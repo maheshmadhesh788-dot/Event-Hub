@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Event Hub</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="login-page">
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="index.html" style="display: flex; align-items: center; gap: 10px;">
+                <img src="images/kasc_logo.jpg" alt="KASC Logo" style="height: 42px; width: auto; border-radius: 50%; object-fit: cover;">
+                <span style="font-weight: 800; font-size: 1.3rem; letter-spacing: 0.5px;">KASC EVENT HUB</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="index.html"><i class="fa-solid fa-house me-1"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>
+                    <li class="nav-item" id="nav-dynamic"></li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-primary-gradient position-relative" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
+                            <i class="fa-solid fa-bell"></i> Notices
+                            <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container my-5">
+        <div class="glass-panel p-4 p-md-5 mx-auto animate-fade-up" style="max-width: 460px;">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary-glow text-primary rounded-circle mb-3" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-right-to-bracket fa-2x"></i>
+                </div>
+                <h3 class="fw-bold text-white mb-1">Account Login</h3>
+                <p class="text-muted small">Enter your credentials to access your dashboard.</p>
+            </div>
+
+            <div id="login-error" class="alert alert-danger" style="display: none;" role="alert"></div>
+
+            <form onsubmit="handleUnifiedLogin(event)">
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">Roll Number / Username / Dept Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-secondary text-muted"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" id="login-username" class="form-control form-control-custom" placeholder="e.g. 22IT045 or admin" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-secondary text-muted"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="login-password" class="form-control form-control-custom password-input-with-eye" placeholder="Enter your password" required>
+                        <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('login-password', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary-gradient py-3"><i class="fa-solid fa-sign-in me-2"></i> Log In</button>
+                </div>
+                <div class="text-center mt-3 d-flex flex-column gap-2">
+                    <div>
+                        <span class="text-muted small">Need a Student Profile?</span>
+                        <a href="dashboard.html?register=true" class="text-primary small fw-bold ms-1">Register Student</a>
+                    </div>
+                    <div>
+                        <span class="text-muted small">Need a Dept Workspace?</span>
+                        <a href="department.html?register=true" class="text-secondary small fw-bold ms-1">Create Workspace</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-4 border-top border-secondary text-center text-muted" style="background: rgba(0,0,0,0.2);">
+        <div class="container">
+            <p class="mb-0">© 2026 Kongunadu Arts and Science College (Autonomous). All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Notifications Drawer -->
+    <div class="offcanvas offcanvas-end modal-content-custom" tabindex="-1" id="notificationDrawer" style="width: 380px;">
+        <div class="offcanvas-header modal-header-custom">
+            <h5 class="offcanvas-title text-white fw-bold" id="notificationDrawerLabel">
+                <i class="fa-solid fa-bell text-primary me-2"></i> Notices & Announcements
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body" style="background: #0b0f19;">
+            <div id="notif-drawer-list">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            startNotificationPolling();
+            
+            // If already logged in, redirect to respective pages
+            const student = localStorage.getItem("eventhub_student_session");
+            const dept = localStorage.getItem("eventhub_dept_session");
+            const admin = localStorage.getItem("eventhub_admin_token");
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get("redirect");
+            
+            if (redirectUrl) {
+                if (student && redirectUrl === "dashboard.html") window.location.href = redirectUrl;
+                if (dept && redirectUrl === "department.html") window.location.href = redirectUrl;
+                if (admin && redirectUrl === "admin.html") window.location.href = redirectUrl;
+            } else {
+                if (student) window.location.href = "dashboard.html";
+                if (dept) window.location.href = "department.html";
+                if (admin) window.location.href = "admin.html";
+            }
+        });
+
+        function handleUnifiedLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById("login-username").value.trim();
+            const password = document.getElementById("login-password").value;
+            const errDiv = document.getElementById("login-error");
+            
+            errDiv.style.display = "none";
+
+            fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Login failed") });
+            })
+            .then(data => {
+                // Clear any previous sessions
+                localStorage.removeItem("eventhub_student_session");
+                localStorage.removeItem("eventhub_dept_session");
+                localStorage.removeItem("eventhub_admin_token");
+                localStorage.removeItem("eventhub_student_password");
+
+                const role = data.role;
+                if (role === "ROLE_ADMIN") {
+                    localStorage.setItem("eventhub_admin_token", data.token);
+                } else if (role === "ROLE_DEPARTMENT") {
+                    localStorage.setItem("eventhub_dept_session", JSON.stringify(data));
+                } else if (role === "ROLE_STUDENT") {
+                    localStorage.setItem("eventhub_student_session", JSON.stringify(data));
+                    localStorage.setItem("eventhub_student_rollnumber", data.rollNumber);
+                    localStorage.setItem("eventhub_student_password", password);
+                }
+
+                showSuccessPopup("Login Successful");
+
+                // Determine redirect path
+                const urlParams = new URLSearchParams(window.location.search);
+                const redirect = urlParams.get("redirect");
+                
+                setTimeout(() => {
+                    if (redirect) {
+                        // Ensure the redirect matches the logged-in role's expected page
+                        if ((role === "ROLE_ADMIN" && redirect === "admin.html") ||
+                            (role === "ROLE_DEPARTMENT" && redirect === "department.html") ||
+                            (role === "ROLE_STUDENT" && redirect === "dashboard.html")) {
+                            window.location.href = redirect;
+                        } else {
+                            // Fallback to role-specific default if mismatch
+                            if (role === "ROLE_ADMIN") window.location.href = "admin.html";
+                            else if (role === "ROLE_DEPARTMENT") window.location.href = "department.html";
+                            else if (role === "ROLE_STUDENT") window.location.href = "dashboard.html";
+                        }
+                    } else {
+                        if (role === "ROLE_ADMIN") window.location.href = "admin.html";
+                        else if (role === "ROLE_DEPARTMENT") window.location.href = "department.html";
+                        else if (role === "ROLE_STUDENT") window.location.href = "dashboard.html";
+                    }
+                }, 1000);
+            })
+            .catch(err => {
+                errDiv.innerText = err.message;
+                errDiv.style.display = "block";
+            });
+        }
+    </script>
+</body>
+</html>

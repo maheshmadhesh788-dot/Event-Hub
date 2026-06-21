@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Hub - College Event Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body class="home-page">
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="index.html" style="display: flex; align-items: center; gap: 10px;">
+                <img src="images/kasc_logo.jpg" alt="KASC Logo" style="height: 42px; width: auto; border-radius: 50%; object-fit: cover;">
+                <span style="font-weight: 800; font-size: 1.3rem; letter-spacing: 0.5px;">KASC EVENT HUB</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link nav-link-custom active" href="index.html"><i class="fa-solid fa-house me-1"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>
+                    <li class="nav-item" id="nav-dynamic"></li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-primary-gradient position-relative" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
+                            <i class="fa-solid fa-bell"></i> Notices
+                            <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero-section container animate-fade-up text-center">
+        <div class="mb-4 d-flex justify-content-center align-items-center gap-3 flex-wrap">
+            <img src="images/kasc_logo.jpg" alt="KASC Emblem Logo" style="height: 95px; width: auto; border-radius: 50%; filter: drop-shadow(0 0 12px rgba(30, 58, 138, 0.45));">
+        </div>
+        <h1 class="hero-title" style="font-size: 2.8rem; line-height: 1.2;">Kongunadu Arts and Science College</h1>
+        <p class="text-primary fw-bold mb-2" style="letter-spacing: 2px; font-size: 1.1rem;">(AUTONOMOUS)</p>
+        <p class="hero-subtitle" style="margin-top: 10px;">Re-accredited by NAAC with 'A+' Grade (4th Cycle) & CGPA of 3.64/4.00<br>Recognized as a College of Excellence by UGC | Coimbatore, Tamil Nadu</p>
+        <div class="d-flex justify-content-center gap-3">
+            <button id="toggle-competitions-btn" class="home-toggle-btn" onclick="toggleHomeSection('competitions')"><i class="fa-solid fa-compass me-2"></i> Explore Competitions</button>
+            <button id="toggle-announcements-btn" class="home-toggle-btn" onclick="toggleHomeSection('announcements')"><i class="fa-solid fa-bullhorn me-2"></i> View Announcements</button>
+        </div>
+    </header>
+
+    <!-- Selection-Driven Competitions & Announcements Content Section (Requirement 1, 2 & 5) -->
+    <section class="container my-5 py-4 animate-fade-up" id="homeContentSection" style="display: none;">
+        <!-- Upcoming Competitions Panel -->
+        <div id="competitions-panel" style="display: none;">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold text-white mb-2"><i class="fa-solid fa-trophy text-primary me-2"></i>Upcoming Competitions</h3>
+                <p class="text-muted">Discover our upcoming college & department competitions.</p>
+            </div>
+            <div id="home-events-grid" class="row g-4 justify-content-center">
+                <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Competition Announcements Panel -->
+        <div id="announcements-panel" style="display: none;">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold text-white mb-2"><i class="fa-solid fa-bullhorn text-primary me-2"></i>Competition Announcements</h3>
+                <p class="text-muted">Stay updated with the latest competition announcements.</p>
+            </div>
+            <div id="home-announcements-list" class="row g-4 justify-content-center">
+                <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Image Gallery Section (Campus & Infrastructure Redesign - Requirement 3 & 4) -->
+    <section class="container my-5 py-4 animate-fade-up">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-white mb-2"><i class="fa-solid fa-images text-primary me-2"></i>Campus & Infrastructure</h2>
+            <p class="text-muted">Explore our campus infrastructure, advanced research laboratories, sports complexes, and academic achievements.</p>
+        </div>
+
+        <!-- Grid of Category Cards -->
+        <div class="row g-4 justify-content-center" id="galleryCategoryGrid">
+            <!-- 1. Kongunadu Campus -->
+            <div class="col-sm-6 col-md-3">
+                <div class="gallery-category-card" onclick="openFullscreenGallery('campus')">
+                    <div class="gallery-card-image-box campus-box">
+                        <img src="images/campus/img_2.jpg" alt="Kongunadu Campus" class="category-cover-img">
+                        <div class="gallery-card-hover-overlay">
+                            <i class="fa-solid fa-expand fa-2xl text-white"></i>
+                        </div>
+                    </div>
+                    <h5 class="gallery-category-title">Kongunadu Campus</h5>
+                </div>
+            </div>
+            <!-- 2. Labs & Libraries -->
+            <div class="col-sm-6 col-md-3">
+                <div class="gallery-category-card" onclick="openFullscreenGallery('labs')">
+                    <div class="gallery-card-image-box labs-box">
+                        <img src="images/labs/img_1.webp" alt="Labs & Libraries" class="category-cover-img">
+                        <div class="gallery-card-hover-overlay">
+                            <i class="fa-solid fa-expand fa-2xl text-white"></i>
+                        </div>
+                    </div>
+                    <h5 class="gallery-category-title">Labs & Libraries</h5>
+                </div>
+            </div>
+            <!-- 3. Sports Activities -->
+            <div class="col-sm-6 col-md-3">
+                <div class="gallery-category-card" onclick="openFullscreenGallery('sports')">
+                    <div class="gallery-card-image-box sports-box">
+                        <img src="images/sports_activities.jpg" alt="Sports Activities" class="category-cover-img">
+                        <div class="gallery-card-hover-overlay">
+                            <i class="fa-solid fa-expand fa-2xl text-white"></i>
+                        </div>
+                    </div>
+                    <h5 class="gallery-category-title">Sports Activities</h5>
+                </div>
+            </div>
+            <!-- 4. Achievements -->
+            <div class="col-sm-6 col-md-3">
+                <div class="gallery-category-card" onclick="openFullscreenGallery('achievements')">
+                    <div class="gallery-card-image-box achievements-box">
+                        <img src="images/achievements/img_1.jpg" alt="Achievements" class="category-cover-img">
+                        <div class="gallery-card-hover-overlay">
+                            <i class="fa-solid fa-expand fa-2xl text-white"></i>
+                        </div>
+                    </div>
+                    <h5 class="gallery-category-title">Achievements</h5>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About College Section -->
+    <section class="container my-5 py-4 animate-fade-up">
+        <div class="glass-panel p-5">
+            <h2 class="fw-bold text-white mb-4"><i class="fa-solid fa-landmark text-primary me-2"></i> About Kongunadu Arts and Science College</h2>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <p class="text-muted mb-4" style="line-height: 1.8;">
+                        Established on <strong>12 August 1973</strong> and located in the industrial city of Coimbatore, Tamil Nadu, 
+                        <strong>Kongunadu Arts and Science College (Autonomous)</strong> has been a pioneer in higher education for over 50 years. 
+                        Granted Autonomous status by the UGC in the academic year 2004–05, the college is re-accredited with an <strong>'A+' Grade by NAAC</strong> 
+                        (4th Cycle) with an outstanding CGPA of 3.64/4.00, and recognized as a <strong>College of Excellence</strong> by the UGC.
+                    </p>
+                    <p class="text-muted mb-0" style="line-height: 1.8;">
+                        The institution maintains a strong focus on academic excellence, industrial research, women empowerment, and social justice, 
+                        nurturing holistic growth and professional readiness in our students.
+                    </p>
+                </div>
+                <div class="col-lg-6">
+                    <p class="text-muted mb-3" style="line-height: 1.8;">
+                        With a student strength of approximately <strong>5,000 students</strong>, KASC offers a comprehensive range of academic programmes, 
+                        providing high-quality education across multiple disciplines:
+                    </p>
+                    <div class="row g-3 text-center mt-2">
+                        <div class="col-4">
+                            <div class="p-3 rounded border border-secondary border-opacity-30" style="background: rgba(255,255,255,0.01);">
+                                <h3 class="fw-bold text-primary mb-1">22</h3>
+                                <small class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">UG Programmes</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 rounded border border-secondary border-opacity-30" style="background: rgba(255,255,255,0.01);">
+                                <h3 class="fw-bold text-primary mb-1">11</h3>
+                                <small class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">PG Programmes</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 rounded border border-secondary border-opacity-30" style="background: rgba(255,255,255,0.01);">
+                                <h3 class="fw-bold text-primary mb-1">13</h3>
+                                <small class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Research Progs</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Accredited Excellence Section -->
+    <section class="container my-5 py-4 animate-fade-up">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-white mb-2"><i class="fa-solid fa-medal text-primary me-2"></i> Accredited Excellence</h2>
+            <p class="text-muted">Elite institutional recognitions and academic achievements held by Kongunadu Arts and Science College.</p>
+        </div>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4 justify-content-center">
+            <!-- Item 1 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-clock"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">Since 1973</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Excellence in Education</p>
+                </div>
+            </div>
+            <!-- Item 2 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-chalkboard-user"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">MoE IIC</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Mentor Institution</p>
+                </div>
+            </div>
+            <!-- Item 3 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-people-arrows"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">UGC Paramarsh</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Mentor Institution</p>
+                </div>
+            </div>
+            <!-- Item 4 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-star"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">UGC Status</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">College of Excellence</p>
+                </div>
+            </div>
+            <!-- Item 5 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-flask-ripple"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">DBT STAR</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">STAR College Status</p>
+                </div>
+            </div>
+            <!-- Item 6 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-flask"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">DST FIST</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Sponsored Science Depts</p>
+                </div>
+            </div>
+            <!-- Item 7 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-ranking-star"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">ARIIA</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Band Performer</p>
+                </div>
+            </div>
+            <!-- Item 8 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-award"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">NAAC A+</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Re-accredited (4th Cycle)</p>
+                </div>
+            </div>
+            <!-- Item 9 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-crown"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">NIRF Rank 53</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Ranked 53 Nationwide</p>
+                </div>
+            </div>
+            <!-- Item 10 -->
+            <div class="col">
+                <div class="glass-panel adv-card p-4 d-flex flex-column align-items-center justify-content-center text-center h-100">
+                    <div class="adv-icon-wrapper mb-3" style="width: 50px; height: 50px; font-size: 1.25rem;"><i class="fa-solid fa-microchip"></i></div>
+                    <h6 class="text-white fw-bold mb-1" style="font-size: 0.9rem;">ICT Academy</h6>
+                    <p class="text-muted mb-0" style="font-size: 0.75rem;">Centre of Excellence</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Footer -->
+    <footer class="mt-5 py-4 border-top border-secondary text-center text-muted" style="background: rgba(0,0,0,0.2);">
+        <div class="container">
+            <p class="mb-0">© 2026 Kongunadu Arts and Science College (Autonomous). All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Notification Pill (Bottom Right) -->
+    <div class="notif-pill" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
+        <i class="fa-solid fa-bullhorn"></i>
+        <span>Latest Notices (<span id="notif-pill-count">0</span>)</span>
+    </div>
+
+    <!-- Notifications Offcanvas Drawer -->
+    <div class="offcanvas offcanvas-end modal-content-custom" tabindex="-1" id="notificationDrawer" style="width: 380px;">
+        <div class="offcanvas-header modal-header-custom">
+            <h5 class="offcanvas-title text-white fw-bold" id="notificationDrawerLabel">
+                <i class="fa-solid fa-bell text-primary me-2"></i> Notices & Announcements
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body" style="background: #0b0f19;">
+            <div id="notif-drawer-list">
+                <!-- Notifications will be loaded dynamically here -->
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Gallery Modal (Requirement 3 & 4) -->
+    <div id="fullscreenGalleryModal" class="fullscreen-gallery-modal" style="display: none;">
+        <!-- Close/Back button -->
+        <button class="gallery-close-btn" onclick="closeFullscreenGallery()"><i class="fa-solid fa-arrow-left me-2"></i> Back to Home</button>
+        
+        <!-- Gallery Slider Main Area -->
+        <div class="gallery-slider-viewport">
+            <button class="gallery-slider-arrow prev-arrow" onclick="gallerySlidePrev()"><i class="fa-solid fa-chevron-left"></i></button>
+            
+            <div class="gallery-slider-slide-container" id="modalSliderContainer">
+                <!-- Dynamically populated slides -->
+            </div>
+            
+            <button class="gallery-slider-arrow next-arrow" onclick="gallerySlideNext()"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        
+        <!-- Indicators/Details -->
+        <div class="gallery-info-panel">
+            <h4 id="galleryModalTitle" class="text-white fw-bold mb-1">-</h4>
+            <p id="galleryModalCaption" class="text-muted mb-2 small">-</p>
+            <div class="gallery-counter" id="galleryModalCounter">0 / 0</div>
+            <div class="gallery-slider-dots" id="galleryModalDots"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+    <script>
+        // Gallery Configuration with numbered sequence names and sequence numbers (Requirement 3)
+        const categoryImages = {
+            campus: [
+                { src: 'images/campus/img_1.jpg', label: 'Kongunadu Campus 1 - Main Entrance Ganesha Temple' },
+                { src: 'images/campus/img_2.jpg', label: 'Kongunadu Campus 2 - Main Entrance Arch' },
+                { src: 'images/campus/img_3.jpg', label: 'Kongunadu Campus 3 - Campus Building with Trees' },
+                { src: 'images/campus/img_4.jpg', label: 'Kongunadu Campus 4 - Academic Block Front View' },
+                { src: 'images/campus/img_5.jpg', label: 'Kongunadu Campus 5 - Green Walkway and Courtyard' },
+                { src: 'images/campus/img_6.jpg', label: 'Kongunadu Campus 6 - Campus Courtyard and Walkway' }
+            ],
+            labs: [
+                { src: 'images/labs/img_1.webp', label: 'Labs & Libraries 1 - Advanced Chemistry and Life Science Lab' },
+                { src: 'images/labs/img_2.jpg', label: 'Labs & Libraries 2 - Chemistry and Biology Instrumentation Lab' },
+                { src: 'images/labs/img_3.jpg', label: 'Labs & Libraries 3 - Computer Science and Information Technology Labs' },
+                { src: 'images/labs/img_4.jpg', label: 'Labs & Libraries 4 - Central Reference Library Hall' },
+                { src: 'images/labs/img_5.jpg', label: 'Labs & Libraries 5 - Central Library Reference & Reading Room' },
+                { src: 'images/labs/img_6.jpg', label: 'Labs & Libraries 6 - Central Reference Section Reading Room' },
+                { src: 'images/labs/img_7.jpg', label: 'Labs & Libraries 7 - Advanced Biotechnology Research Laboratory' }
+            ],
+            sports: [
+                { src: 'images/sports_activities.jpg', label: 'Sports Activities 1 - Basketball Tournament Court' }
+            ],
+            achievements: [
+                { src: 'images/achievements/img_1.jpg', label: 'Achievements 1 - Graduation Ceremony Outstanding Academic Performers' },
+                { src: 'images/achievements/img_2.jpg', label: 'Achievements 2 - Graduation Day Class Photo Celebration' },
+                { src: 'images/achievements/img_3.jpg', label: 'Achievements 3 - College Day Academic Excellence Awardees' },
+                { src: 'images/achievements/img_4.jpg', label: 'Achievements 4 - Graduation Day Degree Award Ceremony' },
+                { src: 'images/achievements/img_5.jpeg', label: 'Achievements 5 - National Level Sports Tournament Trophy Winners' },
+                { src: 'images/achievements/img_6.jpg', label: 'Achievements 6 - Elite NAAC Re-accreditation \'A+\' Grade Certificate' },
+                { src: 'images/achievements/img_7.jpg', label: 'Achievements 7 - State Level Project Exhibition Award Winners' },
+                { src: 'images/achievements/img_8.jpg', label: 'Achievements 8 - Inter-collegiate Symposium Overall Championship' },
+                { src: 'images/achievements/img_9.jpg', label: 'Achievements 9 - Best Student Chapter Award Ceremony' },
+                { src: 'images/achievements/img_10.jpg', label: 'Achievements 10 - Outstanding Placement Record Celebrations' }
+            ]
+        };
+
+        // Fullscreen Gallery Modal Logic
+        let currentGalleryCategory = "";
+        let currentGalleryIndex = 0;
+
+        function openFullscreenGallery(category) {
+            currentGalleryCategory = category;
+            currentGalleryIndex = 0;
+            
+            const slides = categoryImages[category];
+            if (!slides || slides.length === 0) return;
+            
+            const titleEl = document.getElementById("galleryModalTitle");
+            const containerEl = document.getElementById("modalSliderContainer");
+            
+            const categoryTitles = {
+                campus: "Kongunadu Campus",
+                labs: "Labs & Libraries",
+                sports: "Sports Activities",
+                achievements: "Achievements"
+            };
+            titleEl.innerText = categoryTitles[category];
+            
+            containerEl.innerHTML = "";
+            slides.forEach((slide, index) => {
+                const slideDiv = document.createElement("div");
+                slideDiv.className = "gallery-fullscreen-slide" + (index === 0 ? " active" : "");
+                slideDiv.innerHTML = `<img src="${slide.src}" alt="${slide.label}">`;
+                containerEl.appendChild(slideDiv);
+            });
+            
+            const dotsContainer = document.getElementById("galleryModalDots");
+            dotsContainer.innerHTML = "";
+            slides.forEach((_, index) => {
+                const dot = document.createElement("button");
+                dot.className = "gallery-slider-dot" + (index === 0 ? " active" : "");
+                dot.setAttribute("onclick", `goToFullscreenSlide(${index})`);
+                dotsContainer.appendChild(dot);
+            });
+            
+            updateFullscreenGalleryUI();
+            
+            const modal = document.getElementById("fullscreenGalleryModal");
+            modal.style.display = "flex";
+            document.body.style.overflow = "hidden";
+            
+            setupSwipeEvents();
+        }
+
+        function closeFullscreenGallery() {
+            const modal = document.getElementById("fullscreenGalleryModal");
+            modal.style.display = "none";
+            document.body.style.overflow = "";
+        }
+
+        function updateFullscreenGalleryUI() {
+            const slides = categoryImages[currentGalleryCategory];
+            const slideElements = document.querySelectorAll(".gallery-fullscreen-slide");
+            const dotElements = document.querySelectorAll(".gallery-slider-dot");
+            
+            slideElements.forEach((el, index) => {
+                if (index === currentGalleryIndex) el.classList.add("active");
+                else el.classList.remove("active");
+            });
+            
+            dotElements.forEach((el, index) => {
+                if (index === currentGalleryIndex) el.classList.add("active");
+                else el.classList.remove("active");
+            });
+            
+            document.getElementById("galleryModalCaption").innerText = slides[currentGalleryIndex].label;
+            document.getElementById("galleryModalCounter").innerText = `${currentGalleryIndex + 1} / ${slides.length}`;
+        }
+
+        function gallerySlidePrev() {
+            const slides = categoryImages[currentGalleryCategory];
+            if (currentGalleryIndex > 0) currentGalleryIndex--;
+            else currentGalleryIndex = slides.length - 1;
+            updateFullscreenGalleryUI();
+        }
+
+        function gallerySlideNext() {
+            const slides = categoryImages[currentGalleryCategory];
+            if (currentGalleryIndex < slides.length - 1) currentGalleryIndex++;
+            else currentGalleryIndex = 0;
+            updateFullscreenGalleryUI();
+        }
+
+        function goToFullscreenSlide(index) {
+            currentGalleryIndex = index;
+            updateFullscreenGalleryUI();
+        }
+
+        let touchstartX = 0;
+        let touchendX = 0;
+
+        function setupSwipeEvents() {
+            const modal = document.getElementById("fullscreenGalleryModal");
+            modal.ontouchstart = e => {
+                touchstartX = e.changedTouches[0].screenX;
+            };
+            modal.ontouchend = e => {
+                touchendX = e.changedTouches[0].screenX;
+                handleSwipeGesture();
+            };
+        }
+
+        function handleSwipeGesture() {
+            if (touchendX < touchstartX - 50) gallerySlideNext();
+            if (touchendX > touchstartX + 50) gallerySlidePrev();
+        }
+
+        document.addEventListener("keydown", e => {
+            const modal = document.getElementById("fullscreenGalleryModal");
+            if (modal && modal.style.display === "flex") {
+                if (e.key === "ArrowLeft") gallerySlidePrev();
+                if (e.key === "ArrowRight") gallerySlideNext();
+                if (e.key === "Escape") closeFullscreenGallery();
+            }
+        });
+
+        let competitionsLoaded = false;
+        let announcementsLoaded = false;
+
+        function toggleHomeSection(type) {
+            const compBtn = document.getElementById("toggle-competitions-btn");
+            const annBtn = document.getElementById("toggle-announcements-btn");
+            const contentSection = document.getElementById("homeContentSection");
+            const compPanel = document.getElementById("competitions-panel");
+            const annPanel = document.getElementById("announcements-panel");
+
+            if (!compBtn || !annBtn || !contentSection || !compPanel || !annPanel) return;
+
+            if (type === 'competitions') {
+                compBtn.classList.add("active");
+                annBtn.classList.remove("active");
+
+                contentSection.style.display = "block";
+                compPanel.style.display = "block";
+                annPanel.style.display = "none";
+
+                // Load content on-demand
+                if (!competitionsLoaded) {
+                    loadCompetitions();
+                    competitionsLoaded = true;
+                }
+
+                // Smooth scroll to the content section
+                contentSection.scrollIntoView({ behavior: 'smooth' });
+
+            } else if (type === 'announcements') {
+                annBtn.classList.add("active");
+                compBtn.classList.remove("active");
+
+                contentSection.style.display = "block";
+                annPanel.style.display = "block";
+                compPanel.style.display = "none";
+
+                // Load content on-demand
+                if (!announcementsLoaded) {
+                    loadAnnouncements();
+                    announcementsLoaded = true;
+                }
+
+                // Smooth scroll to the content section
+                contentSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Maintain compatibility with any other pages referencing activateHomeTab
+        function activateHomeTab(tabId) {
+            if (tabId === 'explore-competitions-tab' || tabId === 'explore-competitions-pane') {
+                toggleHomeSection('competitions');
+            } else if (tabId === 'announcements-tab' || tabId === 'announcements-pane') {
+                toggleHomeSection('announcements');
+            }
+        }
+
+        function loadCompetitions() {
+            const grid = document.getElementById("home-events-grid");
+            if (!grid) return;
+
+            fetch("/api/student/events")
+                .then(res => res.json())
+                .then(events => {
+                    const now = new Date();
+                    const upcoming = events.filter(e => new Date(e.dateTime) >= now);
+                    
+                    if (upcoming.length === 0) {
+                        grid.innerHTML = '<div class="col-12 text-center text-muted p-4"><p>No upcoming competitions at this time.</p></div>';
+                        return;
+                    }
+
+                    let html = "";
+                    upcoming.forEach(event => {
+                        const isDept = event.type === "DEPARTMENT";
+                        const badgeText = isDept ? (event.department ? event.department.name : "Department Level") : "College Level";
+                        const badgeClass = isDept ? "badge-dept" : "badge-college";
+                        const cardClass = isDept ? "event-card-dept" : "event-card-college";
+
+                        html += `
+                            <div class="col-md-4">
+                                <div class="glass-panel event-card ${cardClass} h-100">
+                                    <div class="event-card-img-wrapper">
+                                        <span class="event-card-badge ${badgeClass}">${badgeText}</span>
+                                        <img id="home-poster-${event.id}" class="event-card-img" alt="${event.name}">
+                                    </div>
+                                    <div class="p-4">
+                                        <h5 class="fw-bold text-white mb-2" title="${event.name}">${event.name}</h5>
+                                        <div class="text-muted mb-1 small"><i class="fa-solid fa-location-dot text-primary me-2"></i> ${event.venue}</div>
+                                        <div class="text-muted mb-3 small"><i class="fa-solid fa-calendar text-primary me-2"></i> ${formatEventDate(event.dateTime)}</div>
+                                        <div class="d-grid">
+                                            <a href="events.html?eventId=${event.id}" class="btn btn-primary-gradient">Register Event</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    grid.innerHTML = html;
+
+                    upcoming.forEach(event => {
+                        const img = document.getElementById(`home-poster-${event.id}`);
+                        if (img) {
+                            setEventPoster(img, event.posterUrl, event.name);
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    grid.innerHTML = '<div class="col-12 text-center text-danger p-4">Failed to load competitions.</div>';
+                });
+        }
+
+        function loadAnnouncements() {
+            const list = document.getElementById("home-announcements-list");
+            if (!list) return;
+
+            fetch("/api/notifications")
+                .then(res => res.json())
+                .then(notifications => {
+                    if (notifications.length === 0) {
+                        list.innerHTML = '<div class="col-12 text-center text-muted p-4"><p>No recent announcements.</p></div>';
+                        return;
+                    }
+
+                    let html = "";
+                    notifications.forEach(notif => {
+                        const isDept = notif.sender.startsWith("Department");
+                        const formattedTime = new Date(notif.createdAt).toLocaleDateString() + ' ' + new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        
+                        html += `
+                            <div class="col-md-6">
+                                <div class="glass-panel p-4 h-100 notif-card ${isDept ? 'dept-notif' : ''}">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="text-white fw-bold mb-0" style="font-size:1rem;">${notif.title}</h5>
+                                        <span class="badge ${isDept ? 'bg-secondary' : 'bg-primary'}">${notif.sender}</span>
+                                    </div>
+                                    <p class="text-muted small mb-3">${notif.content}</p>
+                                    <div class="text-muted" style="font-size: 0.8rem;"><i class="fa-solid fa-clock me-1"></i> ${formattedTime}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    list.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error(err);
+                    list.innerHTML = '<div class="col-12 text-center text-danger p-4">Failed to load announcements.</div>';
+                });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            startNotificationPolling();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Event Hub</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html5-qrcode CDN for check-in camera scan -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="index.html" style="display: flex; align-items: center; gap: 10px;">
+                <img src="images/kasc_logo.jpg" alt="KASC Logo" style="height: 42px; width: auto; border-radius: 50%; object-fit: cover;">
+                <span style="font-weight: 800; font-size: 1.3rem; letter-spacing: 0.5px;">KASC EVENT HUB</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="index.html"><i class="fa-solid fa-house me-1"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>
+                    <li class="nav-item" id="nav-dynamic"></li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-glass" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0;">
+                            <i id="theme-toggle-icon" class="fa-solid fa-sun text-warning"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-primary-gradient position-relative" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
+                            <i class="fa-solid fa-bell"></i> Notices
+                            <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container my-5 animate-fade-up">
+        
+        <!-- Admin Login Screen -->
+        <div id="admin-login-card" class="glass-panel mx-auto my-5 p-4 animate-fade-up" style="max-width: 450px; display: none;">
+            <h3 class="text-white text-center fw-bold mb-4"><i class="fa-solid fa-lock text-primary me-2"></i>Admin Login</h3>
+            <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+                <div class="mb-3">
+                    <label for="admin-user" class="form-label text-white small fw-bold">Username</label>
+                    <input type="text" id="admin-user" class="form-control form-control-custom" required placeholder="admin">
+                </div>
+                <div class="mb-3">
+                    <label for="admin-pass" class="form-label text-white small fw-bold">Password</label>
+                    <div class="input-group">
+                        <input type="password" id="admin-pass" class="form-control form-control-custom" required placeholder="••••••••">
+                        <button class="btn btn-outline-secondary border-secondary text-white" type="button" onclick="togglePasswordVisibility('admin-pass', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary-gradient py-2 fw-bold">Access Console</button>
+                </div>
+                <div id="login-error" class="text-danger small mt-2 text-center" style="display: none;"></div>
+            </form>
+        </div>
+
+        <!-- Admin Workspace Dashboard -->
+        <div id="admin-workspace" style="display: none;">
+            <!-- Header -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-5 gap-3 border-bottom border-secondary pb-4">
+                <div>
+                    <h1 class="fw-bold text-white mb-1"><i class="fa-solid fa-screwdriver-wrench text-primary me-2"></i>Admin Management Console</h1>
+                    <p class="text-muted mb-0">Add/Edit College Events, view registrations, and manage announcements.</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logoutAdmin()"><i class="fa-solid fa-right-from-bracket me-1"></i>Logout</button>
+                </div>
+            </div>
+
+            <!-- Section Navigation Tabs -->
+            <ul class="nav nav-tabs border-secondary mb-4 flex-wrap" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active text-white border-0 bg-transparent fw-bold" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-pane" type="button" role="tab" onclick="renderAdminAnalytics()"><i class="fa-solid fa-chart-line text-primary me-2"></i>Dashboard</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white border-0 bg-transparent fw-bold" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-pane" type="button" role="tab" onclick="loadAllEvents()"><i class="fa-solid fa-calendar-days text-primary me-2"></i>Manage Events</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white border-0 bg-transparent fw-bold" id="depts-tab" data-bs-toggle="tab" data-bs-target="#depts-pane" type="button" role="tab" onclick="loadAdminDepartments()"><i class="fa-solid fa-building-columns text-primary me-2"></i>Manage Departments</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white border-0 bg-transparent fw-bold" id="students-tab" data-bs-toggle="tab" data-bs-target="#students-pane" type="button" role="tab" onclick="loadAdminStudents()"><i class="fa-solid fa-graduation-cap text-primary me-2"></i>Student Profiles</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white border-0 bg-transparent fw-bold" id="registrations-tab" data-bs-toggle="tab" data-bs-target="#registrations-pane" type="button" role="tab" onclick="loadAllRegistrations()"><i class="fa-solid fa-id-card-clip text-primary me-2"></i>All Registrations</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white border-0 bg-transparent fw-bold" id="notices-tab" data-bs-toggle="tab" data-bs-target="#notices-pane" type="button" role="tab" onclick="loadAdminNotices()"><i class="fa-solid fa-bullhorn text-primary me-2"></i>Manage Notices</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white border-0 bg-transparent fw-bold" id="checkin-tab" data-bs-toggle="tab" data-bs-target="#checkin-pane" type="button" role="tab" onclick="stopQRScanner()"><i class="fa-solid fa-square-check text-primary me-2"></i>QR Check-In</button>
+                </li>
+            </ul>
+
+        <!-- Tab Panes Content -->
+        <div class="tab-content" id="adminTabsContent">
+            
+            <!-- 0. DASHBOARD PANE (Premium Analytics) -->
+            <div class="tab-pane fade show active" id="dashboard-pane" role="tabpanel">
+                <!-- Dashboard Statistics & Charts Section (Premium) -->
+                <div class="row g-4 mb-4">
+                    <!-- Stats Cards -->
+                    <div class="col-md-3">
+                        <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center">
+                            <span class="text-muted small fw-bold d-block mb-1">TOTAL EVENTS</span>
+                            <h2 class="fw-bold text-white mb-0" id="stats-total-events">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center">
+                            <span class="text-muted small fw-bold d-block mb-1">TOTAL REGISTRATIONS</span>
+                            <h2 class="fw-bold text-primary mb-0" id="stats-total-registrations">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center">
+                            <span class="text-muted small fw-bold d-block mb-1">TOTAL DEPARTMENTS</span>
+                            <h2 class="fw-bold text-info mb-0" id="stats-total-depts">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center">
+                            <span class="text-muted small fw-bold d-block mb-1">TOTAL STUDENTS</span>
+                            <h2 class="fw-bold text-success mb-0" id="stats-total-students">0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Analytics Grid -->
+                <div class="row g-4 mb-4">
+                    <!-- Charts -->
+                    <div class="col-lg-6">
+                        <div class="glass-panel p-4" style="min-height: 350px;">
+                            <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-chart-bar text-primary me-2"></i>Registrations per Department</h5>
+                            <div style="position: relative; height:280px; width:100%">
+                                <canvas id="adminDeptBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="glass-panel p-4" style="min-height: 350px;">
+                            <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-chart-bar text-success me-2"></i>Registrations per Event</h5>
+                            <div style="position: relative; height:280px; width:100%">
+                                <canvas id="adminEventBarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export & Quick actions panel -->
+                <div class="glass-panel p-4">
+                    <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-gears text-primary me-2"></i>Console Actions & Reports</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-primary-gradient btn-sm" onclick="document.getElementById('events-tab').click(); openEventModal();">
+                            <i class="fa-solid fa-plus me-1"></i> Add College Event
+                        </button>
+                        <button class="btn btn-secondary-gradient btn-sm" onclick="document.getElementById('depts-tab').click(); openDeptModal();">
+                            <i class="fa-solid fa-plus me-1"></i> Add Department
+                        </button>
+                        <button class="btn btn-glass btn-sm" onclick="downloadAdminReport()">
+                            <i class="fa-solid fa-file-csv me-1 text-success"></i> Export Registrations CSV
+                        </button>
+                        <button class="btn btn-glass btn-sm text-white" onclick="renderAdminAnalytics()">
+                            <i class="fa-solid fa-arrows-rotate me-1 text-primary"></i> Refresh Stats
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. EVENTS PANE -->
+            <div class="tab-pane fade" id="events-pane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <h4 class="text-white fw-bold mb-0">College & Department Events</h4>
+                    <button class="btn btn-primary-gradient btn-sm" onclick="openEventModal()"><i class="fa-solid fa-plus me-1"></i> Add College Event</button>
+                </div>
+
+                <div class="glass-panel p-3 mb-4">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-6">
+                            <input type="text" id="admin-event-search" class="form-control form-control-custom" placeholder="Search events..." oninput="filterAdminEvents()">
+                        </div>
+                        <div class="col-md-6 text-md-end text-start">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-outline-primary active text-white" id="btn-filter-all" onclick="filterAdminEventType('ALL')">All</button>
+                                <button class="btn btn-outline-primary text-white" id="btn-filter-college" onclick="filterAdminEventType('COLLEGE')">College</button>
+                                <button class="btn btn-outline-primary text-white" id="btn-filter-dept" onclick="filterAdminEventType('DEPARTMENT')">Department</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4" id="college-events-row">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- 2. MANAGE DEPARTMENTS PANE -->
+            <div class="tab-pane fade" id="depts-pane" role="tabpanel">
+                <div class="glass-panel p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                        <h4 class="text-white fw-bold mb-0">Registered Departments</h4>
+                        <button class="btn btn-primary-gradient btn-sm" onclick="openDeptModal()"><i class="fa-solid fa-plus me-1"></i> Add Department</button>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Logo</th>
+                                    <th>Department Name</th>
+                                    <th>Code</th>
+                                    <th>Password</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="depts-tbody">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. STUDENT PROFILES PANE -->
+            <div class="tab-pane fade" id="students-pane" role="tabpanel">
+                <div class="glass-panel p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                        <h4 class="text-white fw-bold mb-0">Student Profiles Directory</h4>
+                        <input type="text" id="student-search-input" class="form-control form-control-custom w-auto animate-fade-up" placeholder="Search students..." oninput="filterAdminStudents()">
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Roll Number</th>
+                                    <th>Student Name</th>
+                                    <th>Department</th>
+                                    <th>Contact Number</th>
+                                    <th>Email</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-tbody">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. ALL REGISTRATIONS PANE -->
+            <div class="tab-pane fade" id="registrations-pane" role="tabpanel">
+                <div class="glass-panel p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                        <h4 class="text-white fw-bold mb-0">All Registration Records</h4>
+                        <div class="d-flex gap-2">
+                            <select id="reg-level-filter" class="form-select form-control-custom form-select-custom w-auto" onchange="filterAllRegistrations()">
+                                <option value="ALL">All Levels</option>
+                                <option value="COLLEGE">College Level</option>
+                                <option value="DEPARTMENT">Department Level</option>
+                            </select>
+                            <button class="btn btn-glass btn-sm" onclick="loadAllRegistrations()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Student Name</th>
+                                    <th>Roll Number</th>
+                                    <th>Student Department</th>
+                                    <th>Event Name</th>
+                                    <th>Level</th>
+                                    <th>Contact</th>
+                                    <th>Email</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-registrations-tbody">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. MANAGE NOTICES PANE -->
+            <div class="tab-pane fade" id="notices-pane" role="tabpanel">
+                <div class="row g-4">
+                    <!-- Form to Publish Notice -->
+                    <div class="col-lg-5">
+                        <div class="glass-panel p-4">
+                            <h4 class="text-white fw-bold mb-4">Publish New Notice</h4>
+                            <form id="notice-form" onsubmit="submitNotice(event)">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Notice Title</label>
+                                    <input type="text" id="notice-title" class="form-control form-control-custom" required placeholder="e.g. Last Date Extended for XENON">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Notice Content</label>
+                                    <textarea id="notice-content" class="form-control form-control-custom" rows="4" required placeholder="Describe the notice announcement details..."></textarea>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary-gradient"><i class="fa-solid fa-paper-plane me-2"></i> Send Announcement</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Notice List Grid -->
+                    <div class="col-lg-7">
+                        <div class="glass-panel p-4">
+                            <h4 class="text-white fw-bold mb-4">Active Announcements</h4>
+                            <div id="admin-notices-list" style="max-height: 450px; overflow-y: auto;">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. QR CHECK-IN PANE -->
+            <div class="tab-pane fade" id="checkin-pane" role="tabpanel">
+                <div class="glass-panel p-4 mx-auto" style="max-width: 500px;">
+                    <h4 class="text-white fw-bold mb-3"><i class="fa-solid fa-qrcode text-primary me-2"></i>Entry Pass Check-In</h4>
+                    <p class="text-muted small">Scan the QR code on the student's Entry Pass using the camera, or enter their Registration ID manually below to validate attendance.</p>
+                    
+                    <!-- Camera Scanner Container (Premium) -->
+                    <div class="mb-4 text-center">
+                        <div id="qr-reader" class="mb-3" style="width: 100%; max-width: 350px; margin: 0 auto; background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px dashed rgba(255,255,255,0.15);"></div>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="startQRScanner()"><i class="fa-solid fa-camera me-1"></i> Start Camera Scan</button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="stopQRScanner()"><i class="fa-solid fa-video-slash me-1"></i> Stop Camera</button>
+                        </div>
+                    </div>
+
+                    <hr class="border-secondary mb-4">
+                    
+                    <form id="checkin-form" onsubmit="handleCheckIn(event)">
+                        <div class="mb-3">
+                            <label for="checkin-reg-id" class="form-label text-white small fw-bold">Registration ID</label>
+                            <div class="input-group">
+                                <input type="number" id="checkin-reg-id" class="form-control form-control-custom" required placeholder="e.g. 102">
+                                <button type="submit" class="btn btn-primary-gradient"><i class="fa-solid fa-circle-check"></i> Validate Check-In</button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div id="checkin-result" class="mt-4 p-3 glass-panel" style="display: none; border-left: 4px solid #10b981;">
+                        <h5 class="text-white fw-bold mb-2" id="checkin-status-msg">Check-In Successful!</h5>
+                        <div class="row g-2 text-muted small">
+                            <div class="col-4 fw-bold text-white">Student:</div>
+                            <div class="col-8" id="checkin-student-name">-</div>
+                            <div class="col-4 fw-bold text-white">Roll Number:</div>
+                            <div class="col-8" id="checkin-student-roll">-</div>
+                            <div class="col-4 fw-bold text-white">Event:</div>
+                            <div class="col-8 text-primary fw-bold" id="checkin-event-name">-</div>
+                            <div class="col-4 fw-bold text-white">Status:</div>
+                            <div class="col-8 text-success fw-bold" id="checkin-final-status">-</div>
+                        </div>
+                    </div>
+                    <div id="checkin-error" class="text-danger small mt-2 text-center" style="display: none;"></div>
+                </div>
+            </div>
+
+        </div>
+        </div>
+    </main>
+
+    <!-- Create/Edit Event Modal -->
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header modal-header-custom">
+                    <h5 class="modal-title text-white fw-bold" id="modalTitle">Add College Level Event</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="event-form" onsubmit="saveEvent(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="event-id">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Event Name</label>
+                                <input type="text" id="event-name" class="form-control form-control-custom" required placeholder="e.g. Cyber Security workshop">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Number of Competitions</label>
+                                <select id="event-num-competitions" class="form-select form-control-custom form-select-custom" required onchange="onNumCompetitionsChange()">
+                                    <option value="" disabled selected>Select number (1-10)</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Venue</label>
+                                <input type="text" id="event-venue" class="form-control form-control-custom" required placeholder="e.g. Seminar Hall 2">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Date and Time</label>
+                                <input type="datetime-local" id="event-datetime" class="form-control form-control-custom" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted small">Upload Event Poster</label>
+                                <input type="file" id="event-poster-file" class="form-control form-control-custom" accept="image/*" onchange="uploadPoster(this)">
+                                <input type="hidden" id="event-poster-url">
+                                <div class="mt-2 text-muted small" id="upload-status"></div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted small">Event Description</label>
+                                <textarea id="event-desc" class="form-control form-control-custom" rows="3" required placeholder="Explain tournament rules, cash prizes, dates, eligibility..."></textarea>
+                            </div>
+                            <div class="col-12" id="poster-preview-container" style="display: none;">
+                                <label class="form-label text-muted small">Poster Preview</label>
+                                <div class="text-center rounded p-2" style="background: rgba(255,255,255,0.02); border: 1px dashed var(--glass-border);">
+                                    <img id="poster-preview" src="" alt="Preview" style="max-height: 180px; object-fit: contain;">
+                                </div>
+                            </div>
+
+                            <!-- Wizard Step Container for Competitions -->
+                            <div class="col-12" id="wizard-container" style="display: none;">
+                                <hr class="border-secondary my-4">
+                                <h6 class="text-white fw-bold mb-3 d-flex justify-content-between align-items-center">
+                                    <span>Configure Competitions</span>
+                                    <span id="wizard-step-title" class="badge bg-primary">Competition 1 of 3</span>
+                                </h6>
+                                
+                                <div class="wizard-steps-indicator" id="wizard-steps-indicator">
+                                    <!-- Dots populated dynamically -->
+                                </div>
+                                
+                                <div class="comp-step-card">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small">Competition Name</label>
+                                            <input type="text" id="comp-name" class="form-control form-control-custom" placeholder="Enter Competition Name">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small">Venue</label>
+                                            <input type="text" id="comp-venue" class="form-control form-control-custom" placeholder="e.g. Block A, Room 101, Auditorium">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small">Competition Time</label>
+                                            <input type="datetime-local" id="comp-datetime" class="form-control form-control-custom">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small">In-Charge Staff Name</label>
+                                            <input type="text" id="comp-staff-name" class="form-control form-control-custom" placeholder="e.g. Dr. K. Mahesh">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small">Contact Number of In-Charge Staff</label>
+                                            <input type="tel" id="comp-staff-contact" class="form-control form-control-custom" placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="button" class="btn btn-glass btn-sm" id="wizard-prev-btn" onclick="goToPrevCompStep()" style="display: none;">
+                                            <i class="fa-solid fa-arrow-left me-1"></i> Back
+                                        </button>
+                                        <button type="button" class="btn btn-secondary-gradient btn-sm ms-auto" id="wizard-next-btn" onclick="saveActiveCompStep()">
+                                            Save Competition <span id="wizard-next-step-num">1</span> <i class="fa-solid fa-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-custom">
+                        <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Department Modal -->
+    <div class="modal fade" id="deptModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header modal-header-custom border-secondary">
+                    <h5 class="modal-title text-white fw-bold" id="deptModalTitle">Add Department Workspace</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="dept-form" onsubmit="saveDepartment(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="dept-id">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Department Name</label>
+                                <input type="text" id="dept-name" class="form-control form-control-custom" required placeholder="e.g. Information Technology">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Workspace Code (Generated on Add)</label>
+                                <input type="text" id="dept-code" class="form-control form-control-custom text-uppercase" placeholder="e.g. IT (Optional for Edit)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Access Password</label>
+                                <div class="input-group">
+                                    <input type="password" id="dept-password" class="form-control form-control-custom password-input-with-eye" required placeholder="Enter password">
+                                    <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('dept-password', this)">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Upload Workspace Logo</label>
+                                <input type="file" class="form-control form-control-custom" accept="image/*" onchange="uploadDeptImage(this, 'logo')">
+                                <input type="hidden" id="dept-logo-url">
+                                <div class="mt-1 text-muted small" id="dept-logo-status"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Upload Cover Image</label>
+                                <input type="file" class="form-control form-control-custom" accept="image/*" onchange="uploadDeptImage(this, 'cover')">
+                                <input type="hidden" id="dept-cover-url">
+                                <div class="mt-1 text-muted small" id="dept-cover-status"></div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-bold">Workspace Description</label>
+                                <textarea id="dept-desc" class="form-control form-control-custom" rows="3" placeholder="Write description about department labs, events, facilities..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-custom border-secondary">
+                        <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient">Save Department</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Student Profile Modal -->
+    <div class="modal fade" id="studentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header modal-header-custom border-secondary">
+                    <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-graduation-cap text-primary me-2"></i>Edit Student Profile</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="student-form" onsubmit="saveStudentProfile(event)">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Roll Number (ReadOnly)</label>
+                            <input type="text" id="edit-student-roll" class="form-control form-control-custom text-uppercase" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Student Name</label>
+                            <input type="text" id="edit-student-name" class="form-control form-control-custom" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Department</label>
+                            <select id="edit-student-dept" class="form-select form-control-custom form-select-custom" required>
+                                <!-- Loaded dynamically -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Contact Number</label>
+                            <input type="tel" id="edit-student-contact" class="form-control form-control-custom" required pattern="[0-9]{10}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Email Address</label>
+                            <input type="email" id="edit-student-email" class="form-control form-control-custom" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Reset Password (Leave blank to keep unchanged)</label>
+                            <div class="input-group">
+                                <input type="password" id="edit-student-password" class="form-control form-control-custom password-input-with-eye" placeholder="Enter new password">
+                                <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('edit-student-password', this)">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-custom border-secondary">
+                        <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+    <script>
+        let editModal = null;
+        let adminDeptChartInstance = null;
+        let adminEventChartInstance = null;
+        let html5QrcodeScanner = null;
+
+        function setMinDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const minDateStr = `${year}-${month}-${day}T00:00`;
+            document.getElementById("event-datetime").setAttribute("min", minDateStr);
+            const compDt = document.getElementById("comp-datetime");
+            if (compDt) compDt.setAttribute("min", minDateStr);
+        }
+
+        function validateEventDateTime(dateTimeStr) {
+            if (!dateTimeStr) return { valid: false, message: "Please select a date and time." };
+            
+            const selectedDate = new Date(dateTimeStr);
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            if (selectedDate < todayStart) {
+                return { valid: false, message: "The date must be from the current date onward. Past dates are not allowed." };
+            }
+            
+            const hours = selectedDate.getHours();
+            const minutes = selectedDate.getMinutes();
+            
+            if (hours < 8 || hours > 15 || (hours === 15 && minutes > 0)) {
+                return { valid: false, message: "The time must be scheduled between 8:00 AM and 3:00 PM." };
+            }
+            
+            return { valid: true };
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            editModal = new bootstrap.Modal(document.getElementById('eventModal'));
+            const token = localStorage.getItem("eventhub_admin_token");
+            if (token) {
+                document.getElementById("admin-login-card").style.display = "none";
+                document.getElementById("admin-workspace").style.display = "block";
+                renderAdminAnalytics();
+                startNotificationPolling();
+            } else {
+                window.location.href = "login.html?redirect=admin.html";
+            }
+        });
+
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById("admin-user").value.trim();
+            const password = document.getElementById("admin-pass").value.trim();
+            const errorDiv = document.getElementById("login-error");
+            errorDiv.style.display = "none";
+
+            fetch("/api/auth/admin/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                throw new Error("Invalid username or password");
+            })
+            .then(data => {
+                localStorage.setItem("eventhub_admin_token", data.token);
+                document.getElementById("admin-login-card").style.display = "none";
+                document.getElementById("admin-workspace").style.display = "block";
+                renderAdminAnalytics();
+                startNotificationPolling();
+                showSuccessPopup("Admin Access Granted");
+            })
+            .catch(err => {
+                errorDiv.innerText = err.message;
+                errorDiv.style.display = "block";
+            });
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem("eventhub_admin_token");
+            window.location.reload();
+        }
+
+        function handleCheckIn(event) {
+            event.preventDefault();
+            const regId = document.getElementById("checkin-reg-id").value.trim();
+            const resultDiv = document.getElementById("checkin-result");
+            const errorDiv = document.getElementById("checkin-error");
+            
+            resultDiv.style.display = "none";
+            errorDiv.style.display = "none";
+
+            if (!regId) return;
+
+            fetch(`/api/admin/checkin/${regId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Failed to complete check-in") });
+            })
+            .then(data => {
+                document.getElementById("checkin-student-name").innerText = data.studentName;
+                document.getElementById("checkin-student-roll").innerText = data.rollNumber;
+                document.getElementById("checkin-event-name").innerText = data.event.name + (data.competition ? ` - ${data.competition.name}` : "");
+                document.getElementById("checkin-final-status").innerText = data.status;
+                
+                resultDiv.style.display = "block";
+                document.getElementById("checkin-reg-id").value = "";
+                showSuccessPopup("Student Checked In!");
+            })
+            .catch(err => {
+                errorDiv.innerText = err.message;
+                errorDiv.style.display = "block";
+            });
+        }
+
+        function downloadAdminReport() {
+            fetch("/api/admin/reports/csv")
+            .then(res => {
+                if (res.ok) return res.blob();
+                throw new Error("Failed to download CSV report");
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "event_registrations_report.csv";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                showSuccessPopup("Report exported successfully!");
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Failed to export report.");
+            });
+        }
+
+        function renderAdminAnalytics() {
+            fetch("/api/admin/analytics")
+            .then(res => {
+                if (res.ok) return res.json();
+                throw new Error("Failed to load analytics");
+            })
+            .then(data => {
+                document.getElementById("stats-total-events").innerText = data.totalEvents || 0;
+                document.getElementById("stats-total-registrations").innerText = data.totalRegistrations || 0;
+                document.getElementById("stats-total-depts").innerText = data.totalDepartments || 0;
+                document.getElementById("stats-total-students").innerText = data.totalStudents || 0;
+
+                // 1. Registrations per Department Chart
+                const deptLabels = Object.keys(data.registrationsPerDept || {});
+                const deptValues = Object.values(data.registrationsPerDept || {});
+
+                const deptCtx = document.getElementById("adminDeptBarChart").getContext('2d');
+                if (adminDeptChartInstance) {
+                    adminDeptChartInstance.destroy();
+                }
+                adminDeptChartInstance = new Chart(deptCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: deptLabels,
+                        datasets: [{
+                            label: 'Registrations',
+                            data: deptValues,
+                            backgroundColor: 'rgba(99, 102, 241, 0.6)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+
+                // 2. Registrations per Event Chart
+                const eventLabels = Object.keys(data.registrationsPerEvent || {});
+                const eventValues = Object.values(data.registrationsPerEvent || {});
+
+                const eventCtx = document.getElementById("adminEventBarChart").getContext('2d');
+                if (adminEventChartInstance) {
+                    adminEventChartInstance.destroy();
+                }
+                adminEventChartInstance = new Chart(eventCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: eventLabels.map(l => l.length > 20 ? l.substring(0, 18) + "..." : l),
+                        datasets: [{
+                            label: 'Registrations',
+                            data: eventValues,
+                            backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                                ticks: { color: '#94a3b8' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            })
+            .catch(err => console.error("Error loading admin analytics:", err));
+        }
+
+        function startQRScanner() {
+            const readerDiv = document.getElementById("qr-reader");
+            if (!readerDiv) return;
+            
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().catch(e => console.log(e));
+            }
+
+            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+            
+            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                if (decodedText) {
+                    document.getElementById("checkin-reg-id").value = decodedText;
+                    const mockEvent = { preventDefault: () => {} };
+                    handleCheckIn(mockEvent);
+                    stopQRScanner();
+                }
+            };
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                config, 
+                qrCodeSuccessCallback
+            ).catch(err => {
+                console.error("Camera scan failed to start:", err);
+                alert("Camera permission denied or camera not found.");
+            });
+        }
+
+        function stopQRScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then(() => {
+                    html5QrcodeScanner.clear();
+                    html5QrcodeScanner = null;
+                }).catch(err => console.log(err));
+            }
+        }
+
+        // ==========================================
+        // 1. EVENT MANAGEMENT (ALL LEVELS)
+        // ==========================================
+        let allEvents = [];
+        let eventTypeFilter = 'ALL';
+        let eventSearchQuery = '';
+
+        // Wizard State for Competitions
+        let competitionsArray = [];
+        let currentCompStep = 0;
+
+        function onNumCompetitionsChange() {
+            const numVal = parseInt(document.getElementById("event-num-competitions").value);
+            if (!numVal || isNaN(numVal)) {
+                document.getElementById("wizard-container").style.display = "none";
+                competitionsArray = [];
+                return;
+            }
+            
+            const newArray = [];
+            for (let i = 0; i < numVal; i++) {
+                if (competitionsArray[i]) {
+                    newArray.push(competitionsArray[i]);
+                } else {
+                    newArray.push({
+                        name: "",
+                        venue: "",
+                        dateTime: "",
+                        inChargeStaffName: "",
+                        inChargeStaffContact: ""
+                    });
+                }
+            }
+            competitionsArray = newArray;
+            document.getElementById("wizard-container").style.display = "block";
+            currentCompStep = 0;
+            renderWizardStep();
+        }
+
+        function renderWizardStep() {
+            const numVal = competitionsArray.length;
+            if (numVal === 0) return;
+            
+            document.getElementById("wizard-step-title").innerText = `Competition ${currentCompStep + 1} of ${numVal}`;
+            
+            const indicator = document.getElementById("wizard-steps-indicator");
+            indicator.innerHTML = "";
+            for (let i = 0; i < numVal; i++) {
+                const dot = document.createElement("div");
+                dot.className = "wizard-step-dot";
+                if (i === currentCompStep) {
+                    dot.classList.add("active");
+                } else if (isCompStepValid(competitionsArray[i])) {
+                    dot.classList.add("completed");
+                }
+                indicator.appendChild(dot);
+            }
+            
+            const comp = competitionsArray[currentCompStep];
+            document.getElementById("comp-name").value = comp.name || "";
+            document.getElementById("comp-venue").value = comp.venue || "";
+            document.getElementById("comp-datetime").value = comp.dateTime ? comp.dateTime.substring(0, 16) : "";
+            document.getElementById("comp-staff-name").value = comp.inChargeStaffName || "";
+            document.getElementById("comp-staff-contact").value = comp.inChargeStaffContact || "";
+            
+            if (currentCompStep > 0) {
+                document.getElementById("wizard-prev-btn").style.display = "block";
+            } else {
+                document.getElementById("wizard-prev-btn").style.display = "none";
+            }
+            
+            const nextBtn = document.getElementById("wizard-next-btn");
+            const nextNumSpan = document.getElementById("wizard-next-step-num");
+            nextNumSpan.innerText = currentCompStep + 1;
+            if (currentCompStep === numVal - 1) {
+                nextBtn.innerHTML = `Save Competition ${currentCompStep + 1} <i class="fa-solid fa-check ms-1"></i>`;
+            } else {
+                nextBtn.innerHTML = `Save Competition ${currentCompStep + 1} <i class="fa-solid fa-arrow-right ms-1"></i>`;
+            }
+        }
+
+        function isCompStepValid(comp) {
+            return comp && comp.name && comp.venue && comp.dateTime && comp.inChargeStaffName && comp.inChargeStaffContact;
+        }
+
+        function goToPrevCompStep() {
+            saveFieldsToStep();
+            if (currentCompStep > 0) {
+                currentCompStep--;
+                renderWizardStep();
+            }
+        }
+
+        function saveFieldsToStep() {
+            if (currentCompStep < 0 || currentCompStep >= competitionsArray.length) return false;
+            
+            const name = document.getElementById("comp-name").value.trim();
+            const venue = document.getElementById("comp-venue").value.trim();
+            const dateTime = document.getElementById("comp-datetime").value.trim();
+            const staffName = document.getElementById("comp-staff-name").value.trim();
+            const staffContact = document.getElementById("comp-staff-contact").value.trim();
+            
+            competitionsArray[currentCompStep] = {
+                name: name,
+                venue: venue,
+                dateTime: dateTime,
+                inChargeStaffName: staffName,
+                inChargeStaffContact: staffContact
+            };
+            
+            return true;
+        }
+
+        function saveActiveCompStep() {
+            const name = document.getElementById("comp-name").value.trim();
+            const venue = document.getElementById("comp-venue").value.trim();
+            const dateTime = document.getElementById("comp-datetime").value.trim();
+            const staffName = document.getElementById("comp-staff-name").value.trim();
+            const staffContact = document.getElementById("comp-staff-contact").value.trim();
+            
+            if (!name || !venue || !dateTime || !staffName || !staffContact) {
+                alert("Please fill in all details for this competition before saving.");
+                return;
+            }
+            
+            const validation = validateEventDateTime(dateTime);
+            if (!validation.valid) {
+                alert("Competition Time: " + validation.message);
+                return;
+            }
+            
+            if (staffContact.length !== 10 || isNaN(staffContact)) {
+                alert("Please enter a valid 10-digit contact number.");
+                return;
+            }
+            
+            saveFieldsToStep();
+            
+            const numVal = competitionsArray.length;
+            if (currentCompStep < numVal - 1) {
+                currentCompStep++;
+                renderWizardStep();
+            } else {
+                alert("All competitions configured successfully! You can now submit the main event form.");
+            }
+        }
+
+        function loadAllEvents() {
+            const row = document.getElementById("college-events-row");
+            row.innerHTML = '<div class="col-12 text-center p-4"><div class="spinner-border text-primary" role="status"></div></div>';
+            
+            fetch("/api/admin/all-events")
+                .then(res => res.json())
+                .then(events => {
+                    allEvents = events;
+                    renderAdminEvents();
+                })
+                .catch(err => {
+                    console.error("Error loading events:", err);
+                    row.innerHTML = '<div class="col-12 text-center text-danger p-4">Error loading events.</div>';
+                });
+        }
+
+        function filterAdminEventType(type) {
+            eventTypeFilter = type;
+            document.getElementById("btn-filter-all").classList.toggle("active", type === 'ALL');
+            document.getElementById("btn-filter-college").classList.toggle("active", type === 'COLLEGE');
+            document.getElementById("btn-filter-dept").classList.toggle("active", type === 'DEPARTMENT');
+            renderAdminEvents();
+        }
+
+        function filterAdminEvents() {
+            eventSearchQuery = document.getElementById("admin-event-search").value.trim().toLowerCase();
+            renderAdminEvents();
+        }
+
+        function renderAdminEvents() {
+            const row = document.getElementById("college-events-row");
+            const filtered = allEvents.filter(event => {
+                if (eventTypeFilter !== 'ALL' && event.type !== eventTypeFilter) {
+                    return false;
+                }
+                if (eventSearchQuery) {
+                    const nameMatch = event.name.toLowerCase().includes(eventSearchQuery);
+                    const venueMatch = event.venue.toLowerCase().includes(eventSearchQuery);
+                    const descMatch = event.description && event.description.toLowerCase().includes(eventSearchQuery);
+                    return nameMatch || venueMatch || descMatch;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                row.innerHTML = '<div class="col-12 text-center text-muted p-5">No events found.</div>';
+                return;
+            }
+
+            let html = "";
+            filtered.forEach(event => {
+                const isDept = event.type === 'DEPARTMENT';
+                const badgeText = isDept ? (event.department ? event.department.code : "Dept Level") : "College Level";
+                const badgeClass = isDept ? "badge-dept" : "badge-college";
+                
+                let compsHtml = "";
+                if (event.competitions && event.competitions.length > 0) {
+                    compsHtml = `
+                        <div class="mt-3">
+                            <h6 class="text-white fw-bold mb-2 small"><i class="fa-solid fa-list-check text-primary me-2"></i>Competitions:</h6>
+                            <div class="d-flex flex-wrap gap-1 mb-3">
+                                ${event.competitions.map(c => `<span class="badge bg-secondary" style="font-size: 0.75rem;">${c.name}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const cardClass = isDept ? "event-card-dept" : "event-card-college";
+
+                html += `
+                    <div class="col-lg-4 col-md-6">
+                        <div class="glass-panel event-card ${cardClass}" style="cursor: pointer;" onclick="if(!event.target.closest('button')) showEventParticipants(${event.id}, '${event.name.replace(/'/g, "\\'")}')">
+                            <div class="event-card-img-wrapper">
+                                <span class="event-card-badge ${badgeClass}">${badgeText}</span>
+                                <img id="poster-${event.id}" class="event-card-img" alt="${event.name}">
+                            </div>
+                            <div class="p-4">
+                                <h5 class="fw-bold text-white mb-2" title="${event.name}">${event.name}</h5>
+                                <div class="text-muted mb-1 small"><i class="fa-solid fa-location-dot text-primary me-2"></i> ${event.venue}</div>
+                                <div class="text-muted mb-1 small"><i class="fa-solid fa-calendar text-primary me-2"></i> ${formatEventDate(event.dateTime)}</div>
+                                ${compsHtml}
+                                <p class="text-muted small mb-4">
+                                    ${event.description || ''}
+                                </p>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-glass btn-sm flex-fill" onclick="editEvent(${event.id})"><i class="fa-solid fa-edit me-1"></i> Edit</button>
+                                    <button class="btn btn-danger-custom btn-sm flex-fill" onclick="deleteEvent(${event.id})"><i class="fa-solid fa-trash me-1"></i> Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            row.innerHTML = html;
+
+            filtered.forEach(event => {
+                const img = document.getElementById(`poster-${event.id}`);
+                if (img) {
+                    setEventPoster(img, event.posterUrl, event.name);
+                }
+            });
+        }
+
+        // Open Add Event Modal
+        function openEventModal() {
+            document.getElementById("event-form").reset();
+            document.getElementById("event-id").value = "";
+            document.getElementById("event-poster-url").value = "";
+            document.getElementById("poster-preview-container").style.display = "none";
+            document.getElementById("modalTitle").innerText = "Add College Level Event";
+            document.getElementById("upload-status").innerText = "";
+            
+            // Reset wizard
+            competitionsArray = [];
+            currentCompStep = 0;
+            document.getElementById("event-num-competitions").value = "";
+            document.getElementById("wizard-container").style.display = "none";
+
+            setMinDateTime();
+            editModal.show();
+        }
+
+        // Upload Event Poster via API
+        function uploadPoster(fileInput) {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const status = document.getElementById("upload-status");
+            status.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i>Uploading...</span>';
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            fetch("/api/files/upload", {
+                method: "POST",
+                body: formData
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                throw new Error("Upload failed");
+            })
+            .then(data => {
+                status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Uploaded successfully!</span>';
+                document.getElementById("event-poster-url").value = data.url;
+                
+                // Show preview
+                const previewImg = document.getElementById("poster-preview");
+                previewImg.src = data.url;
+                document.getElementById("poster-preview-container").style.display = "block";
+            })
+            .catch(err => {
+                console.error(err);
+                status.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>Failed to upload poster.</span>';
+            });
+        }
+
+        // Save (Add or Update) Event
+        function saveEvent(e) {
+            e.preventDefault();
+
+            const eventId = document.getElementById("event-id").value;
+            const numCompetitions = parseInt(document.getElementById("event-num-competitions").value);
+            
+            if (!numCompetitions || isNaN(numCompetitions)) {
+                alert("Please select the number of competitions.");
+                return;
+            }
+            
+            // Save currently open inputs to step
+            saveFieldsToStep();
+
+            const eventDateTime = document.getElementById("event-datetime").value;
+            const eventValidation = validateEventDateTime(eventDateTime);
+            if (!eventValidation.valid) {
+                alert("Event Date/Time: " + eventValidation.message);
+                return;
+            }
+            
+            // Validate all wizard steps
+            for (let i = 0; i < numCompetitions; i++) {
+                const comp = competitionsArray[i];
+                if (!comp || !comp.name || !comp.venue || !comp.dateTime || !comp.inChargeStaffName || !comp.inChargeStaffContact) {
+                    alert(`Competition ${i + 1} is not fully configured. Please fill in all fields in the wizard.`);
+                    currentCompStep = i;
+                    renderWizardStep();
+                    return;
+                }
+                const compValidation = validateEventDateTime(comp.dateTime);
+                if (!compValidation.valid) {
+                    alert(`Competition ${i + 1} Date/Time: ${compValidation.message}`);
+                    currentCompStep = i;
+                    renderWizardStep();
+                    return;
+                }
+            }
+
+            const payload = {
+                name: document.getElementById("event-name").value,
+                venue: document.getElementById("event-venue").value,
+                dateTime: document.getElementById("event-datetime").value,
+                description: document.getElementById("event-desc").value,
+                posterUrl: document.getElementById("event-poster-url").value,
+                competitions: competitionsArray
+            };
+
+            const url = eventId ? `/api/admin/events/${eventId}` : "/api/admin/events";
+            const method = eventId ? "PUT" : "POST";
+
+            fetch(url, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) {
+                    editModal.hide();
+                    loadAllEvents();
+                    showSuccessPopup("Successfully Uploaded 😊");
+                } else {
+                    alert("Failed to save event");
+                }
+            })
+            .catch(err => console.error("Error saving event:", err));
+        }
+
+        // Edit Event
+        function editEvent(id) {
+            setMinDateTime();
+            fetch("/api/admin/all-events")
+                .then(res => res.json())
+                .then(events => {
+                    const event = events.find(e => e.id.toString() === id.toString());
+                    if (!event) return;
+
+                    document.getElementById("event-id").value = event.id;
+                    document.getElementById("event-name").value = event.name;
+                    document.getElementById("event-venue").value = event.venue;
+                    
+                    if (event.dateTime) {
+                        document.getElementById("event-datetime").value = event.dateTime.substring(0, 16);
+                    }
+                    
+                    document.getElementById("event-desc").value = event.description || "";
+                    document.getElementById("event-poster-url").value = event.posterUrl || "";
+                    document.getElementById("upload-status").innerText = "";
+                    document.getElementById("modalTitle").innerText = "Edit Event Details";
+
+                    if (event.posterUrl) {
+                        const previewImg = document.getElementById("poster-preview");
+                        previewImg.src = event.posterUrl;
+                        document.getElementById("poster-preview-container").style.display = "block";
+                    } else {
+                        document.getElementById("poster-preview-container").style.display = "none";
+                    }
+                    
+                    // Populate wizard competitions
+                    competitionsArray = event.competitions || [];
+                    document.getElementById("event-num-competitions").value = competitionsArray.length || "";
+                    if (competitionsArray.length > 0) {
+                        document.getElementById("wizard-container").style.display = "block";
+                        currentCompStep = 0;
+                        renderWizardStep();
+                    } else {
+                        document.getElementById("wizard-container").style.display = "none";
+                    }
+
+                    editModal.show();
+                })
+                .catch(err => console.error("Error fetching event details:", err));
+        }
+
+        // Delete Event
+        function deleteEvent(id) {
+            if (confirm("Are you sure you want to delete this event? All student registrations associated with this event will be deleted permanently.")) {
+                fetch(`/api/admin/events/${id}`, {
+                    method: "DELETE"
+                })
+                .then(res => {
+                    if (res.ok) {
+                        loadAllEvents();
+                    } else {
+                        alert("Failed to delete event");
+                    }
+                })
+                .catch(err => console.error("Error deleting event:", err));
+            }
+        }
+
+
+        // ==========================================
+        // 2. MANAGE DEPARTMENTS WORKSPACES
+        // ==========================================
+        let deptModalObj = null;
+
+        function loadAdminDepartments() {
+            const tbody = document.getElementById("depts-tbody");
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4"><div class="spinner-border text-primary" role="status"></div></td></tr>';
+
+            fetch("/api/admin/departments")
+                .then(res => res.json())
+                .then(depts => {
+                    if (depts.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">No department workspaces registered.</td></tr>';
+                        return;
+                    }
+
+                    let html = "";
+                    depts.forEach((dept, index) => {
+                        const logoHtml = dept.logoUrl ? `<img src="${dept.logoUrl}" style="height: 32px; width: 32px; border-radius: 50%; object-fit: cover;">` : `<i class="fa-solid fa-building-columns text-secondary fa-lg"></i>`;
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${logoHtml}</td>
+                                <td><strong class="text-white">${dept.name}</strong></td>
+                                <td><span class="badge bg-secondary">${dept.code}</span></td>
+                                <td><code>${dept.password}</code></td>
+                                <td><small class="text-muted text-truncate-2" style="max-width: 200px; display: block;" title="${dept.description || ''}">${dept.description || 'No description'}</small></td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-glass btn-sm" onclick="editDept(${dept.id})"><i class="fa-solid fa-pencil"></i></button>
+                                        <button class="btn btn-danger-custom btn-sm" onclick="deleteDept(${dept.id})"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error("Error fetching departments:", err);
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger p-4">Error loading records.</td></tr>';
+                });
+        }
+
+        function openDeptModal() {
+            if (!deptModalObj) {
+                deptModalObj = new bootstrap.Modal(document.getElementById('deptModal'));
+            }
+            document.getElementById("dept-form").reset();
+            document.getElementById("dept-id").value = "";
+            document.getElementById("dept-logo-url").value = "";
+            document.getElementById("dept-cover-url").value = "";
+            document.getElementById("dept-logo-status").innerText = "";
+            document.getElementById("dept-cover-status").innerText = "";
+            document.getElementById("deptModalTitle").innerText = "Add Department Workspace";
+            deptModalObj.show();
+        }
+
+        function uploadDeptImage(fileInput, type) {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const status = document.getElementById(type === 'logo' ? 'dept-logo-status' : 'dept-cover-status');
+            status.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i>Uploading...</span>';
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            fetch("/api/files/upload", {
+                method: "POST",
+                body: formData
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                throw new Error("Upload failed");
+            })
+            .then(data => {
+                status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Uploaded!</span>';
+                document.getElementById(type === 'logo' ? 'dept-logo-url' : 'dept-cover-url').value = data.url;
+            })
+            .catch(err => {
+                console.error(err);
+                status.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>Failed.</span>';
+            });
+        }
+
+        function saveDepartment(e) {
+            e.preventDefault();
+            const id = document.getElementById("dept-id").value;
+            const payload = {
+                name: document.getElementById("dept-name").value,
+                password: document.getElementById("dept-password").value,
+                description: document.getElementById("dept-desc").value,
+                logoUrl: document.getElementById("dept-logo-url").value,
+                coverImageUrl: document.getElementById("dept-cover-url").value
+            };
+
+            const codeVal = document.getElementById("dept-code").value.trim();
+            if (id && codeVal) {
+                payload.code = codeVal;
+            }
+
+            const url = id ? `/api/admin/departments/${id}` : "/api/admin/departments";
+            const method = id ? "PUT" : "POST";
+
+            fetch(url, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) {
+                    deptModalObj.hide();
+                    loadAdminDepartments();
+                } else {
+                    return res.json().then(err => { alert(err.error || "Failed to save department workspace") });
+                }
+            })
+            .catch(err => console.error("Error saving department:", err));
+        }
+
+        function editDept(id) {
+            if (!deptModalObj) {
+                deptModalObj = new bootstrap.Modal(document.getElementById('deptModal'));
+            }
+
+            fetch("/api/admin/departments")
+                .then(res => res.json())
+                .then(depts => {
+                    const dept = depts.find(d => d.id.toString() === id.toString());
+                    if (!dept) return;
+
+                    document.getElementById("dept-id").value = dept.id;
+                    document.getElementById("dept-name").value = dept.name;
+                    document.getElementById("dept-code").value = dept.code;
+                    document.getElementById("dept-password").value = dept.password;
+                    document.getElementById("dept-desc").value = dept.description || "";
+                    document.getElementById("dept-logo-url").value = dept.logoUrl || "";
+                    document.getElementById("dept-cover-url").value = dept.coverImageUrl || "";
+
+                    document.getElementById("dept-logo-status").innerText = dept.logoUrl ? "Uploaded" : "";
+                    document.getElementById("dept-cover-status").innerText = dept.coverImageUrl ? "Uploaded" : "";
+
+                    document.getElementById("deptModalTitle").innerText = "Edit Department Workspace";
+                    deptModalObj.show();
+                })
+                .catch(err => console.error("Error loading department details:", err));
+        }
+
+        function deleteDept(id) {
+            if (confirm("Are you sure you want to delete this department workspace? All events, notices, and student registrations for this department will be permanently deleted.")) {
+                fetch(`/api/admin/departments/${id}`, {
+                    method: "DELETE"
+                })
+                .then(res => {
+                    if (res.ok) {
+                        loadAdminDepartments();
+                    } else {
+                        alert("Failed to delete department workspace");
+                    }
+                })
+                .catch(err => console.error("Error deleting department:", err));
+            }
+        }
+
+        // ==========================================
+        // 3. STUDENT DIRECTORY MANAGEMENT
+        // ==========================================
+        let studentModalObj = null;
+        let allStudents = [];
+        let studentSearchQuery = "";
+
+        function loadAdminStudents() {
+            const tbody = document.getElementById("students-tbody");
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4"><div class="spinner-border text-primary" role="status"></div></td></tr>';
+
+            fetch("/api/admin/students")
+                .then(res => res.json())
+                .then(students => {
+                    allStudents = students;
+                    renderAdminStudents();
+                    populateStudentDeptDropdown();
+                })
+                .catch(err => {
+                    console.error("Error fetching students:", err);
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger p-4">Error loading records.</td></tr>';
+                });
+        }
+
+        function filterAdminStudents() {
+            studentSearchQuery = document.getElementById("student-search-input").value.trim().toLowerCase();
+            renderAdminStudents();
+        }
+
+        function renderAdminStudents() {
+            const tbody = document.getElementById("students-tbody");
+            const filtered = allStudents.filter(student => {
+                if (studentSearchQuery) {
+                    const rollMatch = student.rollNumber.toLowerCase().includes(studentSearchQuery);
+                    const nameMatch = student.studentName.toLowerCase().includes(studentSearchQuery);
+                    const deptMatch = student.department.toLowerCase().includes(studentSearchQuery);
+                    const emailMatch = student.email.toLowerCase().includes(studentSearchQuery);
+                    return rollMatch || nameMatch || deptMatch || emailMatch;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted p-4">No matching student profiles found.</td></tr>';
+                return;
+            }
+
+            let html = "";
+            filtered.forEach(student => {
+                html += `
+                    <tr>
+                        <td><strong class="text-white">${student.rollNumber}</strong></td>
+                        <td>${student.studentName}</td>
+                        <td>${student.department}</td>
+                        <td>${student.contactNumber}</td>
+                        <td>${student.email}</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-glass btn-sm" onclick="editStudent('${student.rollNumber}')"><i class="fa-solid fa-pencil"></i></button>
+                                <button class="btn btn-danger-custom btn-sm" onclick="deleteStudentProfile('${student.rollNumber}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function populateStudentDeptDropdown() {
+            const select = document.getElementById("edit-student-dept");
+            select.innerHTML = '<option value="" disabled selected>Select Department</option>';
+            fetch("/api/admin/departments")
+                .then(res => res.json())
+                .then(depts => {
+                    depts.forEach(dept => {
+                        const opt = document.createElement("option");
+                        opt.value = dept.name;
+                        opt.innerText = dept.name;
+                        select.appendChild(opt);
+                    });
+                });
+        }
+
+        function editStudent(roll) {
+            if (!studentModalObj) {
+                studentModalObj = new bootstrap.Modal(document.getElementById('studentModal'));
+            }
+
+            const student = allStudents.find(s => s.rollNumber.toString().toUpperCase() === roll.toString().toUpperCase());
+            if (!student) return;
+
+            document.getElementById("edit-student-roll").value = student.rollNumber;
+            document.getElementById("edit-student-name").value = student.studentName;
+            document.getElementById("edit-student-dept").value = student.department;
+            document.getElementById("edit-student-contact").value = student.contactNumber;
+            document.getElementById("edit-student-email").value = student.email;
+            document.getElementById("edit-student-password").value = "";
+
+            studentModalObj.show();
+        }
+
+        function saveStudentProfile(e) {
+            e.preventDefault();
+            const roll = document.getElementById("edit-student-roll").value;
+            const payload = {
+                studentName: document.getElementById("edit-student-name").value,
+                department: document.getElementById("edit-student-dept").value,
+                contactNumber: document.getElementById("edit-student-contact").value,
+                email: document.getElementById("edit-student-email").value
+            };
+
+            const password = document.getElementById("edit-student-password").value;
+            if (password && password.trim().isEmpty() === false) {
+                payload.password = password.trim();
+            }
+
+            fetch(`/api/admin/students/${roll}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) {
+                    studentModalObj.hide();
+                    loadAdminStudents();
+                } else {
+                    alert("Failed to save student profile changes");
+                }
+            })
+            .catch(err => console.error("Error saving student:", err));
+        }
+
+        // Delete Student
+        function deleteStudentProfile(roll) {
+            if (confirm("Are you sure you want to delete this student profile? All competition registrations for this student will be permanently deleted.")) {
+                fetch(`/api/admin/students/${roll}`, {
+                    method: "DELETE"
+                })
+                .then(res => {
+                    if (res.ok) {
+                        loadAdminStudents();
+                    } else {
+                        alert("Failed to delete student profile");
+                    }
+                })
+                .catch(err => console.error("Error deleting student profile:", err));
+            }
+        }
+
+        // ==========================================
+        // 4. REGISTRATIONS LIST
+        // ==========================================
+        let allRegistrations = [];
+
+        function loadAllRegistrations() {
+            const tbody = document.getElementById("all-registrations-tbody");
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center p-4"><div class="spinner-border text-primary" role="status"></div></td></tr>';
+
+            fetch("/api/admin/all-registrations")
+                .then(res => res.json())
+                .then(regs => {
+                    allRegistrations = regs;
+                    renderAllRegistrations();
+                })
+                .catch(err => {
+                    console.error("Error fetching registrations:", err);
+                    tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger p-4">Error loading records.</td></tr>';
+                });
+        }
+
+        function filterAllRegistrations() {
+            renderAllRegistrations();
+        }
+
+        function renderAllRegistrations() {
+            const tbody = document.getElementById("all-registrations-tbody");
+            const filterLevel = document.getElementById("reg-level-filter").value;
+
+            const filtered = allRegistrations.filter(reg => {
+                if (filterLevel !== "ALL") {
+                    return reg.event.type === filterLevel;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted p-4">No registrations found.</td></tr>';
+                return;
+            }
+
+            let html = "";
+            filtered.forEach((reg, index) => {
+                const regDate = new Date(reg.registrationDate).toLocaleDateString() + ' ' + new Date(reg.registrationDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const levelBadge = reg.event.type === "COLLEGE" ? "bg-primary" : "bg-secondary";
+                const levelText = reg.event.type === "COLLEGE" ? "College" : (reg.event.department ? reg.event.department.code : "Dept");
+
+                const statusVal = reg.status ? reg.status.toLowerCase() : "";
+                let statusBadge = "";
+                let checkInBtn = "";
+                
+                if (statusVal.includes("attend") || statusVal.includes("check")) {
+                    statusBadge = `<span class="badge bg-success">Checked In</span>`;
+                } else {
+                    statusBadge = `<span class="badge bg-warning">Registered</span>`;
+                    checkInBtn = `
+                        <button class="btn btn-outline-success btn-sm me-1" onclick="quickCheckIn(${reg.id})" title="Check In Student">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </button>
+                    `;
+                }
+
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong class="text-white">${reg.studentName}</strong></td>
+                        <td>${reg.rollNumber}</td>
+                        <td>${reg.department}</td>
+                        <td><span class="fw-bold text-white">${reg.event.name}</span></td>
+                        <td><span class="badge ${levelBadge}">${levelText}</span></td>
+                        <td>${reg.contactNumber}</td>
+                        <td>${reg.email}</td>
+                        <td>${regDate}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            ${checkInBtn}
+                            <button class="btn btn-danger-custom btn-sm" onclick="deleteRegistrationRecord(${reg.id})"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function quickCheckIn(id) {
+            fetch(`/api/admin/checkin/${id}`, {
+                method: "POST"
+            })
+            .then(res => {
+                if (res.ok) {
+                    showSuccessPopup("Student Checked In!");
+                    loadAllRegistrations();
+                } else {
+                    alert("Check-in failed");
+                }
+            })
+            .catch(err => console.error("Error during quick checkin:", err));
+        }
+
+        function deleteRegistrationRecord(id) {
+            if (confirm("Are you sure you want to delete this registration record?")) {
+                fetch(`/api/admin/registrations/${id}`, {
+                    method: "DELETE"
+                })
+                .then(res => {
+                    if (res.ok) {
+                        loadAllRegistrations();
+                    } else {
+                        alert("Failed to delete registration record");
+                    }
+                })
+                .catch(err => console.error("Error deleting registration:", err));
+            }
+        }
+
+        // ==========================================
+        // 5. NOTICE & ANNOUNCEMENT MANAGEMENT
+        // ==========================================
+        function loadAdminNotices() {
+            const list = document.getElementById("admin-notices-list");
+            list.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div></div>';
+
+            fetch("/api/notifications")
+                .then(res => res.json())
+                .then(notifs => {
+                    const adminNotifs = notifs.filter(n => n.sender === "College Admin");
+                    
+                    if (adminNotifs.length === 0) {
+                        list.innerHTML = '<div class="text-center text-muted p-4">No admin notices active.</div>';
+                        return;
+                    }
+
+                    let html = "";
+                    adminNotifs.forEach(notif => {
+                        const formattedTime = new Date(notif.createdAt).toLocaleDateString() + ' ' + new Date(notif.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        html += `
+                            <div class="notif-card d-flex justify-content-between align-items-start">
+                                <div style="max-width: 85%;">
+                                    <h6 class="mb-1 text-white fw-bold">${notif.title}</h6>
+                                    <p class="mb-2 text-muted small">${notif.content}</p>
+                                    <small class="text-secondary" style="font-size: 0.75rem;"><i class="fa-solid fa-clock me-1"></i> ${formattedTime}</small>
+                                </div>
+                                <button class="btn btn-danger-custom btn-sm" onclick="deleteNotice(${notif.id})"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        `;
+                    });
+                    list.innerHTML = html;
+                })
+                .catch(err => console.error("Error loading notices:", err));
+        }
+
+        function submitNotice(e) {
+            e.preventDefault();
+
+            const payload = {
+                title: document.getElementById("notice-title").value,
+                content: document.getElementById("notice-content").value
+            };
+
+            fetch("/api/admin/notifications", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) {
+                    document.getElementById("notice-form").reset();
+                    loadAdminNotices();
+                } else {
+                    alert("Failed to publish notice");
+                }
+            })
+            .catch(err => console.error("Error posting notice:", err));
+        }
+
+        function deleteNotice(id) {
+            if (confirm("Are you sure you want to delete this notice?")) {
+                fetch(`/api/admin/notifications/${id}`, {
+                    method: "DELETE"
+                })
+                .then(res => {
+                    if (res.ok) {
+                        loadAdminNotices();
+                    } else {
+                        alert("Failed to delete notice");
+                    }
+                })
+                .catch(err => console.error("Error deleting notice:", err));
+            }
+        }
+
+        // --- Participant breakdown grouping by competition ---
+        let participantsModal = null;
+
+        function showEventParticipants(eventId, eventName) {
+            if (!participantsModal) {
+                participantsModal = new bootstrap.Modal(document.getElementById('participantsModal'));
+            }
+            
+            document.getElementById("participantsModalTitle").innerText = `Participants - ${eventName}`;
+            const content = document.getElementById("participants-content");
+            const loader = document.getElementById("participants-loading");
+            
+            content.innerHTML = "";
+            loader.style.display = "block";
+            participantsModal.show();
+            
+            fetch(`/api/admin/events/${eventId}/registrations`)
+                .then(res => res.json())
+                .then(registrations => {
+                    loader.style.display = "none";
+                    if (registrations.length === 0) {
+                        content.innerHTML = '<div class="text-center text-muted p-4">No registrations for this event yet.</div>';
+                        return;
+                    }
+                    
+                    // Group registrations by competition
+                    const grouped = {};
+                    registrations.forEach(reg => {
+                        const compName = reg.competition ? reg.competition.name : "Event Level / General";
+                        if (!grouped[compName]) {
+                            grouped[compName] = [];
+                        }
+                        grouped[compName].push(reg);
+                    });
+                    
+                    let html = "";
+                    for (const [compName, list] of Object.entries(grouped)) {
+                        html += `
+                            <div class="mb-4 animate-fade-up">
+                                <h6 class="text-primary fw-bold mb-3 border-bottom border-secondary pb-2">
+                                    <i class="fa-solid fa-trophy text-warning me-2"></i>${compName} (${list.length} Registrations)
+                                </h6>
+                                <div class="table-responsive">
+                                    <table class="table table-custom table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Student Name</th>
+                                                <th>Roll Number</th>
+                                                <th>Department</th>
+                                                <th>Year</th>
+                                                <th>Contact</th>
+                                                <th>Email</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${list.map((r, i) => `
+                                                <tr>
+                                                    <td>${i + 1}</td>
+                                                    <td><strong class="text-white">${r.studentName}</strong></td>
+                                                    <td>${r.rollNumber}</td>
+                                                    <td>${r.department}</td>
+                                                    <td>${r.year || 'N/A'}</td>
+                                                    <td>${r.contactNumber}</td>
+                                                    <td>${r.email}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    content.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error(err);
+                    loader.style.display = "none";
+                    content.innerHTML = '<div class="text-center text-danger p-4">Error loading participant breakdown.</div>';
+                });
+        }
+    </script>
+
+    <!-- Event Participants Modal -->
+    <div class="modal fade" id="participantsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header modal-header-custom">
+                    <h5 class="modal-title text-white fw-bold" id="participantsModalTitle">Event Participants Breakdown</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="participants-loading" class="text-center p-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                    <div id="participants-content">
+                        <!-- Grouped tables will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer modal-footer-custom">
+                    <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Offcanvas Drawer -->
+    <div class="offcanvas offcanvas-end modal-content-custom" tabindex="-1" id="notificationDrawer" style="width: 380px;">
+        <div class="offcanvas-header modal-header-custom">
+            <h5 class="offcanvas-title text-white fw-bold" id="notificationDrawerLabel">
+                <i class="fa-solid fa-bell text-primary me-2"></i> Notices & Announcements
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body" style="background: #0b0f19;">
+            <div id="notif-drawer-list">
+                <!-- Notifications will be loaded dynamically here -->
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

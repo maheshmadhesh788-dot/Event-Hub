@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event History - Event Hub</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="index.html" style="display: flex; align-items: center; gap: 10px;">
+                <img src="images/kasc_logo.jpg" alt="KASC Logo" style="height: 42px; width: auto; border-radius: 50%; object-fit: cover;">
+                <span style="font-weight: 800; font-size: 1.3rem; letter-spacing: 0.5px;">KASC EVENT HUB</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="index.html"><i class="fa-solid fa-house me-1"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>
+                    <li class="nav-item" id="nav-dynamic"></li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-glass" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0;">
+                            <i id="theme-toggle-icon" class="fa-solid fa-sun text-warning"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-primary-gradient position-relative" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
+                            <i class="fa-solid fa-bell"></i> Notices
+                            <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container my-5">
+        
+        <!-- Department Cover Banner -->
+        <div class="position-relative rounded mb-5 overflow-hidden animate-fade-up" style="height: 200px; background: linear-gradient(135deg, #0f172a, #1e293b); border: 1px solid rgba(255,255,255,0.05);">
+            <img id="dept-cover-img" src="" alt="Cover Image" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+            <div class="position-absolute bottom-0 start-0 w-100 p-4 d-flex align-items-end justify-content-between flex-wrap gap-3" style="background: linear-gradient(to top, rgba(10,15,29,0.95), rgba(10,15,29,0));">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle overflow-hidden bg-dark d-flex align-items-center justify-content-center border border-secondary border-opacity-50" style="width: 80px; height: 80px; flex-shrink: 0;">
+                        <img id="dept-logo-img" src="" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                        <i id="dept-logo-icon" class="fa-solid fa-clock-rotate-left fa-2x text-primary"></i>
+                    </div>
+                    <div>
+                        <h1 class="fw-bold text-white mb-1" id="dept-title-header" style="font-size: 1.8rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Conducted Events History</h1>
+                        <span class="badge bg-secondary px-3 py-1" id="dept-code-badge">- Level</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="department.html" class="btn btn-primary-gradient btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Back to Workspace</a>
+                    <button class="btn btn-secondary-gradient btn-sm" onclick="logoutDepartment()"><i class="fa-solid fa-sign-out me-2"></i> Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="row g-4 mb-5 animate-fade-up">
+            <div class="col-md-6">
+                <div class="glass-panel p-4 text-center h-100 d-flex flex-column justify-content-center">
+                    <span class="text-muted small fw-bold d-block mb-1">TOTAL EVENTS CONDUCTED</span>
+                    <h2 class="fw-bold text-white mb-0" id="stats-total-conducted">0</h2>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="glass-panel p-4 text-center h-100 d-flex flex-column justify-content-center">
+                    <span class="text-muted small fw-bold d-block mb-1">TOTAL PARTICIPATIONS RECORDED</span>
+                    <h2 class="fw-bold text-primary mb-0" id="stats-total-registrations">0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter and Title -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 animate-fade-up">
+            <h4 class="text-white fw-bold mb-0"><i class="fa-solid fa-calendar-check text-primary me-2"></i>Past Completed Competitions</h4>
+            <div style="max-width: 300px; width: 100%;">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-secondary text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="history-search-input" class="form-control form-control-custom" placeholder="Search past events..." oninput="filterHistoryEvents(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <!-- Events Row -->
+        <div class="row g-4" id="history-events-row">
+            <!-- Loaded dynamically -->
+        </div>
+
+    </main>
+
+    <!-- Event Participants Modal -->
+    <div class="modal fade" id="participantsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content modal-content-custom" style="background: #0f1322;">
+                <div class="modal-header modal-header-custom border-secondary">
+                    <h5 class="modal-title text-white fw-bold" id="participantsModalTitle">Event Participants Breakdown</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="participants-loading" class="text-center p-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                    <div id="participants-content">
+                        <!-- Grouped tables will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer modal-footer-custom border-secondary">
+                    <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Offcanvas Drawer -->
+    <div class="offcanvas offcanvas-end modal-content-custom" tabindex="-1" id="notificationDrawer" style="width: 380px;">
+        <div class="offcanvas-header modal-header-custom">
+            <h5 class="offcanvas-title text-white fw-bold" id="notificationDrawerLabel">
+                <i class="fa-solid fa-bell text-primary me-2"></i> Notices & Announcements
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body" style="background: #0b0f19;">
+            <div id="notif-drawer-list">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+    <script>
+        let currentDept = null;
+        let allPastEvents = [];
+        let allPastRegistrations = [];
+        let participantsModal = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            currentDept = checkDepartmentAuth();
+            if (!currentDept) {
+                window.location.href = "login.html?redirect=history.html";
+                return;
+            }
+
+            // Set department cover banner details
+            document.getElementById("dept-title-header").innerText = `Department of ${currentDept.name} - History`;
+            document.getElementById("dept-code-badge").innerText = `${currentDept.code} Level`;
+
+            const coverImg = document.getElementById("dept-cover-img");
+            if (currentDept.coverImageUrl) {
+                coverImg.src = currentDept.coverImageUrl;
+                coverImg.style.display = "block";
+            }
+
+            const logoImg = document.getElementById("dept-logo-img");
+            const logoIcon = document.getElementById("dept-logo-icon");
+            if (currentDept.logoUrl) {
+                logoImg.src = currentDept.logoUrl;
+                logoImg.style.display = "block";
+                logoIcon.style.display = "none";
+            }
+
+            loadHistoryEvents();
+            startNotificationPolling();
+        });
+
+        function loadHistoryEvents() {
+            const row = document.getElementById("history-events-row");
+            row.innerHTML = '<div class="col-12 text-center p-4"><div class="spinner-border text-secondary" role="status"></div></div>';
+
+            Promise.all([
+                fetch(`/api/departments/${currentDept.id}/events`).then(res => res.json()),
+                fetch(`/api/departments/${currentDept.id}/registrations`).then(res => res.json())
+            ])
+            .then(([events, registrations]) => {
+                const now = new Date();
+                // Filter events that have been conducted so far (past events)
+                allPastEvents = events.filter(event => new Date(event.dateTime) < now);
+                allPastRegistrations = registrations;
+
+                // Sort past events by date descending (most recent first)
+                allPastEvents.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+
+                // Update counts
+                document.getElementById("stats-total-conducted").innerText = allPastEvents.length;
+                
+                // Count registrations belonging to these past events
+                const pastEventIds = new Set(allPastEvents.map(e => e.id));
+                const pastRegistrations = registrations.filter(r => r.event && pastEventIds.has(r.event.id));
+                document.getElementById("stats-total-registrations").innerText = pastRegistrations.length;
+
+                displayPastEvents(allPastEvents);
+            })
+            .catch(err => {
+                console.error("Error loading event history:", err);
+                row.innerHTML = '<div class="col-12 text-center text-danger p-4">Error loading completed events history.</div>';
+            });
+        }
+
+        function displayPastEvents(events) {
+            const row = document.getElementById("history-events-row");
+            if (events.length === 0) {
+                row.innerHTML = '<div class="col-12 text-center text-muted p-5">No completed events found matching your search.</div>';
+                return;
+            }
+
+            const pastEventIds = new Set(events.map(e => e.id));
+            const pastRegistrations = allPastRegistrations.filter(r => r.event && pastEventIds.has(r.event.id));
+
+            let html = "";
+            events.forEach(event => {
+                const eventRegs = pastRegistrations.filter(r => r.event.id === event.id);
+                const attendedCount = eventRegs.filter(r => r.status && r.status.toLowerCase().includes("attend")).length;
+                
+                let compsHtml = "";
+                if (event.competitions && event.competitions.length > 0) {
+                    compsHtml = `
+                        <div class="mt-3">
+                            <h6 class="text-white fw-bold mb-2 small"><i class="fa-solid fa-list-check text-primary me-2"></i>Competitions:</h6>
+                            <div class="d-flex flex-wrap gap-1 mb-3">
+                                ${event.competitions.map(c => `<span class="badge bg-secondary" style="font-size: 0.75rem;">${c.name}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="col-lg-4 col-md-6">
+                        <div class="glass-panel event-card event-card-dept" style="cursor: pointer;" onclick="if(!event.target.closest('button')) showEventParticipants(${event.id}, '${event.name.replace(/'/g, "\\'")}')">
+                            <div class="event-card-img-wrapper">
+                                <span class="event-card-badge badge-dept"><i class="fa-solid fa-circle-check text-success me-1"></i> Completed</span>
+                                <img id="poster-${event.id}" class="event-card-img" alt="${event.name}">
+                            </div>
+                            <div class="p-4">
+                                <h5 class="fw-bold text-white mb-2" title="${event.name}">${event.name}</h5>
+                                <div class="text-muted mb-1 small"><i class="fa-solid fa-location-dot text-primary me-2"></i> ${event.venue}</div>
+                                <div class="text-muted mb-2 small"><i class="fa-solid fa-calendar text-primary me-2"></i> ${formatEventDate(event.dateTime)}</div>
+                                <div class="d-flex gap-3 mb-3 small text-secondary fw-bold">
+                                    <span><i class="fa-solid fa-users text-primary me-1"></i> ${eventRegs.length} Registered</span>
+                                    <span><i class="fa-solid fa-user-check text-success me-1"></i> ${attendedCount} Attended</span>
+                                </div>
+                                ${compsHtml}
+                                <p class="text-muted small mb-4">
+                                    ${event.description || ''}
+                                </p>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-glass btn-sm flex-fill" onclick="showEventParticipants(${event.id}, '${event.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-users me-1"></i> View Participants</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            row.innerHTML = html;
+
+            // Set posters
+            events.forEach(event => {
+                const img = document.getElementById(`poster-${event.id}`);
+                if (img) {
+                    setEventPoster(img, event.posterUrl, event.name);
+                }
+            });
+        }
+
+        function filterHistoryEvents(query) {
+            const lowerQuery = query.toLowerCase().trim();
+            if (!lowerQuery) {
+                displayPastEvents(allPastEvents);
+                return;
+            }
+
+            const filtered = allPastEvents.filter(event => {
+                const nameMatch = event.name.toLowerCase().includes(lowerQuery);
+                const venueMatch = event.venue && event.venue.toLowerCase().includes(lowerQuery);
+                const descMatch = event.description && event.description.toLowerCase().includes(lowerQuery);
+                const compMatch = event.competitions && event.competitions.some(c => c.name.toLowerCase().includes(lowerQuery));
+                return nameMatch || venueMatch || descMatch || compMatch;
+            });
+
+            displayPastEvents(filtered);
+        }
+
+        function showEventParticipants(eventId, eventName) {
+            if (!participantsModal) {
+                participantsModal = new bootstrap.Modal(document.getElementById('participantsModal'));
+            }
+            
+            document.getElementById("participantsModalTitle").innerText = `Participants - ${eventName}`;
+            const content = document.getElementById("participants-content");
+            const loader = document.getElementById("participants-loading");
+            
+            content.innerHTML = "";
+            loader.style.display = "block";
+            participantsModal.show();
+            
+            fetch(`/api/departments/${currentDept.id}/events/${eventId}/registrations`)
+                .then(res => res.json())
+                .then(registrations => {
+                    loader.style.display = "none";
+                    if (registrations.length === 0) {
+                        content.innerHTML = '<div class="text-center text-muted p-4">No registrations for this event yet.</div>';
+                        return;
+                    }
+                    
+                    // Group registrations by competition
+                    const grouped = {};
+                    registrations.forEach(reg => {
+                        const compName = reg.competition ? reg.competition.name : "Event Level / General";
+                        if (!grouped[compName]) {
+                            grouped[compName] = [];
+                        }
+                        grouped[compName].push(reg);
+                    });
+                    
+                    let html = "";
+                    for (const [compName, list] of Object.entries(grouped)) {
+                        html += `
+                            <div class="mb-4">
+                                <h6 class="text-primary fw-bold mb-3 border-bottom border-secondary pb-2">
+                                    <i class="fa-solid fa-trophy text-warning me-2"></i>${compName} (${list.length} Registrations)
+                                </h6>
+                                <div class="table-responsive">
+                                    <table class="table table-custom table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Student Name</th>
+                                                <th>Roll Number</th>
+                                                <th>Department</th>
+                                                <th>Year</th>
+                                                <th>Contact</th>
+                                                <th>Email</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${list.map((r, i) => `
+                                                <tr>
+                                                    <td>${i + 1}</td>
+                                                    <td><strong class="text-white">${r.studentName}</strong></td>
+                                                    <td>${r.rollNumber}</td>
+                                                    <td>${r.department}</td>
+                                                    <td>${r.year || 'N/A'}</td>
+                                                    <td>${r.contactNumber}</td>
+                                                    <td>${r.email}</td>
+                                                    <td>
+                                                        <span class="badge ${r.status && r.status.toLowerCase().includes('attend') ? 'bg-success' : 'bg-secondary'}">
+                                                            ${r.status || 'Registered'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    content.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error(err);
+                    loader.style.display = "none";
+                    content.innerHTML = '<div class="text-center text-danger p-4">Error loading participant breakdown.</div>';
+                });
+        }
+    </script>
+</body>
+</html>

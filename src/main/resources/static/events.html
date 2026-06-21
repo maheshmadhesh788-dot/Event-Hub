@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore Events - Event Hub</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="index.html" style="display: flex; align-items: center; gap: 10px;">
+                <img src="images/kasc_logo.jpg" alt="KASC Logo" style="height: 42px; width: auto; border-radius: 50%; object-fit: cover;">
+                <span style="font-weight: 800; font-size: 1.3rem; letter-spacing: 0.5px;">KASC EVENT HUB</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="index.html"><i class="fa-solid fa-house me-1"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom active" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>
+                    <li class="nav-item" id="nav-dynamic"></li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-primary-gradient position-relative" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
+                            <i class="fa-solid fa-bell"></i> Notices
+                            <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container my-5 animate-fade-up">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold text-white mb-2">College & Department Competitions</h1>
+            <p class="text-muted mb-3">Browse upcoming events, search by name, filter by department, and register in a single click.</p>
+            <div class="mb-3">
+                <span class="badge bg-primary px-3 py-2 fs-6" style="box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);"><i class="fa-solid fa-calendar-check me-2"></i>Total Upcoming Events: <span id="total-upcoming-count">0</span></span>
+            </div>
+        </div>
+
+        <!-- Filter & Search Controls Panel -->
+        <div class="glass-panel p-4 mb-5">
+            <div class="row g-3 align-items-center">
+                <!-- Search Input -->
+                <div class="col-lg-6 col-md-6">
+                    <label class="form-label text-muted small fw-bold">Search Event Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-secondary text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" id="search-input" class="form-control form-control-custom" placeholder="Search..." oninput="handleSearch(this.value)">
+                    </div>
+                </div>
+
+                <!-- Advanced Filters Button Trigger -->
+                <div class="col-lg-6 col-md-6">
+                    <label class="form-label text-muted small fw-bold d-none d-md-block">&nbsp;</label>
+                    <button class="btn btn-primary-gradient w-100 py-2" onclick="openFiltersModal()">
+                        <i class="fa-solid fa-sliders me-2"></i> Filter Events
+                        <span class="badge bg-secondary ms-2" id="filter-badge" style="display: none; font-size: 0.8rem; border-radius: 50px;">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Toggle Controls (Grid / Calendar) -->
+        <div class="d-flex justify-content-end mb-4 gap-2">
+            <button class="btn btn-outline-primary active text-white" id="btn-view-grid" onclick="switchViewMode('GRID')">
+                <i class="fa-solid fa-grip"></i> Grid View
+            </button>
+            <button class="btn btn-outline-primary text-white" id="btn-view-calendar" onclick="switchViewMode('CALENDAR')">
+                <i class="fa-solid fa-calendar-days"></i> Calendar View
+            </button>
+        </div>
+
+        <!-- Events Calendar Container -->
+        <div id="events-calendar" class="glass-panel p-4 mb-5 animate-fade-up" style="display: none;">
+            <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Custom Calendar Styling -->
+        <style>
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 700;
+            color: #6366f1;
+            padding: 10px 0;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        .calendar-cell {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            min-height: 100px;
+            padding: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .calendar-cell:hover {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        .calendar-cell-muted {
+            opacity: 0.25;
+            background: transparent;
+            pointer-events: none;
+        }
+        .calendar-cell-today {
+            background: rgba(99, 102, 241, 0.15) !important;
+            border: 1px solid #6366f1 !important;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+        }
+        .calendar-date-num {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+        .calendar-cell-today .calendar-date-num {
+            color: #818cf8;
+        }
+        .calendar-events-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow-y: auto;
+            max-height: 80px;
+        }
+        .calendar-event-badge {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            font-size: 0.72rem;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.2s ease;
+        }
+        .calendar-event-badge:hover {
+            background: linear-gradient(135deg, #4338ca, #4f46e5);
+        }
+        </style>
+
+        <!-- Events List Grid -->
+        <div id="events-grid" class="row g-4">
+            <!-- Loading indicator -->
+            <div class="col-12 text-center p-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notifications Drawer -->
+    <div class="offcanvas offcanvas-end modal-content-custom" tabindex="-1" id="notificationDrawer" style="width: 380px;">
+        <div class="offcanvas-header modal-header-custom">
+            <h5 class="offcanvas-title text-white fw-bold" id="notificationDrawerLabel">
+                <i class="fa-solid fa-bell text-primary me-2"></i> Notices & Announcements
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body" style="background: #0b0f19;">
+            <div id="notif-drawer-list">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Modal -->
+    <div class="modal fade" id="filtersModal" tabindex="-1" aria-labelledby="filtersModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-secondary modal-content-custom" style="background: #0f1322;">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-white fw-bold" id="filtersModalLabel">
+                        <i class="fa-solid fa-sliders text-primary me-2"></i> Filter Events
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="filters-form" onsubmit="applyModalFilters(event)">
+                        <!-- Event Level / Type Filter -->
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Event Level</label>
+                            <select id="modal-event-level" class="form-select form-control-custom form-select-custom">
+                                <option value="ALL">All Levels</option>
+                                <option value="COLLEGE">College Level</option>
+                                <option value="DEPARTMENT">Department Level</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Department Filter -->
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Department</label>
+                            <select id="modal-dept-filter" class="form-select form-control-custom form-select-custom">
+                                <option value="ALL">All Departments</option>
+                                <!-- Loaded dynamically -->
+                            </select>
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Category</label>
+                            <select id="modal-category-filter" class="form-select form-control-custom form-select-custom">
+                                <option value="">All Categories</option>
+                                <option value="Technical">Technical</option>
+                                <option value="Cultural">Cultural</option>
+                                <option value="Sports">Sports</option>
+                                <option value="Workshop">Workshop</option>
+                                <option value="Seminar">Seminar</option>
+                            </select>
+                        </div>
+
+                        <!-- Sort By Filter -->
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Sort By</label>
+                            <select id="modal-sort-filter" class="form-select form-control-custom form-select-custom">
+                                <option value="date_asc">Date Ascending</option>
+                                <option value="date_desc">Date Descending</option>
+                                <option value="name_asc">Name A-Z</option>
+                                <option value="name_desc">Name Z-A</option>
+                            </select>
+                        </div>
+                        
+                        <div class="d-flex gap-3 justify-content-end mt-4">
+                            <button type="button" class="btn btn-glass px-4 py-2" onclick="resetModalFilters()">Reset</button>
+                            <button type="submit" class="btn btn-primary-gradient px-4 py-2">Apply Filters</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header modal-header-custom border-secondary">
+                    <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-pen-to-square text-primary me-2"></i>Event Registration</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="events-reg-form" onsubmit="submitEventsRegistration(event)">
+                    <div class="modal-body">
+                        <!-- Event Info -->
+                        <div class="p-3 mb-3 rounded" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);">
+                            <span class="text-secondary small fw-bold d-block mb-1">Registering for:</span>
+                            <h5 id="modal-event-title" class="fw-bold text-white mb-1">-</h5>
+                            <span id="modal-event-meta" class="text-muted small">-</span>
+                        </div>
+
+                        <!-- Competitions Selector -->
+                        <div class="mb-3" id="modal-competitions-section" style="display: none;">
+                            <label class="form-label text-muted small fw-bold mb-2">Select Competitions (Tick all that apply)</label>
+                            <div class="row g-2" id="modal-competitions-list">
+                                <!-- Competitions cards will be populated dynamically -->
+                            </div>
+                        </div>
+
+                        <div id="modal-reg-error" class="status-register-card status-error" style="display: none;" role="alert">
+                            <div class="status-icon-glow">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <h5 class="fw-bold text-white mb-2">Registration Failed</h5>
+                            <p id="modal-reg-error-text" class="text-muted mb-0 small"></p>
+                        </div>
+                        
+                        <div id="modal-reg-form-fields">
+                            <div class="row g-3">
+                                <!-- Roll Number -->
+                                <div class="col-12">
+                                    <label class="form-label text-muted small fw-bold">Roll Number</label>
+                                    <input type="text" id="modal-rollNumber" class="form-control form-control-custom text-uppercase" required placeholder="e.g. 22IT045" onblur="checkModalStudentProfile()">
+                                    <div id="modal-roll-status" class="form-text small mt-1" style="display: none;"></div>
+                                </div>
+
+                                <!-- Student Name -->
+                                <div class="col-12">
+                                    <label class="form-label text-muted small fw-bold">Full Name</label>
+                                    <input type="text" id="modal-studentName" class="form-control form-control-custom" required placeholder="e.g. Mahesh">
+                                </div>
+
+                                <!-- Department -->
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold">Department</label>
+                                    <select id="modal-department" class="form-select form-control-custom form-select-custom" required>
+                                        <option value="" disabled selected>Select Department</option>
+                                    </select>
+                                </div>
+
+                                <!-- Year of Study -->
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold">Year of Study</label>
+                                    <select id="modal-year" class="form-select form-control-custom form-select-custom" required>
+                                        <option value="" disabled selected>Select Year</option>
+                                        <option value="1st Year">1st Year</option>
+                                        <option value="2nd Year">2nd Year</option>
+                                        <option value="3rd Year">3rd Year</option>
+                                        <option value="4th Year">4th Year</option>
+                                    </select>
+                                </div>
+
+                                <!-- Contact Number -->
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold">Contact Number</label>
+                                    <input type="tel" id="modal-contactNumber" class="form-control form-control-custom" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+                                </div>
+
+                                <!-- Email Address -->
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small fw-bold">Email Address</label>
+                                    <input type="email" id="modal-email" class="form-control form-control-custom" required placeholder="e.g. mahesh@gmail.com">
+                                </div>
+
+                                <!-- Access Password -->
+                                <div class="col-12">
+                                    <label class="form-label text-muted small fw-bold">Access Password</label>
+                                    <div class="input-group">
+                                        <input type="password" id="modal-password" class="form-control form-control-custom password-input-with-eye" required placeholder="Choose/Enter password to verify & register">
+                                        <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('modal-password', this)">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-custom border-secondary" id="modal-reg-footer">
+                        <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient"><i class="fa-solid fa-circle-check me-1"></i> Register Now</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+    <script>
+        let allEvents = [];
+        let studentBookmarks = [];
+        let currentCategory = "ALL"; // ALL, COLLEGE, or DEPARTMENT
+        let selectedDept = "ALL";
+        let selectedCategory = "";
+        let selectedSort = "date_asc";
+        let searchQuery = "";
+        let filtersModalObj = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            filtersModalObj = new bootstrap.Modal(document.getElementById('filtersModal'));
+            startNotificationPolling();
+            loadModalDepartments();
+            
+            const student = checkStudentAuth();
+            if (student) {
+                fetch(`/api/student/bookmarks/${student.rollNumber}`)
+                    .then(res => res.json())
+                    .then(bookmarks => {
+                        studentBookmarks = bookmarks.map(b => b.event.id);
+                        loadDepartments().then(() => loadFilteredEvents());
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        loadDepartments().then(() => loadFilteredEvents());
+                    });
+            } else {
+                loadDepartments().then(() => loadFilteredEvents());
+            }
+
+            // Add verify on password input blur for modal
+            document.getElementById("modal-password").addEventListener("blur", verifyAndAutofillModalProfile);
+        });
+
+        function updateUpcomingEventsCount() {
+            const now = new Date();
+            const upcomingCount = allEvents.filter(e => new Date(e.dateTime) >= now).length;
+            const badge = document.getElementById("total-upcoming-count");
+            if (badge) {
+                badge.innerText = upcomingCount;
+            }
+        }
+
+        function loadFilteredEvents() {
+            const grid = document.getElementById("events-grid");
+            if (currentViewMode === "GRID") {
+                grid.innerHTML = '<div class="col-12 text-center p-5"><div class="spinner-border text-primary" role="status"></div></div>';
+            }
+
+            const name = searchQuery;
+            const type = currentCategory;
+            const category = selectedCategory;
+            const sortBy = selectedSort;
+
+            const url = `/api/student/events/search?name=${encodeURIComponent(name)}&type=${type}&category=${category}&sortBy=${sortBy}`;
+            
+            fetch(url)
+                .then(res => res.json())
+                .then(events => {
+                    allEvents = events;
+                    updateUpcomingEventsCount();
+                    
+                    let filtered = events;
+                    if (selectedDept !== "ALL") {
+                        filtered = events.filter(e => e.department && e.department.id.toString() === selectedDept.toString());
+                    }
+
+                    if (currentViewMode === "GRID") {
+                        displayEvents(filtered);
+                    } else {
+                        renderCalendar();
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    grid.innerHTML = '<div class="col-12 text-center text-danger p-5">Failed to load events.</div>';
+                });
+        }
+
+        // Parse URL query parameter eventId
+        function handleQueryParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const eventId = urlParams.get('eventId');
+            if (eventId && allEvents.length > 0) {
+                const targetEvent = allEvents.find(e => e.id.toString() === eventId.toString());
+                if (targetEvent) {
+                    // switch active category (COLLEGE / DEPARTMENT)
+                    currentCategory = targetEvent.type;
+                    
+                    // switch department filter to match that event
+                    if (currentCategory === "DEPARTMENT" && targetEvent.department) {
+                        selectedDept = targetEvent.department.id.toString();
+                    } else {
+                        selectedDept = "ALL";
+                    }
+                    
+                    // set the search input value to the event name
+                    searchQuery = targetEvent.name.toLowerCase();
+                    document.getElementById("search-input").value = targetEvent.name;
+                    
+                    updateFilterBadge();
+                }
+            }
+        }
+
+        // Load departments list for modal filter dropdown
+        function loadDepartments() {
+            const select = document.getElementById("modal-dept-filter");
+            if (select) select.innerHTML = '<option value="ALL">All Departments</option>';
+            return fetch("/api/departments")
+                .then(res => res.json())
+                .then(depts => {
+                    depts.forEach(dept => {
+                        const opt = document.createElement("option");
+                        opt.value = dept.id;
+                        opt.innerText = dept.name + " (" + dept.code + ")";
+                        if (select) select.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error("Error loading departments:", err));
+        }
+
+        // View toggler logic (GRID vs CALENDAR)
+        let currentViewMode = "GRID";
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+
+        function switchViewMode(mode) {
+            currentViewMode = mode;
+            const gridBtn = document.getElementById("btn-view-grid");
+            const calBtn = document.getElementById("btn-view-calendar");
+            const gridEl = document.getElementById("events-grid");
+            const calEl = document.getElementById("events-calendar");
+
+            if (mode === "GRID") {
+                gridBtn.classList.add("active");
+                calBtn.classList.remove("active");
+                gridEl.style.display = "flex";
+                calEl.style.display = "none";
+                loadFilteredEvents();
+            } else {
+                calBtn.classList.add("active");
+                gridBtn.classList.remove("active");
+                gridEl.style.display = "none";
+                calEl.style.display = "block";
+                renderCalendar();
+            }
+        }
+
+        // Calendar Drawing logic
+        function renderCalendar() {
+            const calendarEl = document.getElementById("events-calendar");
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            
+            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+            const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const prevLastDay = new Date(currentYear, currentMonth, 0).getDate();
+            
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="text-white fw-bold mb-0"><i class="fa-solid fa-calendar-check text-primary me-2"></i>${monthNames[currentMonth]} ${currentYear}</h4>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-glass btn-sm text-white" onclick="prevMonth()"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+                        <button class="btn btn-glass btn-sm text-white" onclick="nextMonth()">Next <i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div class="calendar-grid">
+                    <div class="calendar-day-header">Sun</div>
+                    <div class="calendar-day-header">Mon</div>
+                    <div class="calendar-day-header">Tue</div>
+                    <div class="calendar-day-header">Wed</div>
+                    <div class="calendar-day-header">Thu</div>
+                    <div class="calendar-day-header">Fri</div>
+                    <div class="calendar-day-header">Sat</div>
+            `;
+            
+            for (let i = firstDayIndex; i > 0; i--) {
+                html += `<div class="calendar-cell calendar-cell-muted">${prevLastDay - i + 1}</div>`;
+            }
+            
+            for (let day = 1; day <= lastDay; day++) {
+                const cellDate = new Date(currentYear, currentMonth, day);
+                const dayEvents = allEvents.filter(event => {
+                    const evDate = new Date(event.dateTime);
+                    
+                    // Category match
+                    if (event.type !== currentCategory) return false;
+                    
+                    // Department filter match
+                    if (currentCategory === "DEPARTMENT" && selectedDept !== "ALL") {
+                        if (!event.department || event.department.id.toString() !== selectedDept.toString()) {
+                            return false;
+                        }
+                    }
+                    
+                    // Search query match
+                    if (searchQuery) {
+                        const nameMatch = event.name.toLowerCase().includes(searchQuery);
+                        const venueMatch = event.venue.toLowerCase().includes(searchQuery);
+                        const descMatch = event.description && event.description.toLowerCase().includes(searchQuery);
+                        if (!nameMatch && !venueMatch && !descMatch) return false;
+                    }
+                    
+                    return evDate.getFullYear() === currentYear &&
+                           evDate.getMonth() === currentMonth &&
+                           evDate.getDate() === day;
+                });
+                
+                let eventBadges = "";
+                dayEvents.forEach(ev => {
+                    eventBadges += `
+                        <div class="calendar-event-badge mt-1" onclick="openEventsRegModal(${ev.id})" title="${ev.name}">
+                            ${ev.name.substring(0, 15)}...
+                        </div>
+                    `;
+                });
+                
+                const isToday = new Date().toDateString() === cellDate.toDateString() ? "calendar-cell-today" : "";
+                
+                html += `
+                    <div class="calendar-cell ${isToday}">
+                        <div class="calendar-date-num">${day}</div>
+                        <div class="calendar-events-container">${eventBadges}</div>
+                    </div>
+                `;
+            }
+            
+            const totalCells = firstDayIndex + lastDay;
+            const remainingCells = 42 - totalCells;
+            for (let i = 1; i <= remainingCells; i++) {
+                html += `<div class="calendar-cell calendar-cell-muted">${i}</div>`;
+            }
+            
+            html += `</div>`;
+            calendarEl.innerHTML = html;
+        }
+
+        function prevMonth() {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+        }
+
+        function refreshViews() {
+            loadFilteredEvents();
+        }
+
+        // Search filter
+        function handleSearch(val) {
+            searchQuery = val.trim().toLowerCase();
+            refreshViews();
+        }
+
+        // Modal filter operations
+        function openFiltersModal() {
+            document.getElementById("modal-event-level").value = currentCategory;
+            document.getElementById("modal-dept-filter").value = selectedDept;
+            document.getElementById("modal-category-filter").value = selectedCategory;
+            document.getElementById("modal-sort-filter").value = selectedSort;
+            
+            filtersModalObj.show();
+        }
+
+        function applyModalFilters(e) {
+            if (e) e.preventDefault();
+            
+            currentCategory = document.getElementById("modal-event-level").value;
+            selectedDept = document.getElementById("modal-dept-filter").value;
+            selectedCategory = document.getElementById("modal-category-filter").value;
+            selectedSort = document.getElementById("modal-sort-filter").value;
+            
+            updateFilterBadge();
+            
+            refreshViews();
+            filtersModalObj.hide();
+        }
+
+        function resetModalFilters() {
+            document.getElementById("modal-event-level").value = "ALL";
+            document.getElementById("modal-dept-filter").value = "ALL";
+            document.getElementById("modal-category-filter").value = "";
+            document.getElementById("modal-sort-filter").value = "date_asc";
+        }
+
+
+
+        function updateFilterBadge() {
+            let count = 0;
+            if (currentCategory !== "ALL") count++;
+            if (selectedDept !== "ALL") count++;
+            if (selectedCategory !== "") count++;
+            if (selectedSort !== "date_asc") count++;
+            
+            const badge = document.getElementById("filter-badge");
+            if (badge) {
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.style.display = "inline-block";
+                } else {
+                    badge.style.display = "none";
+                }
+            }
+        }
+
+        // Render matching events into grid
+        function displayEvents(filtered) {
+            const grid = document.getElementById("events-grid");
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div class="col-12 text-center text-muted p-5"><i class="fa-solid fa-calendar-xmark fa-2x mb-3 text-secondary"></i><p>No matching competitions found.</p></div>';
+                return;
+            }
+
+            let html = "";
+            filtered.forEach(event => {
+                const isDept = event.type === "DEPARTMENT";
+                const badgeText = isDept ? (event.department ? event.department.name : "Department Level") : "College Level";
+                const badgeClass = isDept ? "badge-dept" : "badge-college";
+
+                let compsHtml = "";
+                if (event.competitions && event.competitions.length > 0) {
+                    compsHtml = `
+                        <div class="mt-3">
+                            <h6 class="text-white fw-bold mb-2 small"><i class="fa-solid fa-list-check text-primary me-2"></i>Competitions:</h6>
+                            <div class="d-flex flex-wrap gap-1 mb-3">
+                                ${event.competitions.map(c => `<span class="badge bg-secondary" style="font-size: 0.75rem;">${c.name}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const cardClass = isDept ? "event-card-dept" : "event-card-college";
+                const isBookmarked = studentBookmarks.includes(event.id);
+
+                html += `
+                    <div class="col-lg-4 col-md-6">
+                        <div class="glass-panel event-card ${cardClass}">
+                            <div class="event-card-img-wrapper">
+                                <span class="event-card-badge ${badgeClass}">${badgeText}</span>
+                                <img id="poster-${event.id}" class="event-card-img" alt="${event.name}">
+                            </div>
+                            <div class="p-4">
+                                <h5 class="fw-bold text-white mb-2" title="${event.name}">${event.name}</h5>
+                                ${isDept && event.department ? `<div class="text-secondary small fw-bold mb-2"><i class="fa-solid fa-tag me-2"></i>${event.department.name}</div>` : ''}
+                                <div class="text-muted mb-1 small"><i class="fa-solid fa-location-dot text-primary me-2"></i> ${event.venue}</div>
+                                <div class="text-muted mb-1 small"><i class="fa-solid fa-calendar text-primary me-2"></i> ${formatEventDate(event.dateTime)}</div>
+                                ${compsHtml}
+                                <p class="text-muted small mb-4">
+                                    ${event.description || 'No description provided.'}
+                                </p>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary-gradient w-100" onclick="openEventsRegModal(${event.id})">Register Event</button>
+                                    <button class="btn btn-outline-secondary btn-bookmark-toggle" onclick="toggleStudentBookmark(${event.id}, this)" title="Bookmark Event" style="border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: #fff; width: 45px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.3s ease;">
+                                        <i class="${isBookmarked ? 'fa-solid' : 'fa-regular'} fa-bookmark text-primary"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+
+            // Apply posters dynamically
+            filtered.forEach(event => {
+                const img = document.getElementById(`poster-${event.id}`);
+                if (img) {
+                    setEventPoster(img, event.posterUrl, event.name);
+                }
+            });
+        }
+
+        function toggleStudentBookmark(eventId, buttonEl) {
+            const student = checkStudentAuth();
+            if (!student) {
+                showSuccessPopup("Please login from Student Dashboard first.");
+                return;
+            }
+            fetch("/api/student/bookmarks/toggle", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rollNumber: student.rollNumber, eventId: eventId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const icon = buttonEl.querySelector("i");
+                if (data.bookmarked) {
+                    icon.className = "fa-solid fa-bookmark text-primary";
+                    if (!studentBookmarks.includes(eventId)) {
+                        studentBookmarks.push(eventId);
+                    }
+                    showSuccessPopup("Bookmarked successfully!");
+                } else {
+                    icon.className = "fa-regular fa-bookmark text-primary";
+                    studentBookmarks = studentBookmarks.filter(id => id !== eventId);
+                    showSuccessPopup("Bookmark removed!");
+                }
+            })
+            .catch(err => {
+                console.error("Error toggling bookmark:", err);
+            });
+        }
+
+        let registerModalObj = null;
+        let selectedEventIdForModal = null;
+        let selectedCompIds = [];
+
+        function toggleCompSelection(cardEl, compId) {
+            if (cardEl.classList.contains("selected")) {
+                cardEl.classList.remove("selected");
+                selectedCompIds = selectedCompIds.filter(id => id !== compId);
+            } else {
+                cardEl.classList.add("selected");
+                selectedCompIds.push(compId);
+            }
+        }
+
+        function openEventsRegModal(eventId) {
+            selectedEventIdForModal = eventId;
+            const event = allEvents.find(e => e.id.toString() === eventId.toString());
+            if (!event) return;
+
+            document.getElementById("modal-event-title").innerText = event.name;
+            document.getElementById("modal-event-meta").innerText = `${event.venue} | ${formatEventDate(event.dateTime)}`;
+
+            // Reset selected competitions list
+            selectedCompIds = [];
+            const compSection = document.getElementById("modal-competitions-section");
+            const compList = document.getElementById("modal-competitions-list");
+
+            if (event.competitions && event.competitions.length > 0) {
+                compSection.style.display = "block";
+                compList.innerHTML = event.competitions.map(comp => `
+                    <div class="col-12">
+                        <div class="competition-select-card" onclick="toggleCompSelection(this, ${comp.id})">
+                            <h6 class="text-white fw-bold mb-1">${comp.name}</h6>
+                            <div class="text-muted small" style="font-size: 0.8rem;">
+                                <i class="fa-solid fa-location-dot me-1"></i> ${comp.venue} | 
+                                <i class="fa-solid fa-clock me-1"></i> ${formatEventDate(comp.dateTime)} | 
+                                <i class="fa-solid fa-user-tie me-1"></i> Staff: ${comp.inChargeStaffName || 'N/A'}
+                            </div>
+                            <i class="fa-solid fa-circle-check checkmark-tick-icon"></i>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                compSection.style.display = "none";
+                compList.innerHTML = "";
+            }
+
+            // Reset error views
+            document.getElementById("modal-reg-error").style.display = "none";
+            document.getElementById("modal-reg-form-fields").style.display = "block";
+            document.getElementById("modal-reg-footer").style.display = "flex";
+
+            // Clear inputs
+            document.getElementById("events-reg-form").reset();
+            document.getElementById("modal-roll-status").style.display = "none";
+
+            // Check if student session exists and pre-populate
+            const sessionStr = localStorage.getItem("eventhub_student_session");
+            const cachedPassword = localStorage.getItem("eventhub_student_password");
+            if (sessionStr) {
+                try {
+                    const student = JSON.parse(sessionStr);
+                    document.getElementById("modal-rollNumber").value = student.rollNumber;
+                    document.getElementById("modal-studentName").value = student.studentName;
+                    document.getElementById("modal-department").value = student.department;
+                    document.getElementById("modal-contactNumber").value = student.contactNumber;
+                    document.getElementById("modal-email").value = student.email;
+                    if (cachedPassword) {
+                        document.getElementById("modal-password").value = cachedPassword;
+                    }
+                } catch(e) {
+                    console.error("Error parsing student session:", e);
+                }
+            }
+
+            if (!registerModalObj) {
+                registerModalObj = new bootstrap.Modal(document.getElementById('registerModal'));
+            }
+            registerModalObj.show();
+        }
+
+        // Load departments list for modal dropdown
+        function loadModalDepartments() {
+            const select = document.getElementById("modal-department");
+            select.innerHTML = '<option value="" disabled selected>Select Department</option>';
+            fetch("/api/departments")
+                .then(res => res.json())
+                .then(depts => {
+                    depts.forEach(dept => {
+                        const opt = document.createElement("option");
+                        opt.value = dept.name; // match profile/register name
+                        opt.innerText = dept.name + " (" + dept.code + ")";
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error("Error loading departments for modal:", err));
+        }
+
+        function checkModalStudentProfile() {
+            const rollNumber = document.getElementById("modal-rollNumber").value.trim();
+            const statusDiv = document.getElementById("modal-roll-status");
+            if (!rollNumber) {
+                statusDiv.style.display = "none";
+                return;
+            }
+
+            fetch(`/api/student/check/${rollNumber}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.exists) {
+                        statusDiv.className = "form-text text-warning small mt-1";
+                        statusDiv.innerHTML = `<i class="fa-solid fa-circle-info me-1"></i> Existing student profile detected. Enter password to verify and autofill.`;
+                        statusDiv.style.display = "block";
+                        document.getElementById("modal-password").placeholder = "Enter password to verify & register";
+                    } else {
+                        statusDiv.className = "form-text text-success small mt-1";
+                        statusDiv.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i> New student profile. Fill in your details and choose a password.`;
+                        statusDiv.style.display = "block";
+                        document.getElementById("modal-password").placeholder = "Choose a password to view registrations in dashboard";
+                    }
+                })
+                .catch(err => console.error("Error checking student profile:", err));
+        }
+
+        // Verify existing password and autofill student fields inside modal
+        function verifyAndAutofillModalProfile() {
+            const rollNumber = document.getElementById("modal-rollNumber").value.trim();
+            const password = document.getElementById("modal-password").value;
+            if (!rollNumber || !password) return;
+
+            fetch(`/api/student/check/${rollNumber}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.exists) {
+                        fetch("/api/auth/student/login", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ rollNumber, password })
+                        })
+                        .then(res => {
+                            if (res.ok) return res.json();
+                            return null;
+                        })
+                        .then(student => {
+                            if (student) {
+                                document.getElementById("modal-studentName").value = student.studentName;
+                                document.getElementById("modal-department").value = student.department;
+                                document.getElementById("modal-contactNumber").value = student.contactNumber;
+                                document.getElementById("modal-email").value = student.email;
+                                
+                                const statusDiv = document.getElementById("modal-roll-status");
+                                statusDiv.className = "form-text text-success small mt-1";
+                                statusDiv.innerHTML = `<i class="fa-solid fa-circle-check me-1"></i> Profile verified and loaded successfully!`;
+                            }
+                        })
+                        .catch(err => console.error("Error logging in student:", err));
+                    }
+                });
+        }
+
+        function submitEventsRegistration(e) {
+            e.preventDefault();
+            const errorDiv = document.getElementById("modal-reg-error");
+            const errorText = document.getElementById("modal-reg-error-text");
+            errorDiv.style.display = "none";
+
+            const event = allEvents.find(e => e.id.toString() === selectedEventIdForModal.toString());
+            if (event && event.competitions && event.competitions.length > 0 && selectedCompIds.length === 0) {
+                errorText.innerText = "Please select at least one competition to register.";
+                errorDiv.style.display = "block";
+                return;
+            }
+
+            const payload = {
+                eventId: selectedEventIdForModal,
+                studentName: document.getElementById("modal-studentName").value,
+                rollNumber: document.getElementById("modal-rollNumber").value,
+                department: document.getElementById("modal-department").value,
+                year: document.getElementById("modal-year").value,
+                contactNumber: document.getElementById("modal-contactNumber").value,
+                email: document.getElementById("modal-email").value,
+                password: document.getElementById("modal-password").value,
+                competitionIds: selectedCompIds
+            };
+
+            fetch("/api/student/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Registration failed") });
+            })
+            .then(data => {
+                // Save locally
+                localStorage.setItem("eventhub_student_rollnumber", payload.rollNumber);
+                localStorage.setItem("eventhub_student_password", payload.password);
+                
+                // Automatically log them in to get a valid token/session
+                fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: payload.rollNumber, password: payload.password })
+                })
+                .then(res => res.json())
+                .then(loginData => {
+                    if (loginData.token) {
+                        localStorage.setItem("eventhub_student_session", JSON.stringify(loginData));
+                    }
+                })
+                .catch(err => console.error("Auto-login failed:", err));
+
+                registerModalObj.hide();
+                showSuccessPopup("Successfully Registered 😊");
+            })
+            .catch(err => {
+                errorText.innerText = err.message;
+                errorDiv.style.display = "block";
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1783 @@
+/* Import Google Fonts - Outfit */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    --primary: #1e3a8a; /* KASC Premium Navy Blue (blue-900) */
+    --primary-glow: rgba(30, 58, 138, 0.15);
+    --secondary: #d97706; /* KASC Premium Gold/Amber (amber-600) */
+    --secondary-glow: rgba(217, 119, 6, 0.15);
+    --dark-bg: #070b13; /* Rich Deep Blue-Black */
+    --bg-glow: #0c1833;
+    --navbar-bg: rgba(11, 15, 25, 0.8);
+    --nav-active-color: #fff;
+    --active-indicator-bg: #000000;
+    --active-indicator-color: #ffffff;
+    --card-college-bg: linear-gradient(135deg, rgba(8, 18, 38, 0.8) 0%, rgba(7, 11, 19, 0.9) 100%);
+    --card-dept-bg: linear-gradient(135deg, rgba(30, 20, 10, 0.8) 0%, rgba(7, 11, 19, 0.9) 100%);
+    --modal-bg: #0f1322;
+    --input-bg: rgba(255, 255, 255, 0.03);
+    --glass-bg: rgba(10, 17, 30, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-hover: rgba(255, 255, 255, 0.15);
+    --text-primary: #f3f4f6;
+    --text-muted: #9ca3af;
+    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+    --dark-bg: #f9fafb;
+    --bg-glow: #eef2f6; /* Soft light blue-gray glow */
+    --navbar-bg: rgba(255, 255, 255, 0.8);
+    --nav-active-color: var(--primary);
+    --active-indicator-bg: #1e3a8a;
+    --active-indicator-color: #ffffff;
+    --card-college-bg: linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(219, 234, 254, 0.95) 100%);
+    --card-dept-bg: linear-gradient(135deg, rgba(254, 243, 199, 0.9) 0%, rgba(253, 230, 138, 0.95) 100%);
+    --modal-bg: #ffffff;
+    --input-bg: rgba(0, 0, 0, 0.03);
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-border-hover: rgba(0, 0, 0, 0.15);
+    --text-primary: #111827;
+    --text-muted: #4b5563;
+    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background: radial-gradient(circle at 50% 0%, var(--bg-glow) 0%, var(--dark-bg) 70%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+    border-radius: 16px;
+    transition: var(--transition);
+}
+
+.glass-panel:hover {
+    border-color: var(--glass-border-hover);
+    box-shadow: 0 10px 40px 0 rgba(99, 102, 241, 0.15);
+}
+
+/* Custom Navbar */
+.navbar-custom {
+    background: var(--navbar-bg) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 15px 0;
+    transition: var(--transition);
+}
+
+.navbar-brand-custom {
+    font-weight: 800;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar-brand-custom img {
+    height: 35px;
+    width: auto;
+    border-radius: 6px;
+}
+
+.nav-link-custom {
+    color: var(--text-muted) !important;
+    font-weight: 500;
+    transition: var(--transition);
+    padding: 8px 16px !important;
+    border-radius: 8px;
+}
+
+.nav-link-custom:hover, .nav-link-custom.active {
+    color: var(--text-primary) !important;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Gradient Buttons */
+.btn-primary-gradient {
+    background: linear-gradient(135deg, var(--primary), #1d4ed8);
+    border: none;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 10px 24px;
+    transition: var(--transition);
+    box-shadow: 0 4px 14px rgba(30, 58, 138, 0.4);
+}
+
+.btn-primary-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(30, 58, 138, 0.6);
+}
+
+.btn-secondary-gradient {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    border: none;
+    color: #fff !important;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 10px 24px;
+    transition: var(--transition);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.btn-secondary-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
+}
+
+.btn-glass {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 10px 24px;
+    transition: var(--transition);
+}
+
+.btn-glass:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--glass-border-hover);
+    transform: translateY(-2px);
+}
+
+/* Event Cards */
+.event-card {
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+}
+
+.event-card-img-wrapper {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    background: #111827;
+}
+
+.event-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition);
+}
+
+.event-card:hover .event-card-img {
+    transform: scale(1.05);
+}
+
+.event-card-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    z-index: 2;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.badge-college {
+    background: rgba(30, 58, 138, 0.25);
+    color: #93c5fd;
+    border: 1px solid rgba(30, 58, 138, 0.4);
+}
+
+.badge-dept {
+    background: rgba(217, 119, 6, 0.25);
+    color: #fde047;
+    border: 1px solid rgba(217, 119, 6, 0.4);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Form Styles */
+.form-control-custom {
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary) !important;
+    border-radius: 10px;
+    padding: 12px 16px;
+    transition: var(--transition);
+}
+
+.form-control-custom:focus {
+    background: var(--input-bg);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+.form-select-custom {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    background-repeat: no-repeat;
+    appearance: none;
+}
+
+.form-select-custom option {
+    background-color: var(--dark-bg);
+    color: var(--text-primary);
+}
+
+/* Notifications Card */
+.notif-card {
+    border-left: 4px solid var(--primary);
+    background: rgba(255, 255, 255, 0.02);
+    padding: 15px;
+    border-radius: 0 12px 12px 0;
+    margin-bottom: 12px;
+    transition: var(--transition);
+}
+
+.notif-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    transform: translateX(3px);
+}
+
+.notif-card.dept-notif {
+    border-left-color: var(--secondary);
+}
+
+/* Gallery Section */
+.gallery-img-wrapper {
+    height: 220px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+}
+
+.gallery-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition);
+}
+
+.gallery-img-wrapper:hover .gallery-img {
+    transform: scale(1.08);
+}
+
+.gallery-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+/* Gallery Slider Styles */
+.gallery-slider-outer {
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.slider-container {
+    position: relative;
+    width: 100%;
+    height: 480px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+}
+
+.slider-wrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slider-slide {
+    flex-shrink: 0;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.slider-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.slider-caption {
+    position: absolute;
+    bottom: 25px;
+    left: 25px;
+    right: 25px;
+    background: rgba(10, 17, 30, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 15px 25px;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 500;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Arrows */
+.slider-arrow {
+    position: absolute;
+    background: rgba(10, 17, 30, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    color: #fff;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: var(--transition);
+}
+
+.slider-arrow:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.1);
+}
+
+/* Horizontal positioning */
+.slider-horizontal .prev-arrow {
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.slider-horizontal .next-arrow {
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.slider-horizontal .prev-arrow:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+.slider-horizontal .next-arrow:hover {
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Vertical positioning */
+.slider-vertical .prev-arrow {
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+.slider-vertical .next-arrow {
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.slider-vertical .prev-arrow:hover {
+    transform: translateX(-50%) scale(1.1);
+}
+.slider-vertical .next-arrow:hover {
+    transform: translateX(-50%) scale(1.1);
+}
+
+/* Dot pagination */
+.slider-dots {
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    transition: var(--transition);
+}
+
+.slider-horizontal .slider-dots {
+    bottom: 25px;
+    right: 35px;
+}
+
+.slider-vertical .slider-dots {
+    right: 25px;
+    top: 50%;
+    transform: translateY(-50%);
+    flex-direction: column;
+}
+
+.slider-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.slider-dot.active {
+    background: var(--secondary);
+    transform: scale(1.2);
+}
+
+.slider-dot:hover {
+    background: #fff;
+}
+
+/* Swipe and scroll container support */
+@media (max-width: 768px) {
+    .slider-container {
+        height: 320px;
+    }
+    .slider-caption {
+        bottom: 15px;
+        left: 15px;
+        right: 15px;
+        font-size: 0.9rem;
+        padding: 10px 15px;
+    }
+    .slider-arrow {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* Table Customization */
+.table-custom {
+    color: var(--text-primary) !important;
+}
+
+.table-custom th {
+    background: rgba(255, 255, 255, 0.04);
+    border-bottom: 2px solid var(--glass-border) !important;
+    font-weight: 600;
+}
+
+.table-custom td {
+    background: transparent;
+    border-bottom: 1px solid var(--glass-border);
+    vertical-align: middle;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--dark-bg);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+/* Floating Notification Pill */
+.notif-pill {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff;
+    border-radius: 50px;
+    padding: 12px 24px;
+    box-shadow: 0 8px 30px rgba(30, 58, 138, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.notif-pill:hover {
+    transform: scale(1.05) translateY(-3px);
+}
+
+.hero-section {
+    padding: 100px 0 60px 0;
+    text-align: center;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 30%, #a5b4fc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    max-width: 600px;
+    margin: 20px auto 30px auto;
+}
+
+/* Advantages Section Cards */
+.adv-card {
+    padding: 30px;
+    text-align: center;
+    height: 100%;
+}
+
+.adv-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto 20px auto;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    transition: var(--transition);
+}
+
+.adv-card:hover .adv-icon-wrapper {
+    background: var(--primary);
+    color: #fff;
+    transform: rotate(360deg);
+}
+
+/* Modal Styling */
+.modal-content-custom {
+    background: #0f1322;
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    color: var(--text-primary);
+}
+
+.modal-header-custom {
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.modal-footer-custom {
+    border-top: 1px solid var(--glass-border);
+}
+
+/* Eye Toggle button styles for premium input group integrations */
+.btn-eye-toggle {
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    border-left: none;
+    color: var(--text-muted);
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    padding: 0 16px;
+    transition: var(--transition);
+}
+.btn-eye-toggle:hover {
+    color: var(--text-primary);
+    background: var(--input-bg);
+}
+.password-input-with-eye {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+/* Success Popup Styles */
+.success-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(7, 11, 19, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: scaleIn 0.3s ease forwards;
+}
+
+.success-popup-card {
+    text-align: center;
+    padding: 40px;
+    max-width: 400px;
+    width: 90%;
+    transform: scale(0.8);
+    opacity: 0;
+    animation: scaleInCard 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.success-popup-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px auto;
+}
+
+/* Animated Checkmark SVG */
+.checkmark-svg {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 3;
+    stroke: #10b981; /* Premium Emerald */
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px #10b981;
+    animation: fillCheckmark .4s ease-in-out .4s forwards, scaleCheckmark .3s ease-in-out .9s both;
+}
+
+.checkmark-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 3;
+    stroke-miterlimit: 10;
+    stroke: #10b981;
+    fill: none;
+    animation: strokeCircle .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    stroke: #fff;
+    animation: strokeCheck .3s cubic-bezier(0.65, 0, 0.45, 1) .8s forwards;
+}
+
+.success-popup-emoji {
+    font-size: 2.5rem;
+    margin-top: 15px;
+    animation: bounceEmoji 1s ease infinite alternate;
+}
+
+/* Keyframes */
+@keyframes scaleInCard {
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes strokeCircle {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes strokeCheck {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+@keyframes fillCheckmark {
+    to {
+        box-shadow: inset 0px 0px 0px 40px #10b981;
+    }
+}
+
+@keyframes scaleCheckmark {
+    0%, 100% {
+        transform: none;
+    }
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+
+@keyframes bounceEmoji {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-8px);
+    }
+}
+
+.success-popup-overlay.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+/* Competition Selection UI for Students */
+.competition-select-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    user-select: none;
+}
+
+.competition-select-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255,255,255,0.25);
+}
+
+.competition-select-card.selected {
+    border-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.08) !important;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+}
+
+.checkmark-tick-icon {
+    display: none;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    color: #10b981;
+    font-size: 1.25rem;
+}
+
+.competition-select-card.selected .checkmark-tick-icon {
+    display: block;
+    animation: scaleInCard 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Wizard / Step Progress styles */
+.comp-step-card {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    background: rgba(255,255,255,0.01);
+}
+
+.wizard-steps-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.wizard-step-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+}
+
+.wizard-step-dot.active {
+    background: var(--primary);
+    box-shadow: 0 0 8px var(--primary);
+}
+
+.wizard-step-dot.completed {
+    background: #10b981;
+}
+
+/* ==========================================================================
+   GLOBAL INTERACTIVE HOVER AND ACTIVE EFFECTS (Requirement 3 & 5)
+   ========================================================================== */
+
+/* 1. Global Wallpaper background with high-quality display and text contrast overlay for Home Page */
+body.home-page {
+    background: linear-gradient(rgba(7, 11, 19, 0.84), rgba(7, 11, 19, 0.88)), 
+                url('../images/wallpaper.png') no-repeat center center fixed;
+    background-size: cover;
+    background-blend-mode: multiply;
+}
+
+/* 2. Interactive Cards: event-card, competition-select-card, department-card (adv-card), dashboard sections (glass-panel), etc. */
+.event-card, 
+.competition-select-card, 
+.adv-card, 
+.glass-panel, 
+.comp-step-card, 
+.notif-card,
+.gallery-card {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                border-color 0.25s ease, 
+                box-shadow 0.25s ease,
+                background-color 0.25s ease;
+    outline: none;
+}
+
+/* Hover effect: Subtle scale up, blue-glow border, drop shadow */
+.event-card:hover, 
+.competition-select-card:hover, 
+.adv-card:hover, 
+.glass-panel:hover,
+.comp-step-card:hover,
+.gallery-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(30, 58, 138, 0.5) !important; /* Glow primary blue */
+    box-shadow: 0 12px 35px rgba(30, 58, 138, 0.35) !important;
+    background: rgba(12, 22, 45, 0.85) !important;
+}
+
+/* Active click state: Slight shrink, gold-glow border */
+.event-card:active, 
+.competition-select-card:active, 
+.adv-card:active, 
+.glass-panel:active,
+.comp-step-card:active,
+.gallery-card:active {
+    transform: translateY(-2px) scale(0.98);
+    border-color: var(--secondary) !important; /* Glow Gold */
+    box-shadow: 0 5px 15px rgba(217, 119, 6, 0.3) !important;
+    background: rgba(15, 27, 50, 0.9) !important;
+}
+
+/* Specific styling for notifications card hover */
+.notif-card:hover {
+    transform: translateX(4px);
+    border-color: var(--primary) !important;
+    box-shadow: 0 4px 15px rgba(30, 58, 138, 0.2);
+}
+
+.notif-card.dept-notif:hover {
+    border-color: var(--secondary) !important;
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.2);
+}
+
+/* 3. Button transitions and active click states */
+.btn-primary-gradient, 
+.btn-secondary-gradient, 
+.btn-glass {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.btn-primary-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(30, 58, 138, 0.6) !important;
+    filter: brightness(1.1);
+}
+.btn-primary-gradient:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.4) !important;
+}
+
+.btn-secondary-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55) !important;
+    filter: brightness(1.1);
+}
+.btn-secondary-gradient:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35) !important;
+}
+
+.btn-glass:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.05) !important;
+}
+.btn-glass:active {
+    transform: translateY(1px);
+}
+
+/* 4. Table rows interactive hover */
+.table-custom tbody tr {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.table-custom tbody tr:hover {
+    background-color: rgba(30, 58, 138, 0.1) !important;
+    transform: scale(1.005);
+    cursor: pointer;
+}
+
+/* 5. Form inputs active borders */
+.form-control-custom {
+    transition: all 0.25s ease;
+}
+.form-control-custom:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+.form-control-custom:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 12px rgba(30, 58, 138, 0.45) !important;
+}
+
+/* 6. Layout Styles for Redesigned Gallery Section (Requirement 4) */
+.gallery-section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    border-left: 4px solid var(--primary);
+    padding-left: 12px;
+    margin-bottom: 20px;
+    margin-top: 30px;
+}
+
+.gallery-row-outer {
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    position: relative;
+    padding: 20px;
+}
+
+.gallery-scroll-wrapper {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 5px 5px 15px 5px;
+}
+
+.gallery-scroll-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+.gallery-card {
+    flex: 0 0 calc(25% - 12px);
+    min-width: 250px;
+    height: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+}
+
+@media (max-width: 1200px) {
+    .gallery-card {
+        flex: 0 0 calc(33.333% - 11px);
+    }
+}
+@media (max-width: 768px) {
+    .gallery-card {
+        flex: 0 0 calc(50% - 8px);
+        height: 160px;
+    }
+}
+@media (max-width: 480px) {
+    .gallery-card {
+        flex: 0 0 100%;
+        height: 180px;
+    }
+}
+
+.gallery-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition);
+}
+
+.gallery-card-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 12px;
+    background: rgba(10, 17, 30, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    border-top: 1px solid var(--glass-border);
+}
+
+.gallery-arrow-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(10, 17, 30, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: var(--transition);
+}
+
+.gallery-arrow-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.gallery-arrow-btn.prev-btn {
+    left: -20px;
+}
+
+.gallery-arrow-btn.next-btn {
+    right: -20px;
+}
+
+@media (max-width: 768px) {
+    .gallery-arrow-btn {
+        display: none;
+    }
+}
+
+.gallery-dots-indicator {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 15px;
+}
+
+.gallery-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.gallery-dot.active {
+    background: var(--secondary);
+    transform: scale(1.25);
+}
+
+/* ==========================================================================
+   KASC EVENT HUB PREMIUM THEME & UX ENHANCEMENTS
+   ========================================================================== */
+
+/* 1. Global Visibility and High Contrast Typography */
+label, .form-label {
+    color: var(--text-primary) !important; /* Lighter text for much better visibility */
+    font-weight: 600 !important;
+    letter-spacing: 0.3px;
+}
+.text-muted {
+    color: var(--text-muted) !important; /* Increased contrast for muted details */
+}
+p.text-muted {
+    color: var(--text-muted) !important; /* Lighter text inside panels for readability */
+}
+
+/* 2. Premium Navbar Branding Text Gradient */
+.navbar-brand-custom span {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 45%, #3b82f6 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.8px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.nav-link-custom.active {
+    color: var(--nav-active-color) !important;
+    background: rgba(30, 58, 138, 0.15) !important;
+    border-bottom: 2px solid #3b82f6 !important;
+    border-radius: 8px 8px 0 0 !important;
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.1);
+}
+
+/* 3. Active state indicator for nav-tabs & button-groups (Black box with Blue border/glow) */
+.nav-tabs .nav-link.active,
+.btn-group .btn-check:checked + label,
+.gallery-tab-btn.active,
+.home-tabs-container .nav-link.active {
+    background-color: var(--active-indicator-bg) !important;
+    border: 2px solid #3b82f6 !important; /* Glowing blue indicator border */
+    color: var(--active-indicator-color) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.45) !important;
+}
+
+.nav-tabs .nav-link {
+    border: 2px solid transparent !important;
+    border-radius: 8px !important;
+    margin-right: 8px;
+    padding: 10px 20px !important;
+    transition: var(--transition);
+}
+
+.nav-tabs .nav-link:hover:not(.active) {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 4. Distinct College vs Department Competition Cards */
+.event-card-college {
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    background: var(--card-college-bg) !important;
+}
+.event-card-college:hover {
+    border-color: rgba(59, 130, 246, 0.6) !important;
+    box-shadow: 0 15px 40px rgba(30, 58, 138, 0.35) !important;
+    transform: translateY(-5px);
+}
+
+.event-card-dept {
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    background: var(--card-dept-bg) !important;
+}
+.event-card-dept:hover {
+    border-color: rgba(245, 158, 11, 0.6) !important;
+    box-shadow: 0 15px 40px rgba(217, 119, 6, 0.3) !important;
+    transform: translateY(-5px);
+}
+
+/* 5. Modern Red/Delete Warning Buttons */
+.btn-danger-custom {
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+    border: 1px solid #dc2626 !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3) !important;
+}
+.btn-danger-custom:hover {
+    background-color: #b91c1c !important;
+    border-color: #b91c1c !important;
+    transform: translateY(-1.5px) scale(1.03) !important;
+    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.55) !important;
+}
+.btn-danger-custom:active {
+    transform: translateY(0.5px) scale(0.98) !important;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.4) !important;
+}
+
+/* 6. Success Alert Box Customization */
+.alert-success-custom {
+    background: rgba(16, 185, 129, 0.12) !important;
+    border: 1px solid #10b981 !important;
+    border-left: 4px solid #10b981 !important;
+    color: #34d399 !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+    padding: 16px !important;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* 7. Redesigned Confirmation Success Indicator */
+.success-checkmark-wrapper {
+    background: rgba(16, 185, 129, 0.1);
+    border: 2.5px solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #10b981;
+    font-size: 3rem;
+    animation: scaleInCard 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 8. Campus Redesign Tab Gallery Layout */
+.gallery-tab-btn {
+    border: 1px solid var(--glass-border);
+    transition: var(--transition);
+    cursor: pointer;
+    background: var(--glass-bg);
+}
+.gallery-tab-btn:hover {
+    border-color: rgba(59, 130, 246, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(30, 58, 138, 0.2);
+}
+.gallery-tab-btn.active {
+    border-color: #3b82f6 !important;
+    background-color: #000000 !important;
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.35) !important;
+}
+
+/* 9. Micro-Animations for Navbar Items */
+/* Home float bounce */
+.navbar-nav .nav-link-custom i.fa-house {
+    animation: floatHome 3.5s ease-in-out infinite;
+}
+@keyframes floatHome {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* Student scale pulse on hover */
+.navbar-nav .nav-link-custom:hover i.fa-circle-user {
+    animation: pulseStudent 0.5s ease-in-out forwards;
+}
+@keyframes pulseStudent {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
+/* Department Works columns bounce on hover */
+.navbar-nav .nav-link-custom:hover i.fa-building-columns {
+    animation: slideDept 0.5s ease-in-out forwards;
+}
+@keyframes slideDept {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+    100% { transform: translateY(0); }
+}
+
+/* Admin console lock shake on hover */
+.navbar-nav .nav-link-custom:hover i.fa-lock {
+    animation: lockShake 0.4s ease-in-out forwards;
+}
+@keyframes lockShake {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-15deg); }
+    75% { transform: rotate(15deg); }
+}
+
+/* Settings cog spin for Edit Profile */
+.btn:hover .fa-user-gear,
+.btn-edit-profile-animated:hover .fa-user-gear {
+    animation: gearSpin 1.5s linear infinite;
+}
+@keyframes gearSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   NEW GRAPHICAL LAYOUT FOR CAMPUS GALLERY AND FULLSCREEN MODAL (Requirement 3 & 4)
+   ========================================================================== */
+
+/* Redesigned Gallery Category Cards */
+.gallery-category-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.gallery-category-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(30, 58, 138, 0.5) !important;
+    box-shadow: 0 12px 35px rgba(30, 58, 138, 0.35) !important;
+    background: rgba(12, 22, 45, 0.85) !important;
+}
+
+.gallery-card-image-box {
+    width: 100%;
+    height: 220px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 12px;
+    border: 1px solid var(--glass-border);
+}
+
+.category-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition);
+}
+
+.gallery-card-hover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(30, 58, 138, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: var(--transition);
+    backdrop-filter: blur(2px);
+}
+
+.gallery-category-card:hover .gallery-card-hover-overlay {
+    opacity: 1;
+}
+
+.gallery-category-title {
+    font-weight: 700;
+    color: #fff;
+    margin-top: 8px;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    transition: var(--transition);
+}
+
+.gallery-category-card:hover .gallery-category-title {
+    color: #60a5fa;
+}
+
+/* Sports card (empty box indicator) */
+.empty-sports-card {
+    cursor: default;
+}
+.empty-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed rgba(255, 255, 255, 0.15) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+.empty-sports-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.empty-sports-card:hover .empty-box {
+    border-color: rgba(217, 119, 6, 0.4) !important;
+    background: rgba(217, 119, 6, 0.04) !important;
+}
+
+/* Unique card hover animations */
+/* 1. Campus Card Animation: Parallax Tilt & Zoom */
+.gallery-category-card:hover .campus-box img {
+    transform: scale(1.1) translateY(-5px);
+}
+
+/* 2. Labs Card Animation: Shine Sweep */
+.labs-box::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-25deg);
+    transition: 0.75s;
+}
+.gallery-category-card:hover .labs-box::after {
+    left: 150%;
+}
+.gallery-category-card:hover .labs-box img {
+    transform: scale(1.05);
+}
+
+/* 3. Achievements Card Animation: Float and rotate */
+.gallery-category-card:hover .achievements-box img {
+    transform: scale(1.08);
+}
+.gallery-category-card:hover .achievements-box {
+    animation: floatCategory 3s ease-in-out infinite;
+}
+@keyframes floatCategory {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+/* 4. Sports Card Animation: Pulse glow */
+.empty-sports-card:hover {
+    box-shadow: 0 0 20px rgba(217, 119, 6, 0.25) !important;
+}
+.empty-sports-card:hover .empty-sports-placeholder i {
+    animation: sportsPulse 1.5s infinite alternate;
+}
+@keyframes sportsPulse {
+    from { transform: scale(1); opacity: 0.7; }
+    to { transform: scale(1.15); opacity: 1; color: var(--secondary) !important; }
+}
+
+/* Fullscreen Gallery Modal styles */
+.fullscreen-gallery-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.96);
+    backdrop-filter: blur(15px);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.4s ease;
+}
+
+.gallery-close-btn {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-weight: 600;
+    transition: var(--transition);
+    cursor: pointer;
+    z-index: 100;
+}
+.gallery-close-btn:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
+}
+
+.gallery-slider-viewport {
+    position: relative;
+    width: 100%;
+    max-width: 1000px;
+    height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 50px;
+}
+
+.gallery-slider-slide-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+}
+
+.gallery-fullscreen-slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.gallery-fullscreen-slide.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+.gallery-fullscreen-slide img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+.gallery-slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: var(--transition);
+}
+.gallery-slider-arrow:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    transform: translateY(-50%) scale(1.1);
+}
+.gallery-slider-arrow.prev-arrow {
+    left: 10px;
+}
+.gallery-slider-arrow.next-arrow {
+    right: 10px;
+}
+
+.gallery-info-panel {
+    text-align: center;
+    margin-top: 25px;
+    max-width: 600px;
+    padding: 0 20px;
+}
+
+.gallery-counter {
+    color: #60a5fa;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-top: 5px;
+    letter-spacing: 1px;
+}
+
+.gallery-slider-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.gallery-slider-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.gallery-slider-dot.active {
+    background: #60a5fa;
+    transform: scale(1.3);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ==========================================================================
+   REDESIGNED STATUS REGISTERS & SHAKE ANIMATIONS (Requirements 5, 6 & 7)
+   ========================================================================== */
+
+/* Custom status badges for registration table (Requirement 6) */
+.status-badge-success {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    color: #34d399 !important;
+    font-weight: 600 !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 0.8rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.status-badge-warning {
+    background: rgba(245, 158, 11, 0.15) !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    color: #fbbf24 !important;
+    font-weight: 600 !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 0.8rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.status-badge-danger {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+    color: #f87171 !important;
+    font-weight: 600 !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 0.8rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Redesigned Success/Error Status Card */
+.status-register-card {
+    background: var(--glass-bg);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+    text-align: center;
+    margin-bottom: 25px;
+    animation: fadeInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.status-register-card.status-success {
+    border: 1.5px solid #10b981;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(7, 11, 19, 0.9) 100%) !important;
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.15) !important;
+}
+
+.status-register-card.status-error {
+    border: 1.5px solid #ef4444;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(7, 11, 19, 0.9) 100%) !important;
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.15) !important;
+}
+
+.status-icon-glow {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-bottom: 15px;
+}
+
+.status-success .status-icon-glow {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+}
+
+.status-error .status-icon-glow {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+}
+
+/* Bell shake animation keyframes */
+.bell-shake-animation {
+    animation: bellRingAnimation 0.65s ease;
+}
+@keyframes bellRingAnimation {
+    0%, 100% { transform: rotate(0); }
+    15% { transform: rotate(-24deg); }
+    30% { transform: rotate(20deg); }
+    45% { transform: rotate(-16deg); }
+    60% { transform: rotate(12deg); }
+    75% { transform: rotate(-8deg); }
+    90% { transform: rotate(4deg); }
+}
+
+/* ==========================================================================
+   HOME PAGE SELECTION AND TOGGLE BUTTONS (Requirement 3 & 4)
+   ========================================================================== */
+
+.home-toggle-btn {
+    border: 2px solid #3b82f6 !important;
+    background: transparent !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 12px 28px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: none;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    text-decoration: none;
+}
+
+.home-toggle-btn i {
+    color: #ffffff;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+/* Active State */
+.home-toggle-btn.active {
+    background-color: #000000 !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.45) !important;
+}
+
+.home-toggle-btn.active i {
+    color: #3b82f6 !important;
+}
+
+/* Inactive Hover */
+.home-toggle-btn:hover:not(.active) {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-color: #60a5fa !important;
+    transform: translateY(-2px);
+}
+
+.home-toggle-btn:active {
+    transform: translateY(1px);
+}
+
+/* Compass slow rotation */
+@keyframes compassRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.home-toggle-btn.active .fa-compass {
+    animation: compassRotate 12s linear infinite;
+}
+
+/* Speaker pulse glow */
+@keyframes speakerPulse {
+    0%, 100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0px rgba(59, 130, 246, 0));
+    }
+    50% {
+        transform: scale(1.15);
+        filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7));
+    }
+}
+
+.home-toggle-btn.active .fa-bullhorn {
+    animation: speakerPulse 2.2s ease-in-out infinite;
+}
+
+/* Light mode overrides for text-white utility to adjust for readability */
+[data-theme="light"] .text-white {
+    color: var(--text-primary) !important;
+}
+
+/* Make offcanvas drawer bodies and modal content fully theme responsive */
+.offcanvas-body {
+    background: var(--dark-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+.modal-content-custom {
+    background: var(--modal-bg) !important;
+}
+

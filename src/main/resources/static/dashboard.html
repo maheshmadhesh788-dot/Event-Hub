@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Event Hub</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <!-- FullCalendar CSS and JS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="index.html" style="display: flex; align-items: center; gap: 10px;">
+                <img src="images/kasc_logo.jpg" alt="KASC Logo" style="height: 42px; width: auto; border-radius: 50%; object-fit: cover;">
+                <span style="font-weight: 800; font-size: 1.3rem; letter-spacing: 0.5px;">KASC EVENT HUB</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="index.html"><i class="fa-solid fa-house me-1"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link nav-link-custom" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>
+                    <li class="nav-item" id="nav-dynamic"></li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-glass" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0;">
+                            <i id="theme-toggle-icon" class="fa-solid fa-sun text-warning"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-primary-gradient position-relative" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
+                            <i class="fa-solid fa-bell"></i> Notices
+                            <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container my-5">
+        
+        <!-- 1. STUDENT LOGIN PANEL -->
+        <div id="login-panel" class="glass-panel p-4 mb-5 mx-auto animate-fade-up" style="max-width: 460px; display: none;">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary-glow text-primary rounded-circle mb-3" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-circle-user fa-2x"></i>
+                </div>
+                <h3 class="fw-bold text-white mb-1">Student Login</h3>
+                <p class="text-muted small">Enter your roll number and password to access your dashboard.</p>
+            </div>
+
+            <div id="login-error" class="status-register-card status-error" style="display: none;" role="alert">
+                <div class="status-icon-glow">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h5 class="fw-bold text-white mb-2">Login Failed</h5>
+                <p id="login-error-text" class="text-muted mb-0 small"></p>
+            </div>
+
+            <form onsubmit="handleStudentLogin(event)">
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">Roll Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-secondary text-muted"><i class="fa-solid fa-id-card"></i></span>
+                        <input type="text" id="roll-number-input" class="form-control form-control-custom text-uppercase" placeholder="e.g. 22IT045" required>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-muted small fw-bold">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-secondary text-muted"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="password-input" class="form-control form-control-custom password-input-with-eye" placeholder="Enter your access password" required>
+                        <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('password-input', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-primary-gradient py-3"><i class="fa-solid fa-sign-in me-2"></i> Log In to Dashboard</button>
+                </div>
+                <div class="text-center">
+                    <a href="#" class="text-secondary small fw-bold" onclick="showRegisterPanel()"><i class="fa-solid fa-plus-circle me-1"></i> Create Student Profile</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- 2. STUDENT REGISTER PANEL -->
+        <div id="register-panel" class="glass-panel p-4 mb-5 mx-auto animate-fade-up" style="max-width: 480px; display: none;">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary-glow text-primary rounded-circle mb-3" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-user-plus fa-2x"></i>
+                </div>
+                <h3 class="fw-bold text-white mb-1">Create Student Profile</h3>
+                <p class="text-muted small">Register your profile to track event participations.</p>
+            </div>
+
+            <div id="register-error" class="status-register-card status-error" style="display: none;" role="alert">
+                <div class="status-icon-glow">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h5 class="fw-bold text-white mb-2">Registration Failed</h5>
+                <p id="register-error-text" class="text-muted mb-0 small"></p>
+            </div>
+            <div id="register-success" class="status-register-card status-success" style="display: none;" role="alert">
+                <div class="status-icon-glow">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h5 class="fw-bold text-white mb-2">Profile Created!</h5>
+                <p id="register-success-text" class="text-muted mb-0 small"></p>
+            </div>
+
+            <form onsubmit="handleStudentRegister(event)">
+                <div class="row g-3">
+                    <!-- Roll Number -->
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Roll Number</label>
+                        <input type="text" id="reg-rollNumber" class="form-control form-control-custom text-uppercase" required placeholder="e.g. 22IT045">
+                    </div>
+                    <!-- Full Name -->
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Full Name</label>
+                        <input type="text" id="reg-studentName" class="form-control form-control-custom" required placeholder="e.g. Mahesh">
+                    </div>
+                    <!-- Department -->
+                    <div class="col-12">
+                        <label class="form-label text-muted small fw-bold">Department</label>
+                        <select id="reg-department" class="form-select form-control-custom form-select-custom" required>
+                            <option value="" disabled selected>Select Department</option>
+                            <!-- Dynamically loaded -->
+                        </select>
+                    </div>
+                    <!-- Contact Number -->
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Contact Number</label>
+                        <input type="tel" id="reg-contactNumber" class="form-control form-control-custom" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+                    </div>
+                    <!-- Email -->
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small fw-bold">Email Address</label>
+                        <input type="email" id="reg-email" class="form-control form-control-custom" required placeholder="e.g. mahesh@gmail.com">
+                    </div>
+                    <!-- Password -->
+                    <div class="col-12">
+                        <label class="form-label text-muted small fw-bold">Choose Access Password</label>
+                        <div class="input-group">
+                            <input type="password" id="reg-password" class="form-control form-control-custom password-input-with-eye" required placeholder="Choose a password for dashboard login">
+                            <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('reg-password', this)">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-grid mt-4 mb-3">
+                    <button type="submit" class="btn btn-primary-gradient py-3"><i class="fa-solid fa-circle-check me-2"></i> Register Profile</button>
+                </div>
+                <div class="text-center">
+                    <a href="#" class="text-muted small" onclick="showLoginPanel()"><i class="fa-solid fa-arrow-left me-1"></i> Back to Login</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- 3. STUDENT PERSONALIZED WORKSPACE PANEL -->
+        <div id="workspace-panel" class="animate-fade-up" style="display: none;">
+            
+            <!-- Welcome Header -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3 border-bottom border-secondary pb-4">
+                <div>
+                    <h1 class="fw-bold text-white mb-1" id="student-welcome-header">Welcome, Student!</h1>
+                    <p class="text-muted mb-0">Your personalized student profile and competition registrations.</p>
+                </div>
+                <button class="btn btn-secondary-gradient" onclick="logoutStudent()"><i class="fa-solid fa-sign-out me-2"></i> Logout</button>
+            </div>
+
+            <div class="row g-4 mb-5">
+                <!-- Info details card -->
+                <div class="col-lg-4">
+                    <div class="glass-panel p-4 h-100">
+                        <h4 class="text-white fw-bold mb-4"><i class="fa-solid fa-id-card text-primary me-2"></i>Profile Details</h4>
+                        
+                        <div class="mb-3">
+                            <label class="text-muted small d-block">Full Name</label>
+                            <span class="text-white fw-bold" id="info-name">-</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small d-block">Roll Number</label>
+                            <span class="text-white fw-bold text-uppercase" id="info-roll">-</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small d-block">Department</label>
+                            <span class="text-white fw-bold" id="info-dept">-</span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-muted small d-block">Contact Number</label>
+                            <span class="text-white fw-bold" id="info-contact">-</span>
+                        </div>
+                        <div class="mb-0">
+                            <label class="text-muted small d-block">Email Address</label>
+                            <span class="text-white fw-bold" id="info-email">-</span>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button class="btn btn-secondary-gradient btn-edit-profile-animated" onclick="openEditProfileModal()"><i class="fa-solid fa-user-gear me-1"></i> Edit Profile</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registration History list -->
+                <div class="col-lg-8">
+                    <div class="glass-panel p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-20 flex-wrap gap-2">
+                            <h4 class="text-white fw-bold mb-0"><i class="fa-solid fa-calendar-check text-primary me-2"></i>My Registrations</h4>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary px-3 py-2" id="records-count">0 Events</span>
+                                <button class="btn btn-secondary-gradient btn-sm" onclick="openRegistrationModal()"><i class="fa-solid fa-plus me-1"></i> New Registration</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Empty view inside workspace -->
+                        <div id="empty-records-panel" class="text-center py-5 text-muted" style="display: none;">
+                            <i class="fa-solid fa-folder-open fa-3x mb-3 text-secondary"></i>
+                            <p class="mb-3">You haven't registered for any competitions yet.</p>
+                            <a href="events.html" class="btn btn-glass btn-sm"><i class="fa-solid fa-plus me-1"></i> Register for an Event</a>
+                        </div>
+
+                        <!-- Table -->
+                        <div class="table-responsive" id="table-panel">
+                            <table class="table table-custom table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Event Name</th>
+                                        <th>Type</th>
+                                        <th>Venue</th>
+                                        <th>Date & Time</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="records-tbody">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- New Row for Calendar & Wishlist Bookmarks -->
+            <div class="row g-4 mt-2 mb-5">
+                <!-- Bookmarked / Wishlist Events -->
+                <div class="col-lg-4">
+                    <div class="glass-panel p-4 h-100">
+                        <h4 class="text-white fw-bold mb-4"><i class="fa-solid fa-bookmark text-primary me-2"></i>My Wishlist</h4>
+                        <div id="wishlist-container" class="d-flex flex-column gap-3">
+                            <!-- Bookmarks loaded dynamically -->
+                            <div class="text-center py-4 text-muted small">No bookmarked events.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar View -->
+                <div class="col-lg-8">
+                    <div class="glass-panel p-4 h-100">
+                        <h4 class="text-white fw-bold mb-4"><i class="fa-solid fa-calendar-days text-primary me-2"></i>My Event Calendar</h4>
+                        <div id="student-calendar" style="min-height: 400px; color: #fff;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Notifications Drawer -->
+    <div class="offcanvas offcanvas-end modal-content-custom" tabindex="-1" id="notificationDrawer" style="width: 380px;">
+        <div class="offcanvas-header modal-header-custom">
+            <h5 class="offcanvas-title text-white fw-bold" id="notificationDrawerLabel">
+                <i class="fa-solid fa-bell text-primary me-2"></i> Notices & Announcements
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body" style="background: #0b0f19;">
+            <div id="notif-drawer-list">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Event Modal -->
+    <div class="modal fade" id="registerEventModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header modal-header-custom border-secondary">
+                    <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-pen-to-square text-primary me-2"></i>Register for Competition</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="dashboard-reg-form" onsubmit="submitDashboardRegistration(event)">
+                    <div class="modal-body">
+                        <div id="modal-error-message" class="status-register-card status-error" style="display: none;" role="alert">
+                            <div class="status-icon-glow">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <h5 class="fw-bold text-white mb-2">Registration Error</h5>
+                            <p id="modal-error-text" class="text-muted mb-0 small"></p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Select Competition / Event</label>
+                            <select id="modal-event-select" class="form-select form-control-custom form-select-custom" required>
+                                <option value="" disabled selected>Select an Event</option>
+                                <!-- Loaded dynamically -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Year of Study</label>
+                            <select id="modal-year-select" class="form-select form-control-custom form-select-custom" required>
+                                <option value="" disabled selected>Select Year</option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-custom border-secondary">
+                        <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient">Confirm Registration</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header modal-header-custom border-secondary">
+                    <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-user-pen text-primary me-2"></i>Edit Profile Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="edit-profile-form" onsubmit="submitProfileUpdate(event)">
+                    <div class="modal-body">
+                        <div id="edit-profile-error" class="status-register-card status-error" style="display: none;" role="alert">
+                            <div class="status-icon-glow">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <h5 class="fw-bold text-white mb-2">Update Failed</h5>
+                            <p id="edit-profile-error-text" class="text-muted mb-0 small"></p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Full Name</label>
+                            <input type="text" id="edit-studentName" class="form-control form-control-custom" required placeholder="e.g. Mahesh">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Department</label>
+                            <select id="edit-department" class="form-select form-control-custom form-select-custom" required>
+                                <!-- Loaded dynamically -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Contact Number</label>
+                            <input type="tel" id="edit-contactNumber" class="form-control form-control-custom" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Email Address</label>
+                            <input type="email" id="edit-email" class="form-control form-control-custom" required placeholder="e.g. mahesh@gmail.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">New Password (leave blank to keep current)</label>
+                            <div class="input-group">
+                                <input type="password" id="edit-password" class="form-control form-control-custom password-input-with-eye" placeholder="Leave blank to keep unchanged">
+                                <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('edit-password', this)">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-custom border-secondary">
+                        <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+    <script>
+        let currentStudent = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            startNotificationPolling();
+            loadDepartments();
+
+            // Check if student session is cached
+            currentStudent = checkStudentAuth();
+            if (currentStudent) {
+                showWorkspace(currentStudent);
+            } else {
+                if (window.location.search.includes("register=true")) {
+                    showRegisterPanel();
+                } else {
+                    window.location.href = "login.html?redirect=dashboard.html";
+                }
+            }
+        });
+
+        // Check if student session exists in local storage
+        function checkStudentAuth() {
+            const sessionStr = localStorage.getItem("eventhub_student_session");
+            if (sessionStr) {
+                try {
+                    return JSON.parse(sessionStr);
+                } catch (e) {
+                    localStorage.removeItem("eventhub_student_session");
+                }
+            }
+            return null;
+        }
+
+        // Toggle UI Panels
+        function showLogin() {
+            document.getElementById("login-panel").style.display = "block";
+            document.getElementById("register-panel").style.display = "none";
+            document.getElementById("workspace-panel").style.display = "none";
+        }
+
+        function showLoginPanel() {
+            showLogin();
+        }
+
+        function showRegisterPanel() {
+            document.getElementById("login-panel").style.display = "none";
+            document.getElementById("register-panel").style.display = "block";
+            document.getElementById("workspace-panel").style.display = "none";
+            document.getElementById("register-error").style.display = "none";
+            document.getElementById("register-success").style.display = "none";
+        }
+
+        function showWorkspace(student) {
+            document.getElementById("login-panel").style.display = "none";
+            document.getElementById("register-panel").style.display = "none";
+            document.getElementById("workspace-panel").style.display = "block";
+
+            // Populate personalized details
+            document.getElementById("student-welcome-header").innerText = `Welcome back, ${student.studentName || student.name}! 👋`;
+            document.getElementById("info-name").innerText = student.studentName || student.name || '-';
+            document.getElementById("info-roll").innerText = student.rollNumber || student.username || '-';
+            document.getElementById("info-dept").innerText = student.department || '-';
+            document.getElementById("info-contact").innerText = student.contactNumber || '-';
+            document.getElementById("info-email").innerText = student.email || '-';
+
+            const roll = student.rollNumber || student.username;
+
+            // Fetch registration history, bookmarks list, and calendar entries
+            loadStudentHistory(roll);
+            loadStudentBookmarks(roll);
+            loadCalendar(roll);
+        }
+
+        // Logout Student
+        function logoutStudent() {
+            localStorage.removeItem("eventhub_student_session");
+            localStorage.removeItem("eventhub_student_password");
+            currentStudent = null;
+            showLogin();
+        }
+
+        // Load Departments for select lists
+        function loadDepartments() {
+            const selectReg = document.getElementById("reg-department");
+            const selectEdit = document.getElementById("edit-department");
+            if (selectReg) selectReg.innerHTML = '<option value="" disabled selected>Select Department</option>';
+            if (selectEdit) selectEdit.innerHTML = '<option value="" disabled selected>Select Department</option>';
+            
+            fetch("/api/departments")
+                .then(res => res.json())
+                .then(depts => {
+                    depts.forEach(dept => {
+                        const opt1 = document.createElement("option");
+                        opt1.value = dept.name;
+                        opt1.innerText = dept.name + " (" + dept.code + ")";
+                        if (selectReg) selectReg.appendChild(opt1);
+
+                        const opt2 = document.createElement("option");
+                        opt2.value = dept.name;
+                        opt2.innerText = dept.name + " (" + dept.code + ")";
+                        if (selectEdit) selectEdit.appendChild(opt2);
+                    });
+                })
+                .catch(err => console.error("Error loading departments:", err));
+        }
+
+        // Handle profile registration
+        function handleStudentRegister(e) {
+            e.preventDefault();
+            const errDiv = document.getElementById("register-error");
+            const successDiv = document.getElementById("register-success");
+            const errText = document.getElementById("register-error-text");
+            const successText = document.getElementById("register-success-text");
+            errDiv.style.display = "none";
+            successDiv.style.display = "none";
+
+            const payload = {
+                rollNumber: document.getElementById("reg-rollNumber").value,
+                studentName: document.getElementById("reg-studentName").value,
+                department: document.getElementById("reg-department").value,
+                contactNumber: document.getElementById("reg-contactNumber").value,
+                email: document.getElementById("reg-email").value,
+                password: document.getElementById("reg-password").value
+            };
+
+            fetch("/api/auth/student/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Profile registration failed") });
+            })
+            .then(data => {
+                successText.innerHTML = '<strong>Profile registered successfully!</strong> You can now log in.';
+                successDiv.style.display = "block";
+                
+                // Clear input fields
+                document.getElementById("reg-rollNumber").value = "";
+                document.getElementById("reg-studentName").value = "";
+                document.getElementById("reg-department").value = "";
+                document.getElementById("reg-contactNumber").value = "";
+                document.getElementById("reg-email").value = "";
+                document.getElementById("reg-password").value = "";
+
+                // Autocomplete login roll number
+                document.getElementById("roll-number-input").value = payload.rollNumber;
+
+                setTimeout(() => {
+                    showLoginPanel();
+                }, 2000);
+            })
+            .catch(err => {
+                errText.innerText = err.message;
+                errDiv.style.display = "block";
+            });
+        }
+
+        // Trigger student login and load history on success
+        function handleStudentLogin(e) {
+            e.preventDefault();
+            const rollNumber = document.getElementById("roll-number-input").value.trim();
+            const password = document.getElementById("password-input").value;
+            const errorDiv = document.getElementById("login-error");
+            const errorText = document.getElementById("login-error-text");
+            
+            errorDiv.style.display = "none";
+
+            fetch("/api/auth/student/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rollNumber, password })
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Login failed") });
+            })
+            .then(student => {
+                // Save session in local storage
+                localStorage.setItem("eventhub_student_session", JSON.stringify(student));
+                localStorage.setItem("eventhub_student_rollnumber", rollNumber);
+                localStorage.setItem("eventhub_student_password", password);
+                currentStudent = student;
+                showWorkspace(student);
+            })
+            .catch(err => {
+                if (err.message === "The student name does not exist") {
+                    alert("The student name does not exist");
+                }
+                errorText.innerText = err.message;
+                errorDiv.style.display = "block";
+            });
+        }
+
+        // Fetch student history from REST API
+        function loadStudentHistory(rollNumber) {
+            const tbody = document.getElementById("records-tbody");
+            const emptyPanel = document.getElementById("empty-records-panel");
+            const tablePanel = document.getElementById("table-panel");
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4"><div class="spinner-border text-secondary" role="status"></div></td></tr>';
+
+            fetch(`/api/student/registrations/${rollNumber}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error("Failed to load registration history");
+                })
+                .then(registrations => {
+                    document.getElementById("records-count").innerText = `${registrations.length} Competitions`;
+                    if (registrations.length === 0) {
+                        tablePanel.style.display = "none";
+                        emptyPanel.style.display = "block";
+                        return;
+                    }
+
+                    emptyPanel.style.display = "none";
+                    tablePanel.style.display = "block";
+
+                    // Populate table
+                    let html = "";
+                    registrations.forEach((reg, index) => {
+                        const event = reg.event;
+                        const eventType = event.type === "COLLEGE" ? "College Level" : "Department Level";
+                        const typeBadge = event.type === "COLLEGE" ? "bg-primary" : "bg-secondary";
+                        const compName = reg.competition ? ` - ${reg.competition.name}` : "";
+
+                        // Dynamic status badge generation (Requirement 6)
+                        let statusBadgeHtml = "";
+                        const statusVal = reg.status ? reg.status.toLowerCase() : "";
+                        if (statusVal.includes("success") || statusVal.includes("approve") || statusVal.includes("confirm") || statusVal.includes("register") || statusVal.includes("attend")) {
+                            statusBadgeHtml = `<span class="status-badge-success"><i class="fa-solid fa-circle-check"></i>${reg.status}</span>`;
+                        } else if (statusVal.includes("pending") || statusVal.includes("wait") || statusVal.includes("incomplete")) {
+                            statusBadgeHtml = `<span class="status-badge-warning"><i class="fa-solid fa-triangle-exclamation"></i>${reg.status}</span>`;
+                        } else {
+                            statusBadgeHtml = `<span class="status-badge-danger"><i class="fa-solid fa-circle-xmark"></i>${reg.status}</span>`;
+                        }
+
+                        // Actions buttons
+                        let actionButtonsHtml = "";
+                        const isAttended = statusVal.includes("attend");
+                        
+                        actionButtonsHtml += `
+                            <button class="btn btn-outline-primary btn-sm px-2 py-1" onclick="showQrModal(${reg.id}, '${event.name.replace(/'/g, "\\'")}${compName.replace(/'/g, "\\'")}')" title="View Entry Pass QR">
+                                <i class="fa-solid fa-qrcode"></i> Pass
+                            </button>
+                        `;
+
+                        if (isAttended) {
+                            actionButtonsHtml += `
+                                <button class="btn btn-outline-success btn-sm px-2 py-1 ms-1" onclick="printCertificate(${reg.id}, '${reg.studentName.replace(/'/g, "\\'")}', '${event.name.replace(/'/g, "\\'")}${compName.replace(/'/g, "\\'")}', '${event.type}')" title="Print/Download Certificate">
+                                    <i class="fa-solid fa-award"></i> Cert
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm px-2 py-1 ms-1" onclick="openFeedbackModal(${reg.id}, ${event.id}, '${event.name.replace(/'/g, "\\'")}')" title="Submit Feedback">
+                                    <i class="fa-solid fa-comment-dots"></i> Feedback
+                                </button>
+                            `;
+                        }
+
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><strong class="text-white">${event.name}${compName}</strong></td>
+                                <td><span class="badge ${typeBadge}">${eventType}</span></td>
+                                <td>${event.venue}</td>
+                                <td>${formatEventDate(event.dateTime)}</td>
+                                <td>${statusBadgeHtml}</td>
+                                <td class="text-center align-middle">${actionButtonsHtml}</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error("Error loading history:", err);
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Failed to fetch registrations. Ensure the server is online.</td></tr>`;
+                });
+        }
+
+        function openRegistrationModal() {
+            window.location.href = "events.html";
+        }
+
+        function submitDashboardRegistration(e) {
+            e.preventDefault();
+            const errDiv = document.getElementById("modal-error-message");
+            const errText = document.getElementById("modal-error-text");
+            errDiv.style.display = "none";
+
+            const eventId = document.getElementById("modal-event-select").value;
+            const year = document.getElementById("modal-year-select").value;
+            const password = localStorage.getItem("eventhub_student_password");
+
+            if (!eventId) {
+                errText.innerText = "Please select an event.";
+                errDiv.style.display = "block";
+                return;
+            }
+
+            if (!password) {
+                errText.innerText = "Authentication details missing. Please log out and log in again.";
+                errDiv.style.display = "block";
+                return;
+            }
+
+            const payload = {
+                eventId: eventId,
+                studentName: currentStudent.studentName,
+                rollNumber: currentStudent.rollNumber,
+                department: currentStudent.department,
+                year: year,
+                contactNumber: currentStudent.contactNumber,
+                email: currentStudent.email,
+                password: password
+            };
+
+            fetch("/api/student/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Registration failed") });
+            })
+            .then(data => {
+                registerModalObj.hide();
+                loadStudentHistory(currentStudent.rollNumber);
+                alert("Successfully registered for event!");
+            })
+            .catch(err => {
+                errText.innerText = err.message;
+                errDiv.style.display = "block";
+            });
+        }
+
+        let editProfileModalObj = null;
+
+        function openEditProfileModal() {
+            if (!editProfileModalObj) {
+                editProfileModalObj = new bootstrap.Modal(document.getElementById('editProfileModal'));
+            }
+            
+            document.getElementById("edit-profile-error").style.display = "none";
+            document.getElementById("edit-studentName").value = currentStudent.studentName;
+            document.getElementById("edit-department").value = currentStudent.department;
+            document.getElementById("edit-contactNumber").value = currentStudent.contactNumber;
+            document.getElementById("edit-email").value = currentStudent.email;
+            document.getElementById("edit-password").value = "";
+
+            editProfileModalObj.show();
+        }
+
+        function submitProfileUpdate(e) {
+            e.preventDefault();
+            const errDiv = document.getElementById("edit-profile-error");
+            const errText = document.getElementById("edit-profile-error-text");
+            errDiv.style.display = "none";
+
+            const studentName = document.getElementById("edit-studentName").value.trim();
+            const department = document.getElementById("edit-department").value;
+            const contactNumber = document.getElementById("edit-contactNumber").value.trim();
+            const email = document.getElementById("edit-email").value.trim();
+            const password = document.getElementById("edit-password").value;
+
+            const payload = {
+                studentName,
+                department,
+                contactNumber,
+                email
+            };
+            if (password && password.trim() !== "") {
+                payload.password = password;
+            }
+
+            fetch(`/api/student/profile/${currentStudent.rollNumber}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Profile update failed") });
+            })
+            .then(updatedStudent => {
+                // Keep the password field cached in local storage if updated
+                if (password && password.trim() !== "") {
+                    localStorage.setItem("eventhub_student_password", password);
+                }
+                
+                // Update local session keeping token and role
+                const oldSession = JSON.parse(localStorage.getItem("eventhub_student_session") || "{}");
+                const newSession = { ...oldSession, ...updatedStudent };
+                localStorage.setItem("eventhub_student_session", JSON.stringify(newSession));
+                currentStudent = newSession;
+                
+                // Update UI fields
+                document.getElementById("student-welcome-header").innerText = `Welcome back, ${updatedStudent.studentName}! 👋`;
+                document.getElementById("info-name").innerText = updatedStudent.studentName;
+                document.getElementById("info-dept").innerText = updatedStudent.department;
+                document.getElementById("info-contact").innerText = updatedStudent.contactNumber;
+                document.getElementById("info-email").innerText = updatedStudent.email;
+
+                editProfileModalObj.hide();
+                alert("Profile details updated successfully!");
+            })
+            .catch(err => {
+                errText.innerText = err.message;
+                errDiv.style.display = "block";
+            });
+        }
+
+        // --- Entry Pass QR Modal Helper ---
+        let qrModalObj = null;
+        function showQrModal(regId, eventName) {
+            document.getElementById("qr-code-img").src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${regId}`;
+            document.getElementById("qr-event-name").innerText = eventName;
+            document.getElementById("qr-reg-id").innerText = `Registration ID: ${regId}`;
+            
+            if (!qrModalObj) {
+                qrModalObj = new bootstrap.Modal(document.getElementById('qrModal'));
+            }
+            qrModalObj.show();
+        }
+
+        // --- Dynamic Certificate Generator & Printing ---
+        function printCertificate(regId, studentName, eventName, eventType) {
+            document.getElementById("cert-student-name").innerText = studentName.toUpperCase();
+            document.getElementById("cert-event-name").innerText = eventName.toUpperCase();
+            document.getElementById("cert-event-type").innerText = eventType === "COLLEGE" ? "College" : "Department";
+            
+            const printArea = document.getElementById("certificate-print-area");
+            printArea.style.display = "block";
+            window.print();
+            printArea.style.display = "none";
+        }
+
+        // --- Feedback and Ratings Modal System ---
+        let feedbackModalObj = null;
+        let selectedFeedbackRating = 0;
+        
+        function openFeedbackModal(regId, eventId, eventTitle) {
+            selectedFeedbackRating = 0;
+            document.getElementById("feedback-rating").value = "0";
+            document.getElementById("feedback-comments").value = "";
+            document.getElementById("feedback-event-id").value = eventId;
+            document.getElementById("feedback-reg-id").value = regId;
+            document.getElementById("feedback-event-title").innerText = eventTitle;
+            
+            const stars = document.querySelectorAll(".star-btn");
+            stars.forEach(star => {
+                star.classList.remove("fa-solid", "text-warning");
+                star.classList.add("fa-regular", "text-secondary");
+            });
+
+            // Check if feedback already submitted to avoid double-submission UI flows
+            fetch(`/api/student/feedback/check/${currentStudent.rollNumber}/${eventId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.submitted) {
+                        alert("You have already submitted feedback for this event!");
+                    } else {
+                        if (!feedbackModalObj) {
+                            feedbackModalObj = new bootstrap.Modal(document.getElementById('feedbackModal'));
+                        }
+                        feedbackModalObj.show();
+                    }
+                })
+                .catch(err => {
+                    console.error("Error checking feedback status:", err);
+                    if (!feedbackModalObj) {
+                        feedbackModalObj = new bootstrap.Modal(document.getElementById('feedbackModal'));
+                    }
+                    feedbackModalObj.show();
+                });
+        }
+
+        function setStarRating(rating) {
+            selectedFeedbackRating = rating;
+            document.getElementById("feedback-rating").value = rating;
+            const stars = document.querySelectorAll(".star-btn");
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove("fa-regular", "text-secondary");
+                    star.classList.add("fa-solid", "text-warning");
+                } else {
+                    star.classList.remove("fa-solid", "text-warning");
+                    star.classList.add("fa-regular", "text-secondary");
+                }
+            });
+        }
+
+        function submitFeedback(e) {
+            e.preventDefault();
+            const eventId = document.getElementById("feedback-event-id").value;
+            const rating = document.getElementById("feedback-rating").value;
+            const comment = document.getElementById("feedback-comments").value.trim();
+
+            if (rating === "0" || !rating) {
+                alert("Please select a star rating!");
+                return;
+            }
+
+            fetch("/api/student/feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    rollNumber: currentStudent.rollNumber,
+                    eventId: eventId,
+                    rating: rating,
+                    comment: comment
+                })
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Submission failed") });
+            })
+            .then(data => {
+                feedbackModalObj.hide();
+                showSuccessPopup("Feedback Submitted! Thank you.");
+            })
+            .catch(err => {
+                alert(err.message);
+            });
+        }
+
+        // --- Bookmarks and Wishlist (Premium) ---
+        function loadStudentBookmarks(rollNumber) {
+            const container = document.getElementById("wishlist-container");
+            if (!container) return;
+            container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm" role="status"></div></div>';
+
+            fetch(`/api/student/bookmarks/${rollNumber}`)
+                .then(res => res.json())
+                .then(bookmarks => {
+                    if (bookmarks.length === 0) {
+                        container.innerHTML = '<div class="text-center py-4 text-muted small"><i class="fa-regular fa-bookmark mb-2 d-block"></i>No bookmarked events.</div>';
+                        return;
+                    }
+
+                    let html = "";
+                    bookmarks.forEach(b => {
+                        const event = b.event;
+                        const eventTime = formatEventDate(event.dateTime);
+                        
+                        html += `
+                            <div class="d-flex justify-content-between align-items-center p-3 rounded" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease;">
+                                <div style="min-width: 0;">
+                                    <h6 class="text-white fw-bold mb-1 text-truncate" title="${event.name}">${event.name}</h6>
+                                    <small class="text-muted d-block text-truncate"><i class="fa-solid fa-location-dot me-1"></i>${event.venue}</small>
+                                    <small class="text-secondary d-block text-truncate" style="font-size: 0.75rem;"><i class="fa-solid fa-clock me-1"></i>${eventTime}</small>
+                                </div>
+                                <div class="d-flex gap-2 ms-2">
+                                    <a href="events.html?eventId=${event.id}" class="btn btn-primary-gradient btn-sm px-2 py-1" style="font-size: 0.75rem;"><i class="fa-solid fa-eye"></i></a>
+                                    <button class="btn btn-outline-danger btn-sm px-2 py-1" onclick="removeBookmarkFromDashboard(${event.id})" style="font-size: 0.75rem;"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error("Error loading bookmarks:", err);
+                    container.innerHTML = '<div class="text-center py-4 text-danger small">Failed to load bookmarks.</div>';
+                });
+        }
+
+        function removeBookmarkFromDashboard(eventId) {
+            if (!currentStudent) return;
+            const roll = currentStudent.rollNumber || currentStudent.username;
+            fetch("/api/student/bookmarks/toggle", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rollNumber: roll, eventId: eventId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showSuccessPopup("Bookmark removed!");
+                loadStudentBookmarks(roll);
+                loadCalendar(roll);
+            })
+            .catch(err => {
+                console.error("Error removing bookmark:", err);
+            });
+        }
+
+        // --- FullCalendar Load (Premium) ---
+        let calendarInstance = null;
+
+        function loadCalendar(rollNumber) {
+            const calendarEl = document.getElementById("student-calendar");
+            if (!calendarEl) return;
+
+            // Fetch registrations and bookmarks in parallel
+            Promise.all([
+                fetch(`/api/student/registrations/${rollNumber}`).then(res => res.json()),
+                fetch(`/api/student/bookmarks/${rollNumber}`).then(res => res.json())
+            ])
+            .then(([registrations, bookmarks]) => {
+                const events = [];
+
+                // Add registered events (Blue color)
+                registrations.forEach(r => {
+                    const event = r.event;
+                    const compSuffix = r.competition ? ` - ${r.competition.name}` : "";
+                    events.push({
+                        id: 'reg-' + r.id,
+                        title: `Registered: ${event.name}${compSuffix}`,
+                        start: event.dateTime,
+                        color: '#6366f1',
+                        textColor: '#ffffff',
+                        url: `events.html?eventId=${event.id}`
+                    });
+                });
+
+                // Add bookmarked events (Purple color)
+                bookmarks.forEach(b => {
+                    const event = b.event;
+                    const alreadyReg = registrations.some(r => r.event.id === event.id);
+                    if (!alreadyReg) {
+                        events.push({
+                            id: 'book-' + event.id,
+                            title: `Wishlist: ${event.name}`,
+                            start: event.dateTime,
+                            color: '#a855f7',
+                            textColor: '#ffffff',
+                            url: `events.html?eventId=${event.id}`
+                        });
+                    }
+                });
+
+                if (calendarInstance) {
+                    calendarInstance.destroy();
+                }
+
+                calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek'
+                    },
+                    events: events,
+                    themeSystem: 'standard',
+                    eventClick: function(info) {
+                        if (info.event.url) {
+                            info.jsEvent.preventDefault();
+                            window.location.href = info.event.url;
+                        }
+                    }
+                });
+
+                calendarInstance.render();
+            })
+            .catch(err => {
+                console.error("Error loading calendar events:", err);
+            });
+        }
+    </script>
+
+    <!-- Entry Pass QR Code Modal -->
+    <div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+            <div class="modal-content modal-content-custom text-center">
+                <div class="modal-header modal-header-custom border-secondary justify-content-between">
+                    <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-qrcode text-primary me-2"></i>Entry Pass QR</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Present this QR code to the event organizers for check-in validation.</p>
+                    <div class="bg-white p-3 d-inline-block rounded mb-3">
+                        <img id="qr-code-img" src="" alt="Registration QR Code" style="width: 200px; height: 200px;">
+                    </div>
+                    <h5 id="qr-event-name" class="text-white fw-bold mb-1">Event Name</h5>
+                    <p id="qr-reg-id" class="text-primary small mb-0 fw-bold">ID: 102</p>
+                </div>
+                <div class="modal-footer modal-footer-custom border-secondary justify-content-center">
+                    <button type="button" class="btn btn-glass btn-sm" data-bs-dismiss="modal">Close Pass</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header modal-header-custom border-secondary">
+                    <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-comment-dots text-warning me-2"></i>Event Feedback & Rating</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="feedback-form" onsubmit="submitFeedback(event)">
+                    <div class="modal-body">
+                        <input type="hidden" id="feedback-event-id">
+                        <input type="hidden" id="feedback-reg-id">
+                        <h6 id="feedback-event-title" class="text-white fw-bold mb-3">Event Name</h6>
+                        
+                        <!-- Star Rating System -->
+                        <div class="mb-3 text-center">
+                            <label class="form-label text-white small fw-bold d-block mb-2">Your Rating</label>
+                            <div class="rating-stars fs-3 text-secondary" style="cursor: pointer;">
+                                <i class="fa-regular fa-star star-btn" data-value="1" onclick="setStarRating(1)"></i>
+                                <i class="fa-regular fa-star star-btn" data-value="2" onclick="setStarRating(2)"></i>
+                                <i class="fa-regular fa-star star-btn" data-value="3" onclick="setStarRating(3)"></i>
+                                <i class="fa-regular fa-star star-btn" data-value="4" onclick="setStarRating(4)"></i>
+                                <i class="fa-regular fa-star star-btn" data-value="5" onclick="setStarRating(5)"></i>
+                            </div>
+                            <input type="hidden" id="feedback-rating" value="0" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="feedback-comments" class="form-label text-white small fw-bold">Comments / Experience</label>
+                            <textarea id="feedback-comments" class="form-control form-control-custom" rows="4" required placeholder="Tell us what you liked and how we can improve..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-custom border-secondary">
+                        <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient">Submit Feedback</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certificate Print Area -->
+    <div id="certificate-print-area" style="display: none;">
+        <div style="border: 15px double #b58d3d; padding: 40px; text-align: center; font-family: 'Georgia', serif; height: 100%; background: #fff; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <div style="color: #222; font-size: 2.2rem; font-weight: bold; margin-bottom: 5px; letter-spacing: 1px; line-height: 1.2;">KONGUNADU ARTS AND SCIENCE COLLEGE</div>
+            <div style="color: #555; font-size: 0.95rem; font-style: italic; margin-bottom: 25px; letter-spacing: 2px;">(Autonomous) - Coimbatore, Tamil Nadu</div>
+            <div style="border-top: 2px solid #b58d3d; border-bottom: 2px solid #b58d3d; width: 60%; margin: 15px 0; padding: 5px 0; color: #b58d3d; font-size: 1.3rem; font-weight: bold; letter-spacing: 3px;">CERTIFICATE OF PARTICIPATION</div>
+            <div style="font-size: 1.1rem; color: #444; margin-top: 30px;">This is to certify that</div>
+            <div style="font-size: 1.8rem; color: #111; font-weight: bold; border-bottom: 1px dashed #777; padding: 5px 40px; margin: 15px 0; font-family: 'Times New Roman', serif;" id="cert-student-name">STUDENT NAME</div>
+            <div style="font-size: 1.1rem; color: #444;">of Kongunadu Arts and Science College has successfully attended / participated in</div>
+            <div style="font-size: 1.4rem; color: #111; font-weight: bold; margin: 15px 0; font-family: 'Times New Roman', serif;" id="cert-event-name">EVENT NAME</div>
+            <div style="font-size: 1.1rem; color: #444;">conducted as a <span id="cert-event-type">College</span> Level Event.</div>
+            
+            <div style="display: flex; justify-content: space-between; width: 80%; margin-top: 60px;">
+                <div style="text-align: center; font-size: 0.9rem; color: #333;">
+                    <div style="border-top: 1px solid #999; width: 150px; margin-top: 30px; padding-top: 5px;">Event Coordinator</div>
+                </div>
+                <div style="text-align: center; font-size: 0.9rem; color: #333;">
+                    <div style="border-top: 1px solid #999; width: 150px; margin-top: 30px; padding-top: 5px;">Principal</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certificate Printing CSS Stylesheet Override -->
+    <style>
+    @media print {
+        body * {
+            visibility: hidden !important;
+        }
+        #certificate-print-area, #certificate-print-area * {
+            visibility: visible !important;
+        }
+        #certificate-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: block !important;
+        }
+    }
+    </style>
+</body>
+</html>
