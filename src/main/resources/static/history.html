@@ -183,19 +183,23 @@
             startNotificationPolling();
         });
 
+        let allPastFeedbacks = [];
+
         function loadHistoryEvents() {
             const row = document.getElementById("history-events-row");
             row.innerHTML = '<div class="col-12 text-center p-4"><div class="spinner-border text-secondary" role="status"></div></div>';
 
             Promise.all([
                 fetch(`/api/departments/${currentDept.id}/events`).then(res => res.json()),
-                fetch(`/api/departments/${currentDept.id}/registrations`).then(res => res.json())
+                fetch(`/api/departments/${currentDept.id}/registrations`).then(res => res.json()),
+                fetch(`/api/departments/${currentDept.id}/feedback`).then(res => res.json())
             ])
-            .then(([events, registrations]) => {
+            .then(([events, registrations, feedbacks]) => {
                 const now = new Date();
                 // Filter events that have been conducted so far (past events)
                 allPastEvents = events.filter(event => new Date(event.dateTime) < now);
                 allPastRegistrations = registrations;
+                allPastFeedbacks = feedbacks;
 
                 // Sort past events by date descending (most recent first)
                 allPastEvents.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
@@ -226,6 +230,16 @@
             const pastEventIds = new Set(events.map(e => e.id));
             const pastRegistrations = allPastRegistrations.filter(r => r.event && pastEventIds.has(r.event.id));
 
+            // Map feedbacks to event IDs
+            const eventFeedbacksMap = {};
+            allPastFeedbacks.forEach(f => {
+                if (f.event) {
+                    const eId = f.event.id;
+                    if (!eventFeedbacksMap[eId]) eventFeedbacksMap[eId] = [];
+                    eventFeedbacksMap[eId].push(f.rating);
+                }
+            });
+
             let html = "";
             events.forEach(event => {
                 const eventRegs = pastRegistrations.filter(r => r.event.id === event.id);
@@ -243,6 +257,34 @@
                     `;
                 }
 
+                // Compute rating stars
+                let ratingHtml = "";
+                const ratings = eventFeedbacksMap[event.id];
+                if (ratings && ratings.length > 0) {
+                    const sum = ratings.reduce((acc, curr) => acc + curr, 0);
+                    const avg = (sum / ratings.length).toFixed(1);
+                    let starsHtml = "";
+                    for (let i = 1; i <= 5; i++) {
+                        if (i <= Math.round(avg)) {
+                            starsHtml += `<i class="fa-solid fa-star text-warning" style="font-size: 0.8rem;"></i>`;
+                        } else {
+                            starsHtml += `<i class="fa-regular fa-star text-secondary" style="font-size: 0.8rem;"></i>`;
+                        }
+                    }
+                    ratingHtml = `
+                        <div class="mb-3 d-flex align-items-center gap-1 small text-warning fw-bold">
+                            <span class="font-monospace">${starsHtml}</span>
+                            <span class="ms-1">${avg} / 5.0 (${ratings.length} reviews)</span>
+                        </div>
+                    `;
+                } else {
+                    ratingHtml = `
+                        <div class="mb-3 small text-muted">
+                            <i class="fa-regular fa-star text-secondary" style="font-size: 0.8rem;"></i> No ratings yet
+                        </div>
+                    `;
+                }
+
                 html += `
                     <div class="col-lg-4 col-md-6">
                         <div class="glass-panel event-card event-card-dept" style="cursor: pointer;" onclick="if(!event.target.closest('button')) showEventParticipants(${event.id}, '${event.name.replace(/'/g, "\\'")}')">
@@ -253,7 +295,9 @@
                             <div class="p-4">
                                 <h5 class="fw-bold text-white mb-2" title="${event.name}">${event.name}</h5>
                                 <div class="text-muted mb-1 small"><i class="fa-solid fa-location-dot text-primary me-2"></i> ${event.venue}</div>
-                                <div class="text-muted mb-2 small"><i class="fa-solid fa-calendar text-primary me-2"></i> ${formatEventDate(event.dateTime)}</div>
+                                <div class="text-muted mb-1 small"><i class="fa-solid fa-calendar text-primary me-2"></i> ${formatEventDate(event.dateTime)}</div>
+                                <div class="text-muted mb-2 small"><i class="fa-solid fa-user-tie text-primary me-2"></i> In-Charge: ${event.inChargeStaffName || 'N/A'} (${event.inChargeStaffContact || 'N/A'})</div>
+                                ${ratingHtml}
                                 <div class="d-flex gap-3 mb-3 small text-secondary fw-bold">
                                     <span><i class="fa-solid fa-users text-primary me-1"></i> ${eventRegs.length} Registered</span>
                                     <span><i class="fa-solid fa-user-check text-success me-1"></i> ${attendedCount} Attended</span>

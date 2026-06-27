@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "feedbacks")
+@Table(name = "feedback")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Feedback {
     
@@ -14,7 +14,7 @@ public class Feedback {
     private Long id;
     
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "student_roll_number", nullable = false)
+    @JoinColumn(name = "student_id", nullable = false)
     @JsonIgnoreProperties({"password", "hibernateLazyInitializer", "handler"})
     private Student student;
     
@@ -26,10 +26,10 @@ public class Feedback {
     @Column(nullable = false)
     private int rating; // 1 to 5
     
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "comments", columnDefinition = "TEXT")
     private String comment;
     
-    @Column(nullable = false)
+    @Column(name = "created_date", nullable = false)
     private LocalDateTime createdAt;
 
     public Feedback() {}

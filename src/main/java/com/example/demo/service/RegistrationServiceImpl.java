@@ -4,10 +4,12 @@ import com.example.demo.model.Registration;
 import com.example.demo.model.Event;
 import com.example.demo.model.Competition;
 import com.example.demo.model.Student;
+import com.example.demo.model.User;
 import com.example.demo.repository.RegistrationRepository;
 import com.example.demo.repository.EventRepository;
 import com.example.demo.repository.CompetitionRepository;
 import com.example.demo.repository.StudentRepository;
+import com.example.demo.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private final EventRepository eventRepository;
     private final CompetitionRepository competitionRepository;
     private final StudentRepository studentRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
@@ -32,12 +35,14 @@ public class RegistrationServiceImpl implements RegistrationService {
                                    EventRepository eventRepository,
                                    CompetitionRepository competitionRepository,
                                    StudentRepository studentRepository,
+                                   UserRepository userRepository,
                                    PasswordEncoder passwordEncoder,
                                    EmailService emailService) {
         this.registrationRepository = registrationRepository;
         this.eventRepository = eventRepository;
         this.competitionRepository = competitionRepository;
         this.studentRepository = studentRepository;
+        this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
     }
@@ -64,6 +69,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         // 2. Validate/Create Student profile
         Optional<Student> studentOpt = studentRepository.findByRollNumberIgnoreCase(rollNumber);
+        Student studentEntity;
         if (studentOpt.isEmpty()) {
             // Auto create student
             Student newStudent = new Student();
@@ -72,18 +78,27 @@ public class RegistrationServiceImpl implements RegistrationService {
             newStudent.setDepartment(regData.getDepartment().trim());
             newStudent.setContactNumber(regData.getContactNumber().trim());
             newStudent.setEmail(regData.getEmail().trim());
+            newStudent.setYear(regData.getYear() != null ? regData.getYear().trim() : "1st");
             
             // Password fallback or default
-            String pwd = regData.getEmail().substring(0, Math.min(regData.getEmail().indexOf("@"), 6)) + "123";
+            int atIndex = regData.getEmail().indexOf("@");
+            String pwdPrefix = atIndex != -1 ? regData.getEmail().substring(0, Math.min(atIndex, 6)) : "stud";
+            String pwd = pwdPrefix + "123";
             newStudent.setPassword(passwordEncoder.encode(pwd));
-            studentRepository.save(newStudent);
+            studentEntity = studentRepository.save(newStudent);
+
+            // Sync to users table
+            User user = new User(studentEntity.getRollNumber(), studentEntity.getPassword(), "ROLE_STUDENT", studentEntity.getStudentName(), studentEntity.getEmail(), studentEntity.getContactNumber());
+            userRepository.save(user);
+        } else {
+            studentEntity = studentOpt.get();
         }
 
         List<Registration> savedList = new ArrayList<>();
 
         if (competitionIds == null || competitionIds.isEmpty()) {
             // Event level registration duplicate check
-            List<Registration> existingRegs = registrationRepository.findByRollNumberIgnoreCase(rollNumber);
+            List<Registration> existingRegs = registrationRepository.findByStudentRollNumberIgnoreCase(rollNumber);
             boolean alreadyRegistered = existingRegs.stream()
                     .anyMatch(r -> r.getEvent().getId().equals(event.getId()) && r.getCompetition() == null);
             if (alreadyRegistered) {
@@ -91,6 +106,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             }
 
             Registration reg = new Registration();
+            reg.setStudent(studentEntity);
             reg.setStudentName(regData.getStudentName().trim());
             reg.setRollNumber(rollNumber);
             reg.setDepartment(regData.getDepartment().trim());
@@ -103,12 +119,13 @@ public class RegistrationServiceImpl implements RegistrationService {
             reg.setStatus("Successfully Registered");
             
             Registration saved = registrationRepository.save(reg);
+            registrationRepository.flush();
             emailService.sendRegistrationConfirmation(saved);
             savedList.add(saved);
         } else {
             // Competition level registration check
             for (Long compId : competitionIds) {
-                if (!registrationRepository.findByRollNumberIgnoreCaseAndCompetitionId(rollNumber, compId).isEmpty()) {
+                if (!registrationRepository.findByStudentRollNumberIgnoreCaseAndCompetitionId(rollNumber, compId).isEmpty()) {
                     throw new RuntimeException("You have already registered for one of the selected competitions.");
                 }
             }
@@ -118,6 +135,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                         .orElseThrow(() -> new RuntimeException("Competition not found with ID: " + compId));
 
                 Registration reg = new Registration();
+                reg.setStudent(studentEntity);
                 reg.setStudentName(regData.getStudentName().trim());
                 reg.setRollNumber(rollNumber);
                 reg.setDepartment(regData.getDepartment().trim());
@@ -130,6 +148,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 reg.setStatus("Successfully Registered");
                 
                 Registration saved = registrationRepository.save(reg);
+                registrationRepository.flush();
                 emailService.sendRegistrationConfirmation(saved);
                 savedList.add(saved);
             }
@@ -165,7 +184,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     @Override
     public List<Registration> getRegistrationsByStudentRollNumber(String rollNumber) {
-        return registrationRepository.findByRollNumberIgnoreCase(rollNumber.trim());
+        return registrationRepository.findByStudentRollNumberIgnoreCase(rollNumber.trim());
     }
 
     @Override

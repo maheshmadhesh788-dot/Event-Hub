@@ -3,9 +3,14 @@ package com.example.demo.controller;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.model.Department;
 import com.example.demo.model.Student;
+import com.example.demo.model.User;
+import com.example.demo.model.StaffProfile;
 import com.example.demo.repository.DepartmentRepository;
 import com.example.demo.repository.StudentRepository;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.StaffProfileRepository;
 import com.example.demo.security.JwtTokenProvider;
+import com.example.demo.service.EmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +19,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 @SuppressWarnings("null")
 @RestController
@@ -22,8 +30,11 @@ public class AuthController {
 
     private final StudentRepository studentRepository;
     private final DepartmentRepository departmentRepository;
+    private final UserRepository userRepository;
+    private final StaffProfileRepository staffProfileRepository;
     private final JwtTokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Value("${eventhub.admin.username:admin}")
     private String adminUsername;
@@ -33,12 +44,18 @@ public class AuthController {
 
     public AuthController(StudentRepository studentRepository,
                           DepartmentRepository departmentRepository,
+                          UserRepository userRepository,
+                          StaffProfileRepository staffProfileRepository,
                           JwtTokenProvider tokenProvider,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          EmailService emailService) {
         this.studentRepository = studentRepository;
         this.departmentRepository = departmentRepository;
+        this.userRepository = userRepository;
+        this.staffProfileRepository = staffProfileRepository;
         this.tokenProvider = tokenProvider;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     // --- STUDENT REGISTRATION ---
@@ -75,6 +92,17 @@ public class AuthController {
         newStudent.setPassword(passwordEncoder.encode(password.trim()));
         
         Student saved = studentRepository.save(newStudent);
+
+        // Sync to users table
+        User user = new User(saved.getRollNumber(), saved.getPassword(), "ROLE_STUDENT", saved.getStudentName(), saved.getEmail(), saved.getContactNumber());
+        userRepository.save(user);
+
+        try {
+            emailService.sendStudentAccountCreated(saved);
+        } catch (Exception e) {
+            // Log or ignore to prevent blocking registration
+        }
+
         return ResponseEntity.ok(saved);
     }
 
@@ -130,6 +158,11 @@ public class AuthController {
 
         Department dept = new Department(name.trim(), code, passwordEncoder.encode(password.trim()));
         Department saved = departmentRepository.save(dept);
+
+        // Sync to users table
+        User user = new User(saved.getName(), saved.getPassword(), "ROLE_DEPARTMENT", saved.getName());
+        userRepository.save(user);
+
         return ResponseEntity.ok(saved);
     }
 
@@ -159,22 +192,58 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Department name and password are required"));
         }
 
-        return departmentRepository.findByNameIgnoreCase(name.trim())
-            .map(dept -> {
-                if (passwordEncoder.matches(password.trim(), dept.getPassword())) {
-                    String token = tokenProvider.generateToken(dept.getName(), "ROLE_DEPARTMENT");
-                    AuthResponse resp = new AuthResponse(token, dept.getName(), "ROLE_DEPARTMENT", dept.getName());
-                    resp.setId(dept.getId());
-                    resp.setCode(dept.getCode());
-                    resp.setDescription(dept.getDescription());
-                    resp.setLogoUrl(dept.getLogoUrl());
-                    resp.setCoverImageUrl(dept.getCoverImageUrl());
+        String trimmedName = name.trim();
+        String lookupName = trimmedName;
+        Optional<Department> deptByCodeOpt = departmentRepository.findByCode(trimmedName.toUpperCase());
+        if (deptByCodeOpt.isPresent() && deptByCodeOpt.get().getName().equalsIgnoreCase("B.Sc Artificial Intelligence & Data Science")) {
+            lookupName = deptByCodeOpt.get().getName();
+        }
+
+        Optional<User> userOpt = userRepository.findByUsernameIgnoreCase(lookupName);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(password.trim(), user.getPassword())) {
+                if ("ROLE_DEPARTMENT".equals(user.getRole())) {
+                    Optional<ResponseEntity<?>> responseOpt = departmentRepository.findByNameIgnoreCase(user.getUsername())
+                        .map(dept -> {
+                            String token = tokenProvider.generateToken(dept.getName(), "ROLE_DEPARTMENT");
+                            AuthResponse resp = new AuthResponse(token, dept.getName(), "ROLE_DEPARTMENT", dept.getName());
+                            resp.setId(dept.getId());
+                            resp.setCode(dept.getCode());
+                            resp.setDescription(dept.getDescription());
+                            resp.setLogoUrl(dept.getLogoUrl());
+                            resp.setCoverImageUrl(dept.getCoverImageUrl());
+                            ResponseEntity<?> okResponse = ResponseEntity.ok(resp);
+                            return okResponse;
+                        });
+                    return responseOpt.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "The department profile does not exist.")));
+                } else if ("ROLE_TUTOR".equals(user.getRole()) || "ROLE_HOD".equals(user.getRole())) {
+                    String token = tokenProvider.generateToken(user.getUsername(), user.getRole());
+                    AuthResponse resp = new AuthResponse(token, user.getUsername(), user.getRole(), user.getName());
+                    
+                    Optional<StaffProfile> profileOpt = staffProfileRepository.findByUsernameIgnoreCase(user.getUsername());
+                    if (profileOpt.isPresent()) {
+                        StaffProfile profile = profileOpt.get();
+                        resp.setName(profile.getName());
+                        resp.setDepartment(profile.getDepartment());
+                        
+                        departmentRepository.findByNameIgnoreCase(profile.getDepartment()).ifPresent(dept -> {
+                            resp.setId(dept.getId());
+                            resp.setCode(dept.getCode());
+                            resp.setDescription(dept.getDescription());
+                            resp.setLogoUrl(dept.getLogoUrl());
+                            resp.setCoverImageUrl(dept.getCoverImageUrl());
+                        });
+                    }
                     return ResponseEntity.ok(resp);
                 } else {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Wrong Password"));
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access Denied: Only Department, HOD or Tutor roles can login to workspace"));
                 }
-            })
-            .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "The department does not exist.")));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Wrong Password"));
+            }
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "The department does not exist."));
     }
 
     // --- ADMIN LOGIN ---
@@ -187,12 +256,17 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Username and password are required"));
         }
 
-        if (adminUsername.equals(username.trim()) && adminPassword.equals(password.trim())) {
-            String token = tokenProvider.generateToken(username.trim(), "ROLE_ADMIN");
-            return ResponseEntity.ok(new AuthResponse(token, username.trim(), "ROLE_ADMIN", "College Admin"));
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid Admin Credentials"));
+        Optional<User> userOpt = userRepository.findByUsernameIgnoreCase(username.trim());
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if ("ROLE_ADMIN".equals(user.getRole())) {
+                if (passwordEncoder.matches(password.trim(), user.getPassword())) {
+                    String token = tokenProvider.generateToken(user.getUsername(), "ROLE_ADMIN");
+                    return ResponseEntity.ok(new AuthResponse(token, user.getUsername(), "ROLE_ADMIN", user.getName()));
+                }
+            }
         }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid Admin Credentials"));
     }
 
     // --- UNIFIED LOGIN ---
@@ -208,51 +282,101 @@ public class AuthController {
         String trimmedUser = username.trim();
         String trimmedPass = password.trim();
 
-        // 1. Check Admin
-        if (adminUsername.equals(trimmedUser) && adminPassword.equals(trimmedPass)) {
-            String token = tokenProvider.generateToken(trimmedUser, "ROLE_ADMIN");
-            return ResponseEntity.ok(new AuthResponse(token, trimmedUser, "ROLE_ADMIN", "College Admin"));
+        String lookupUsername = trimmedUser;
+        // Resolve department code to department name if needed ONLY for B.Sc Artificial Intelligence & Data Science
+        Optional<Department> deptByCodeOpt = departmentRepository.findByCode(trimmedUser.toUpperCase());
+        if (deptByCodeOpt.isPresent() && deptByCodeOpt.get().getName().equalsIgnoreCase("B.Sc Artificial Intelligence & Data Science")) {
+            lookupUsername = deptByCodeOpt.get().getName();
         }
 
-        // 2. Check Department (by name or code)
-        Optional<Department> deptOpt = departmentRepository.findByNameIgnoreCase(trimmedUser);
-        if (deptOpt.isEmpty()) {
-            deptOpt = departmentRepository.findByCode(trimmedUser.toUpperCase());
-        }
-        if (deptOpt.isPresent()) {
-            Department dept = deptOpt.get();
-            if (passwordEncoder.matches(trimmedPass, dept.getPassword())) {
-                String token = tokenProvider.generateToken(dept.getName(), "ROLE_DEPARTMENT");
-                AuthResponse resp = new AuthResponse(token, dept.getName(), "ROLE_DEPARTMENT", dept.getName());
-                resp.setId(dept.getId());
-                resp.setCode(dept.getCode());
-                resp.setDescription(dept.getDescription());
-                resp.setLogoUrl(dept.getLogoUrl());
-                resp.setCoverImageUrl(dept.getCoverImageUrl());
-                return ResponseEntity.ok(resp);
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Wrong password for department"));
-            }
-        }
+        Optional<User> userOpt = userRepository.findByUsernameIgnoreCase(lookupUsername);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(trimmedPass, user.getPassword())) {
+                String token = tokenProvider.generateToken(user.getUsername(), user.getRole());
+                AuthResponse resp = new AuthResponse(token, user.getUsername(), user.getRole(), user.getName());
 
-        // 3. Check Student (by roll number)
-        Optional<Student> studentOpt = studentRepository.findByRollNumberIgnoreCase(trimmedUser);
-        if (studentOpt.isPresent()) {
-            Student student = studentOpt.get();
-            if (passwordEncoder.matches(trimmedPass, student.getPassword())) {
-                String token = tokenProvider.generateToken(student.getRollNumber(), "ROLE_STUDENT");
-                AuthResponse resp = new AuthResponse(token, student.getRollNumber(), "ROLE_STUDENT", student.getStudentName());
-                resp.setRollNumber(student.getRollNumber());
-                resp.setStudentName(student.getStudentName());
-                resp.setDepartment(student.getDepartment());
-                resp.setContactNumber(student.getContactNumber());
-                resp.setEmail(student.getEmail());
+                // Populate custom fields for compatibility with frontend expectations
+                if ("ROLE_STUDENT".equals(user.getRole())) {
+                    studentRepository.findByRollNumberIgnoreCase(user.getUsername()).ifPresent(student -> {
+                        resp.setRollNumber(student.getRollNumber());
+                        resp.setStudentName(student.getStudentName());
+                        resp.setDepartment(student.getDepartment());
+                        resp.setContactNumber(student.getContactNumber());
+                        resp.setEmail(student.getEmail());
+                    });
+                } else if ("ROLE_DEPARTMENT".equals(user.getRole())) {
+                    departmentRepository.findByNameIgnoreCase(user.getUsername()).ifPresent(dept -> {
+                        resp.setId(dept.getId());
+                        resp.setCode(dept.getCode());
+                        resp.setDescription(dept.getDescription());
+                        resp.setLogoUrl(dept.getLogoUrl());
+                        resp.setCoverImageUrl(dept.getCoverImageUrl());
+                    });
+                } else if ("ROLE_TUTOR".equals(user.getRole()) || "ROLE_HOD".equals(user.getRole())) {
+                    staffProfileRepository.findByUsernameIgnoreCase(user.getUsername()).ifPresent(profile -> {
+                        resp.setName(profile.getName());
+                        resp.setDepartment(profile.getDepartment());
+                    });
+                }
                 return ResponseEntity.ok(resp);
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Wrong password for student"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Wrong Password"));
             }
         }
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "The account does not exist"));
+    }
+
+    @GetMapping("/search/suggestions")
+    public ResponseEntity<?> getSuggestions(@RequestParam(required = false, defaultValue = "") String q) {
+        String query = q.trim().toLowerCase();
+        List<Map<String, String>> suggestions = new ArrayList<>();
+        if (query.isEmpty()) {
+            return ResponseEntity.ok(suggestions);
+        }
+
+        // Search departments
+        List<Department> departments = departmentRepository.findAll();
+        for (Department dept : departments) {
+            String name = dept.getName();
+            String code = dept.getCode();
+            if (name.toLowerCase().contains(query) || (code != null && code.toLowerCase().contains(query))) {
+                Map<String, String> sug = new HashMap<>();
+                sug.put("type", "DEPARTMENT");
+                sug.put("code", code);
+                sug.put("name", name);
+                sug.put("display", name + " (" + code + ")");
+                if (name.equalsIgnoreCase("B.Sc Artificial Intelligence & Data Science")) {
+                    sug.put("value", code);
+                } else {
+                    sug.put("value", name);
+                }
+                suggestions.add(sug);
+            }
+        }
+
+        // Search students
+        List<Student> students = studentRepository.findAll();
+        for (Student student : students) {
+            String name = student.getStudentName();
+            String roll = student.getRollNumber();
+            if (name.toLowerCase().contains(query) || (roll != null && roll.toLowerCase().contains(query))) {
+                Map<String, String> sug = new HashMap<>();
+                sug.put("type", "STUDENT");
+                sug.put("code", roll);
+                sug.put("name", name);
+                sug.put("display", name + " (" + roll + ")");
+                sug.put("value", roll);
+                suggestions.add(sug);
+            }
+        }
+
+        // Limit results to 10
+        if (suggestions.size() > 10) {
+            return ResponseEntity.ok(suggestions.subList(0, 10));
+        }
+
+        return ResponseEntity.ok(suggestions);
     }
 }

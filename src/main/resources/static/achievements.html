@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achievement Management Workspace - Event Hub</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        /* Timeline UI Styling */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+            list-style: none;
+        }
+        .timeline::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 31px;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 70px;
+        }
+        .timeline-badge {
+            position: absolute;
+            top: 2px;
+            left: 15px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+            z-index: 10;
+        }
+        .timeline-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: var(--transition);
+        }
+        .timeline-card:hover {
+            border-color: var(--glass-border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.1);
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+            .navbar, .btn, .nav-tabs, .filter-section, .no-print {
+                display: none !important;
+            }
+            .print-container {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 20px !important;
+            }
+            .table {
+                width: 100% !important;
+                color: #000 !important;
+                border-collapse: collapse !important;
+            }
+            .table th, .table td {
+                border: 1px solid #ddd !important;
+                padding: 8px !important;
+                background-color: transparent !important;
+            }
+            .table-striped tbody tr:nth-of-type(odd) {
+                background-color: rgba(0,0,0,0.05) !important;
+            }
+        }
+    </style>
+</head>
+<body class="dashboard-page">
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top no-print">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-custom" href="index.html" style="display: flex; align-items: center; gap: 10px;">
+                <img src="images/kasc_logo.jpg" alt="KASC Logo" style="height: 42px; width: auto; border-radius: 50%; object-fit: cover;">
+                <span style="font-weight: 800; font-size: 1.3rem; letter-spacing: 0.5px;">KASC EVENT HUB</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <!-- Dynamic Navbar Links -->
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-glass" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0;">
+                            <i id="theme-toggle-icon" class="fa-solid fa-sun text-warning"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-outline-danger btn-sm px-3" onclick="handleLogout()"><i class="fa-solid fa-power-off me-1"></i> Logout</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container my-5 print-container">
+        
+        <!-- Header Profile Panel -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 no-print">
+            <div class="p-3 rounded glass-panel d-flex align-items-center gap-3">
+                <div class="profile-avatar-glow d-flex align-items-center justify-content-center bg-primary-glow text-primary rounded-circle" style="width: 50px; height: 50px; flex-shrink: 0; box-shadow: 0 0 12px rgba(30, 58, 138, 0.4);">
+                    <i class="fa-solid fa-graduation-cap fa-lg"></i>
+                </div>
+                <div>
+                    <h1 class="h4 text-white fw-bold mb-1" id="staff-name">Staff Workspace</h1>
+                    <p class="text-muted mb-0 small" id="staff-details">Role: Staff | Department: Information Technology</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs border-secondary mb-4 no-print" id="achievementTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active text-white border-0 bg-transparent fw-bold" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-pane" type="button" role="tab"><i class="fa-solid fa-timeline text-secondary me-2"></i>Timeline View</button>
+            </li>
+            <li class="nav-item" role="presentation" id="entry-tab-item">
+                <button class="nav-link text-white border-0 bg-transparent fw-bold" id="entry-tab" data-bs-toggle="tab" data-bs-target="#entry-pane" type="button" role="tab"><i class="fa-solid fa-file-pen text-secondary me-2"></i>Achievement Entry</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-white border-0 bg-transparent fw-bold" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports-pane" type="button" role="tab" onclick="loadReportsData()"><i class="fa-solid fa-file-invoice text-secondary me-2"></i>Report Generator</button>
+            </li>
+            <li class="nav-item" role="presentation" id="assignments-tab-item">
+                <button class="nav-link text-white border-0 bg-transparent fw-bold" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments-pane" type="button" role="tab" onclick="loadAssignmentsData()"><i class="fa-solid fa-user-tag text-secondary me-2"></i>Student Assignments</button>
+            </li>
+        </ul>
+
+        <!-- Tab Content Panes -->
+        <div class="tab-content" id="achievementTabsContent">
+            
+            <!-- Pane 1: Timeline View -->
+            <div class="tab-pane fade show active" id="timeline-pane" role="tabpanel">
+                <div class="glass-panel p-4 no-print mb-4">
+                    <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Timeline Filter</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Academic Year</label>
+                            <select id="timeline-academic-year" class="form-select form-control-custom" onchange="loadTimeline()">
+                                <option value="">All Academic Years</option>
+                                <option value="2024-2025">2024-2025</option>
+                                <option value="2025-2026" selected>2025-2026</option>
+                                <option value="2026-2027">2026-2027</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-muted small fw-bold">Event Type</label>
+                            <select id="timeline-event-type" class="form-select form-control-custom" onchange="loadTimeline()">
+                                <option value="">All Types</option>
+                                <option value="COLLEGE">College Level</option>
+                                <option value="DEPARTMENT">Department Level</option>
+                                <option value="NATIONAL">National Level</option>
+                                <option value="INTERNATIONAL">International Level</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="timeline-container" class="timeline">
+                    <!-- Timeline Nodes Populated Dynamically -->
+                </div>
+            </div>
+
+            <!-- Pane 2: Achievement Entry Form -->
+            <div class="tab-pane fade" id="entry-pane" role="tabpanel">
+                <div class="glass-panel p-4 p-md-5 mx-auto" style="max-width: 680px;">
+                    <h4 class="fw-bold text-white mb-4"><i class="fa-solid fa-award text-secondary me-2"></i>Add Student Achievement</h4>
+                    <form id="achievement-form" onsubmit="handleAchievementSubmit(event)">
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Student Register / Roll Number</label>
+                                <input type="text" id="entry-register" class="form-control form-control-custom" placeholder="e.g. 22IT001" required oninput="handleRegisterLookup()">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Student Name</label>
+                                <input type="text" id="entry-name" class="form-control form-control-custom" placeholder="Auto-populated" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Department</label>
+                                <input type="text" id="entry-department" class="form-control form-control-custom" placeholder="Auto-populated" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Tutor Name</label>
+                                <input type="text" id="entry-tutor" class="form-control form-control-custom" placeholder="Tutor/Staff Name" required>
+                            </div>
+                        </div>
+
+                        <hr class="border-secondary my-4">
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label text-muted small fw-bold">Event Name</label>
+                                <input type="text" id="entry-event" class="form-control form-control-custom" placeholder="e.g. National Level Hackathon 2026" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">Event Type</label>
+                                <select id="entry-event-type" class="form-select form-control-custom" required>
+                                    <option value="COLLEGE">College Level</option>
+                                    <option value="DEPARTMENT">Department Level</option>
+                                    <option value="NATIONAL">National Level</option>
+                                    <option value="INTERNATIONAL">International Level</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">Achievement / Position</label>
+                                <input type="text" id="entry-achievement" class="form-control form-control-custom" placeholder="e.g. 1st Prize, Runner-up" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">Event Date</label>
+                                <input type="date" id="entry-date" class="form-control form-control-custom" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small fw-bold">Academic Year</label>
+                                <select id="entry-academic-year" class="form-select form-control-custom" required>
+                                    <option value="2024-2025">2024-2025</option>
+                                    <option value="2025-2026" selected>2025-2026</option>
+                                    <option value="2026-2027">2026-2027</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary-gradient py-3 fw-bold"><i class="fa-solid fa-save me-2"></i>Save Achievement Details</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Pane 3: Report Generator -->
+            <div class="tab-pane fade" id="reports-pane" role="tabpanel">
+                <div class="glass-panel p-4 no-print mb-4">
+                    <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-filter text-secondary me-2"></i>Report Filters</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">Academic Year</label>
+                            <select id="filter-academic-year" class="form-select form-control-custom">
+                                <option value="">All Academic Years</option>
+                                <option value="2024-2025">2024-2025</option>
+                                <option value="2025-2026" selected>2025-2026</option>
+                                <option value="2026-2027">2026-2027</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">From Date</label>
+                            <input type="date" id="filter-from-date" class="form-control form-control-custom">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">To Date</label>
+                            <input type="date" id="filter-to-date" class="form-control form-control-custom">
+                        </div>
+                    </div>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">Event Type</label>
+                            <select id="filter-event-type" class="form-select form-control-custom">
+                                <option value="">All Types</option>
+                                <option value="COLLEGE">College Level</option>
+                                <option value="DEPARTMENT">Department Level</option>
+                                <option value="NATIONAL">National Level</option>
+                                <option value="INTERNATIONAL">International Level</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4" id="filter-dept-container">
+                            <label class="form-label text-muted small fw-bold">Department</label>
+                            <select id="filter-department" class="form-select form-control-custom">
+                                <!-- Loaded dynamically for admin/superadmin -->
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex gap-2">
+                            <button class="btn btn-primary-gradient w-100 fw-bold" onclick="loadReportsData()"><i class="fa-solid fa-magnifying-glass me-2"></i>Filter</button>
+                            <button class="btn btn-glass w-100 fw-bold text-muted" onclick="resetReportFilters()"><i class="fa-solid fa-redo me-2"></i>Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Controls -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
+                    <h5 class="fw-bold text-white mb-0"><i class="fa-solid fa-table text-primary me-2"></i>Generated Report Preview</h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-glass text-white" onclick="triggerPrint()"><i class="fa-solid fa-print me-1"></i> Print Format</button>
+                        <button class="btn btn-sm btn-glass text-danger" onclick="triggerPdfDownload()"><i class="fa-solid fa-file-pdf me-1"></i> Save PDF</button>
+                        <button class="btn btn-sm btn-glass text-success" onclick="triggerExcelDownload()"><i class="fa-solid fa-file-excel me-1"></i> Excel Spread</button>
+                    </div>
+                </div>
+
+                <!-- Report Result Table -->
+                <div class="glass-panel p-4">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped align-middle mb-0" id="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Register Number</th>
+                                    <th>Event Name</th>
+                                    <th>Achievement</th>
+                                    <th>Date</th>
+                                    <th>Department</th>
+                                    <th class="text-end no-print">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-tbody">
+                                <!-- Reports list loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pane 4: Student Assignments -->
+            <div class="tab-pane fade" id="assignments-pane" role="tabpanel">
+                <div class="row g-4">
+                    <!-- Column 1: Self Assign Form -->
+                    <div class="col-md-4 no-print">
+                        <div class="glass-panel p-4">
+                            <h5 class="fw-bold text-white mb-3" id="assign-card-title"><i class="fa-solid fa-user-tag text-secondary me-2"></i>Assign Student</h5>
+                            <form id="assignment-form" onsubmit="handleAssignmentSubmit(event)">
+                                <div class="mb-3" id="assign-tutor-container" style="display: none;">
+                                    <label class="form-label text-muted small fw-bold">Tutor Username</label>
+                                    <input type="text" id="assign-tutor" class="form-control form-control-custom" placeholder="e.g. it_tutor">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Student Register / Roll Number</label>
+                                    <input type="text" id="assign-student" class="form-control form-control-custom" placeholder="e.g. 22IT001" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary-gradient w-100 fw-bold"><i class="fa-solid fa-plus me-1"></i> Assign to List</button>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- Column 2: Assignments Directory -->
+                    <div class="col-md-8">
+                        <div class="glass-panel p-4">
+                            <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-address-book text-primary me-2"></i>Assigned Students Directory</h5>
+                            <div class="table-responsive">
+                                <table class="table table-dark table-striped align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Register Number</th>
+                                            <th>Student Name</th>
+                                            <th>Department</th>
+                                            <th id="assign-th-tutor">Tutor Username</th>
+                                            <th class="text-end no-print">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="assignments-tbody">
+                                        <!-- Loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+    <script>
+        let currentRole = "";
+        let currentUsername = "";
+        let currentDept = "";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Verify Authentication
+            const superAdminToken = localStorage.getItem("eventhub_superadmin_token");
+            const adminToken = localStorage.getItem("eventhub_admin_token");
+            const deptSessionStr = localStorage.getItem("eventhub_dept_session");
+            const staffSessionStr = localStorage.getItem("eventhub_staff_session");
+
+            if (superAdminToken) {
+                currentRole = "ROLE_SUPER_ADMIN";
+                currentUsername = "Maheshwaran";
+                currentDept = "All";
+            } else if (adminToken) {
+                currentRole = "ROLE_ADMIN";
+                currentUsername = "Admin";
+                currentDept = "All";
+            } else if (deptSessionStr) {
+                const session = JSON.parse(deptSessionStr);
+                currentRole = "ROLE_DEPARTMENT";
+                currentUsername = session.username;
+                currentDept = session.name;
+            } else if (staffSessionStr) {
+                const session = JSON.parse(staffSessionStr);
+                currentRole = session.role; // ROLE_TUTOR or ROLE_HOD
+                currentUsername = session.username;
+                currentDept = session.department;
+            } else {
+                window.location.href = "login.html?redirect=achievements.html";
+                return;
+            }
+
+            // Setup display headers
+            let roleDisplay = "Staff";
+            if (currentRole === "ROLE_SUPER_ADMIN") roleDisplay = "Super Admin";
+            else if (currentRole === "ROLE_ADMIN") roleDisplay = "Admin";
+            else if (currentRole === "ROLE_HOD") roleDisplay = "HOD";
+            else if (currentRole === "ROLE_DEPARTMENT") roleDisplay = "Department Admin";
+            else if (currentRole === "ROLE_TUTOR") roleDisplay = "Tutor / Staff";
+
+            document.getElementById("staff-name").innerText = currentUsername;
+            document.getElementById("staff-details").innerText = `Role: ${roleDisplay} | Department: ${currentDept}`;
+
+            // Adjust forms & options based on roles
+            if (currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT" || currentRole === "ROLE_TUTOR") {
+                document.getElementById("entry-tutor").value = currentUsername;
+                
+                // Automatically fetch and lock department details
+                if (currentDept && currentDept !== "All" && currentDept !== "null" && currentDept !== "") {
+                    document.getElementById("entry-department").value = currentDept;
+                    document.getElementById("entry-department").readOnly = true;
+                    document.getElementById("entry-department").style.borderColor = "var(--primary)";
+                }
+            }
+
+            // Hide Tutor-Student assignment for HOD/Admin/Superadmin if not needed,
+            // or configure it to show assignments department wise.
+            if (currentRole === "ROLE_SUPER_ADMIN" || currentRole === "ROLE_ADMIN" || currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT") {
+                document.getElementById("assign-tutor-container").style.display = "block";
+                document.getElementById("assign-card-title").innerHTML = `<i class="fa-solid fa-user-tag text-secondary me-2"></i>Assign Student to Tutor`;
+            } else {
+                document.getElementById("assign-th-tutor").style.display = "none";
+            }
+
+            // Populate departments dropdown for filters if Admin/Super Admin
+            const filterDeptSelect = document.getElementById("filter-department");
+            if (currentRole === "ROLE_ADMIN" || currentRole === "ROLE_SUPER_ADMIN") {
+                filterDeptSelect.innerHTML = `<option value="">All Departments</option>`;
+                fetch("/api/departments")
+                    .then(res => res.json())
+                    .then(depts => {
+                        depts.forEach(d => {
+                            filterDeptSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+                        });
+                    });
+            } else {
+                // Lock department filter to current staff's department
+                filterDeptSelect.innerHTML = `<option value="${currentDept}" selected>${currentDept}</option>`;
+                filterDeptSelect.disabled = true;
+            }
+
+            // Load initial view
+            loadTimeline();
+        });
+
+        function handleLogout() {
+            localStorage.clear();
+            window.location.href = "login.html";
+        }
+
+        // ==========================================
+        // AUTO-FILL REGISTER LOOKUP
+        // ==========================================
+        let lookupTimeout = null;
+        function handleRegisterLookup() {
+            clearTimeout(lookupTimeout);
+            const reg = document.getElementById("entry-register").value.trim();
+            if (reg.length < 4) return;
+
+            lookupTimeout = setTimeout(() => {
+                fetch(`/api/achievements/student/${reg}`)
+                    .then(res => {
+                        if (res.ok) return res.json();
+                        throw new Error("Student not found");
+                    })
+                    .then(data => {
+                        // Check department limits for non-admin roles
+                        if (currentRole === "ROLE_TUTOR" || currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT") {
+                            if (!data.department || data.department.toLowerCase() !== currentDept.toLowerCase()) {
+                                alert(`Access Denied: Student belongs to department "${data.department}", but you are only authorized to manage achievements for "${currentDept}".`);
+                                document.getElementById("entry-register").value = "";
+                                document.getElementById("entry-name").value = "";
+                                document.getElementById("entry-name").style.borderColor = "";
+                                return;
+                            }
+                        }
+                        document.getElementById("entry-name").value = data.name;
+                        document.getElementById("entry-name").style.borderColor = "var(--primary)";
+                        if (currentRole === "ROLE_ADMIN" || currentRole === "ROLE_SUPER_ADMIN") {
+                            document.getElementById("entry-department").value = data.department;
+                            document.getElementById("entry-department").style.borderColor = "var(--primary)";
+                        }
+                    })
+                    .catch(() => {
+                        // Keep values user entered but clear styling
+                        document.getElementById("entry-name").style.borderColor = "";
+                        if (currentRole === "ROLE_ADMIN" || currentRole === "ROLE_SUPER_ADMIN") {
+                            document.getElementById("entry-department").style.borderColor = "";
+                        }
+                    });
+            }, 300);
+        }
+
+        // ==========================================
+        // TIMELINE LOADER
+        // ==========================================
+        function loadTimeline() {
+            const container = document.getElementById("timeline-container");
+            container.innerHTML = `
+                <div class="text-center p-5 text-muted no-print">
+                    <div class="spinner-border text-primary spinner-border-sm me-2" role="status"></div>
+                    Loading achievements timeline...
+                </div>
+            `;
+
+            const academicYear = document.getElementById("timeline-academic-year").value;
+            const eventType = document.getElementById("timeline-event-type").value;
+
+            let url = `/api/achievements?1=1`;
+            if (academicYear) url += `&academicYear=${encodeURIComponent(academicYear)}`;
+            if (eventType) url += `&eventType=${encodeURIComponent(eventType)}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(achievements => {
+                    if (achievements.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center p-5 text-muted glass-panel no-print">
+                                <i class="fa-solid fa-folder-open fa-2x mb-3 text-secondary"></i>
+                                <p class="mb-0">No achievements recorded for this timeline.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    // Sort achievements by Date descending
+                    achievements.sort((a, b) => new Date(b.eventDate) - new Date(a.eventDate));
+
+                    let html = "";
+                    achievements.forEach(ach => {
+                        const dateObj = new Date(ach.eventDate);
+                        const formattedDate = dateObj.toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        }).replace(/\//g, '-');
+
+                        html += `
+                            <div class="timeline-item animate-fade-up">
+                                <div class="timeline-badge">
+                                    <i class="fa-solid fa-award"></i>
+                                </div>
+                                <div class="timeline-card">
+                                    <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap">
+                                        <h5 class="fw-bold text-white mb-1">${formattedDate}</h5>
+                                        <span class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">${ach.eventType}</span>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <div class="text-muted small">Student Name</div>
+                                            <div class="fw-bold text-white">${ach.studentName} (${ach.registerNumber})</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="text-muted small">Event Name</div>
+                                            <div class="text-white fw-bold">${ach.eventName}</div>
+                                        </div>
+                                        <div class="col-md-6 mt-2">
+                                            <div class="text-muted small">Achievement Position</div>
+                                            <div class="text-warning fw-bold"><i class="fa-solid fa-trophy me-1"></i>${ach.achievement}</div>
+                                        </div>
+                                        <div class="col-md-6 mt-2">
+                                            <div class="text-muted small">Department / Tutor</div>
+                                            <div class="text-white small">${ach.department} | ${ach.tutorName}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = `<div class="text-center text-danger p-4">Failed to load timeline.</div>`;
+                });
+        }
+
+        // ==========================================
+        // SUBMIT ACHIEVEMENT FORM
+        // ==========================================
+        function handleAchievementSubmit(e) {
+            e.preventDefault();
+            const studentName = document.getElementById("entry-name").value.trim();
+            const registerNumber = document.getElementById("entry-register").value.trim().toUpperCase();
+            const department = document.getElementById("entry-department").value.trim();
+            const tutorName = document.getElementById("entry-tutor").value.trim();
+            const eventName = document.getElementById("entry-event").value.trim();
+            const eventType = document.getElementById("entry-event-type").value;
+            const achievement = document.getElementById("entry-achievement").value.trim();
+            const eventDate = document.getElementById("entry-date").value;
+            const academicYear = document.getElementById("entry-academic-year").value;
+
+            const payload = {
+                studentName,
+                registerNumber,
+                department,
+                tutorName,
+                eventName,
+                eventType,
+                achievement,
+                eventDate,
+                academicYear
+            };
+
+            fetch("/api/achievements", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Failed to save achievement") });
+            })
+            .then(() => {
+                showSuccessPopup("Achievement Added Successfully");
+                document.getElementById("achievement-form").reset();
+                
+                // Re-initialize default tutor name
+                if (currentRole === "ROLE_TUTOR" || currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT") {
+                    document.getElementById("entry-tutor").value = currentUsername;
+                }
+
+                // Redirect to timeline view
+                const timelineTab = new bootstrap.Tab(document.getElementById("timeline-tab"));
+                timelineTab.show();
+                loadTimeline();
+            })
+            .catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+
+        // ==========================================
+        // REPORT GENERATION & TABLE
+        // ==========================================
+        let reportsData = [];
+
+        function resetReportFilters() {
+            document.getElementById("filter-from-date").value = "";
+            document.getElementById("filter-to-date").value = "";
+            document.getElementById("filter-event-type").value = "";
+            if (currentRole === "ROLE_ADMIN" || currentRole === "ROLE_SUPER_ADMIN") {
+                document.getElementById("filter-department").value = "";
+            }
+            loadReportsData();
+        }
+
+        function loadReportsData() {
+            const tbody = document.getElementById("report-tbody");
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        Fetching reports data...
+                    </td>
+                </tr>
+            `;
+
+            const academicYear = document.getElementById("filter-academic-year").value;
+            const fromDate = document.getElementById("filter-from-date").value;
+            const toDate = document.getElementById("filter-to-date").value;
+            const eventType = document.getElementById("filter-event-type").value;
+            const department = document.getElementById("filter-department").value;
+
+            let url = `/api/achievements?1=1`;
+            if (academicYear) url += `&academicYear=${encodeURIComponent(academicYear)}`;
+            if (fromDate) url += `&fromDate=${encodeURIComponent(fromDate)}`;
+            if (toDate) url += `&toDate=${encodeURIComponent(toDate)}`;
+            if (eventType) url += `&eventType=${encodeURIComponent(eventType)}`;
+            if (department) url += `&department=${encodeURIComponent(department)}`;
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    reportsData = data;
+                    renderReportsTable(data);
+                })
+                .catch(err => {
+                    console.error(err);
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Failed to fetch report data.</td></tr>`;
+                });
+        }
+
+        function renderReportsTable(data) {
+            const tbody = document.getElementById("report-tbody");
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No records found matching filters.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            data.forEach(ach => {
+                const dateObj = new Date(ach.eventDate);
+                const formattedDate = dateObj.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                }).replace(/\//g, '-');
+
+                // Determine if user has permission to delete achievement
+                let deleteButton = "";
+                if (currentRole === "ROLE_SUPER_ADMIN" || currentRole === "ROLE_ADMIN" || 
+                    (currentRole === "ROLE_HOD" && ach.department.equalsIgnoreCase(currentDept)) ||
+                    (currentRole === "ROLE_TUTOR" && ach.createdByUsername.equalsIgnoreCase(currentUsername))) {
+                    deleteButton = `<button class="btn btn-outline-danger btn-sm no-print" onclick="deleteAchievement(${ach.id})"><i class="fa-solid fa-trash"></i></button>`;
+                }
+
+                html += `
+                    <tr>
+                        <td>${ach.studentName}</td>
+                        <td class="font-monospace fw-bold">${ach.registerNumber}</td>
+                        <td>${ach.eventName}</td>
+                        <td class="text-warning fw-bold"><i class="fa-solid fa-award me-1"></i>${ach.achievement}</td>
+                        <td>${formattedDate}</td>
+                        <td><span class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">${ach.department}</span></td>
+                        <td class="text-end no-print">${deleteButton}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function deleteAchievement(id) {
+            if (!confirm("Are you sure you want to delete this achievement record permanently?")) return;
+
+            fetch(`/api/achievements/${id}`, {
+                method: "DELETE"
+            })
+            .then(res => {
+                if (res.ok) {
+                    showSuccessPopup("Achievement Record Deleted");
+                    loadReportsData();
+                    loadTimeline();
+                } else {
+                    alert("Failed to delete achievement.");
+                }
+            })
+            .catch(err => console.error(err));
+        }
+
+        // ==========================================
+        // EXPORTS AND OUTPUT FORMATS
+        // ==========================================
+        function triggerPrint() {
+            window.print();
+        }
+
+        function triggerPdfDownload() {
+            // Re-use print for standard PDF conversion since browser has default high-quality Print to PDF
+            window.print();
+        }
+
+        function triggerExcelDownload() {
+            if (reportsData.length === 0) {
+                alert("No report data available to export.");
+                return;
+            }
+
+            // CSV Header
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Student Name,Register Number,Event Name,Achievement,Date,Department,Tutor Name,Academic Year,Event Type\r\n";
+
+            // CSV Rows
+            reportsData.forEach(ach => {
+                const dateObj = new Date(ach.eventDate);
+                const formattedDate = dateObj.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                }).replace(/\//g, '-');
+
+                // Escape double quotes in csv fields
+                const row = [
+                    `"${ach.studentName.replace(/"/g, '""')}"`,
+                    `"${ach.registerNumber.replace(/"/g, '""')}"`,
+                    `"${ach.eventName.replace(/"/g, '""')}"`,
+                    `"${ach.achievement.replace(/"/g, '""')}"`,
+                    `"${formattedDate}"`,
+                    `"${ach.department.replace(/"/g, '""')}"`,
+                    `"${ach.tutorName.replace(/"/g, '""')}"`,
+                    `"${ach.academicYear}"`,
+                    `"${ach.eventType}"`
+                ];
+                csvContent += row.join(",") + "\r\n";
+            });
+
+            // Trigger download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Achievements_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ==========================================
+        // STUDENT ASSIGNMENT DIRECTORY
+        // ==========================================
+        function loadAssignmentsData() {
+            const tbody = document.getElementById("assignments-tbody");
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        Fetching assignments...
+                    </td>
+                </tr>
+            `;
+
+            fetch("/api/achievements/assignments")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No student assignments recorded.</td></tr>`;
+                        return;
+                    }
+
+                    let html = "";
+                    data.forEach(assign => {
+                        let tutorCol = "";
+                        if (currentRole === "ROLE_SUPER_ADMIN" || currentRole === "ROLE_ADMIN" || currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT") {
+                            tutorCol = `<td>${assign.tutorUsername}</td>`;
+                        }
+
+                        html += `
+                            <tr>
+                                <td class="font-monospace fw-bold">${assign.studentRegisterNumber}</td>
+                                <td>${assign.studentName}</td>
+                                <td><span class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">${assign.department}</span></td>
+                                ${tutorCol}
+                                <td class="text-end no-print">
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteAssignment(${assign.id})"><i class="fa-solid fa-unlink me-1"></i>Unassign</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error(err);
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Failed to fetch assignments list.</td></tr>`;
+                });
+        }
+
+        function handleAssignmentSubmit(e) {
+            e.preventDefault();
+            const studentRegisterNumber = document.getElementById("assign-student").value.trim().toUpperCase();
+            const tutorUsernameVal = document.getElementById("assign-tutor").value.trim();
+
+            const payload = {
+                studentRegisterNumber
+            };
+            if (tutorUsernameVal) {
+                payload.tutorUsername = tutorUsernameVal;
+            }
+
+            fetch("/api/achievements/assignments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Assignment failed") });
+            })
+            .then(() => {
+                showSuccessPopup("Student Assigned Successfully");
+                document.getElementById("assign-student").value = "";
+                loadAssignmentsData();
+            })
+            .catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+
+        function deleteAssignment(id) {
+            if (!confirm("Are you sure you want to remove this student-tutor assignment?")) return;
+
+            fetch(`/api/achievements/assignments/${id}`, {
+                method: "DELETE"
+            })
+            .then(res => {
+                if (res.ok) {
+                    showSuccessPopup("Assignment Removed");
+                    loadAssignmentsData();
+                } else {
+                    alert("Failed to remove assignment.");
+                }
+            })
+            .catch(err => console.error(err));
+        }
+
+        // Case-insensitive ignore case helper
+        String.prototype.equalsIgnoreCase = function (compareString) {
+            if (!compareString) return false;
+            return this.toLowerCase() === compareString.toLowerCase();
+        };
+    </script>
+</body>
+</html>

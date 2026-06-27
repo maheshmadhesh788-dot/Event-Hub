@@ -10,6 +10,8 @@ import com.example.demo.service.EventService;
 import com.example.demo.service.RegistrationService;
 import com.example.demo.service.NotificationService;
 import com.example.demo.service.StudentService;
+import com.example.demo.service.FeedbackService;
+import com.example.demo.model.Feedback;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,17 +31,20 @@ public class AdminController {
     private final NotificationService notificationService;
     private final StudentService studentService;
     private final DepartmentService departmentService;
+    private final FeedbackService feedbackService;
 
     public AdminController(EventService eventService,
                            RegistrationService registrationService,
                            NotificationService notificationService,
                            StudentService studentService,
-                           DepartmentService departmentService) {
+                           DepartmentService departmentService,
+                           FeedbackService feedbackService) {
         this.eventService = eventService;
         this.registrationService = registrationService;
         this.notificationService = notificationService;
         this.studentService = studentService;
         this.departmentService = departmentService;
+        this.feedbackService = feedbackService;
     }
 
     // ==========================================
@@ -177,8 +182,8 @@ public class AdminController {
         String name = payload.get("name");
         String password = payload.get("password");
 
-        if (name == null || password == null || name.trim().isEmpty() || password.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Name and password are required"));
+        if (name == null || name.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Name is required"));
         }
 
         if (departmentService.findByName(name).isPresent()) {
@@ -187,7 +192,13 @@ public class AdminController {
 
         Department dept = new Department();
         dept.setName(name.trim());
-        dept.setPassword(password.trim()); // hashed inside service
+        dept.setPassword(password != null ? password.trim() : "");
+        dept.setHodName(payload.get("hodName"));
+        dept.setContactNumber(payload.get("contactNumber"));
+        dept.setEmail(payload.get("email"));
+        dept.setDescription(payload.get("description"));
+        dept.setLogoUrl(payload.get("logoUrl"));
+        dept.setCoverImageUrl(payload.get("coverImageUrl"));
         
         // Generate temporary code, service overrides/uniquifies it
         String[] words = name.trim().split("\\s+");
@@ -218,6 +229,9 @@ public class AdminController {
             updateData.setDescription(payload.get("description"));
             updateData.setLogoUrl(payload.get("logoUrl"));
             updateData.setCoverImageUrl(payload.get("coverImageUrl"));
+            updateData.setHodName(payload.get("hodName"));
+            updateData.setContactNumber(payload.get("contactNumber"));
+            updateData.setEmail(payload.get("email"));
 
             Department updated = departmentService.updateDepartment(id, updateData);
             return ResponseEntity.ok(updated);
@@ -338,5 +352,11 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    // --- Get feedback for college events ---
+    @GetMapping("/feedback")
+    public ResponseEntity<?> getCollegeFeedback() {
+        return ResponseEntity.ok(feedbackService.getFeedbackForCollege());
     }
 }

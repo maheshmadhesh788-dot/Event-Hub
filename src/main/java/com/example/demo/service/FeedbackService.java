@@ -8,4 +8,6 @@ public interface FeedbackService {
     List<Feedback> getFeedbackForEvent(Long eventId);
     List<Feedback> getFeedbackByStudent(String rollNumber);
     boolean hasSubmittedFeedback(String rollNumber, Long eventId);
+    List<Feedback> getFeedbackForDepartment(Long departmentId);
+    List<Feedback> getFeedbackForCollege();
 }

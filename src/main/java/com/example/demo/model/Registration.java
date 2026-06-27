@@ -13,24 +13,29 @@ public class Registration {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false)
+    @Transient
     private String studentName;
     
-    @Column(nullable = false)
+    @Transient
     private String rollNumber;
     
-    @Column(nullable = false)
+    @Transient
     private String department; // Student's department
     
-    @Column(name = "academic_year", nullable = false)
+    @Transient
     private String year; // Student's year (e.g. 1st, 2nd, 3rd, 4th)
     
-    @Column(nullable = false)
+    @Transient
     private String contactNumber;
     
-    @Column(nullable = false)
+    @Transient
     private String email;
     
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Student student;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "event_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -41,7 +46,7 @@ public class Registration {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Competition competition;
     
-    @Column(nullable = false)
+    @Column(name = "registration_date", nullable = false)
     private LocalDateTime registrationDate;
     
     @Column(nullable = false)
@@ -59,7 +64,7 @@ public class Registration {
     }
 
     public String getStudentName() {
-        return studentName;
+        return student != null ? student.getStudentName() : studentName;
     }
 
     public void setStudentName(String studentName) {
@@ -67,7 +72,7 @@ public class Registration {
     }
 
     public String getRollNumber() {
-        return rollNumber;
+        return student != null ? student.getRollNumber() : rollNumber;
     }
 
     public void setRollNumber(String rollNumber) {
@@ -75,7 +80,7 @@ public class Registration {
     }
 
     public String getDepartment() {
-        return department;
+        return student != null ? student.getDepartment() : department;
     }
 
     public void setDepartment(String department) {
@@ -83,7 +88,7 @@ public class Registration {
     }
 
     public String getYear() {
-        return year;
+        return student != null ? student.getYear() : year;
     }
 
     public void setYear(String year) {
@@ -91,7 +96,7 @@ public class Registration {
     }
 
     public String getContactNumber() {
-        return contactNumber;
+        return student != null ? student.getContactNumber() : contactNumber;
     }
 
     public void setContactNumber(String contactNumber) {
@@ -99,7 +104,7 @@ public class Registration {
     }
 
     public String getEmail() {
-        return email;
+        return student != null ? student.getEmail() : email;
     }
 
     public void setEmail(String email) {
@@ -136,5 +141,13 @@ public class Registration {
 
     public void setCompetition(Competition competition) {
         this.competition = competition;
+    }
+
+    public Student getStudent() {
+        return student;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
     }
 }

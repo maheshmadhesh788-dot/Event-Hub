@@ -111,15 +111,17 @@ public class EventServiceImpl implements EventService {
         return stream.collect(java.util.stream.Collectors.toList());
     }
 
-    void validateEventDateTime(LocalDateTime dateTime, String fieldPrefix) {
+    void validateEventDateTime(@org.springframework.lang.Nullable LocalDateTime dateTime, String fieldPrefix, boolean checkPastDate) {
         if (dateTime == null) {
             throw new IllegalArgumentException(fieldPrefix + " date/time is required.");
         }
         
         // 1. Must be current date/time onward (i.e. >= today at 00:00:00)
-        LocalDateTime todayStart = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
-        if (dateTime.isBefore(todayStart)) {
-            throw new IllegalArgumentException(fieldPrefix + " date must be from the current date onward. Past dates are not allowed.");
+        if (checkPastDate) {
+            LocalDateTime todayStart = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+            if (dateTime.isBefore(todayStart)) {
+                throw new IllegalArgumentException(fieldPrefix + " date must be from the current date onward. Past dates are not allowed.");
+            }
         }
         
         // 2. Restricted to 8:00 AM to 3:00 PM (08:00 to 15:00 inclusive)
@@ -136,11 +138,11 @@ public class EventServiceImpl implements EventService {
         if (event.getDateTime() == null) {
             event.setDateTime(LocalDateTime.now().plusDays(1).withHour(9).withMinute(0).withSecond(0).withNano(0));
         }
-        validateEventDateTime(event.getDateTime(), "Event");
+        validateEventDateTime(event.getDateTime(), "Event", true);
         
         if (event.getCompetitions() != null) {
             for (Competition comp : event.getCompetitions()) {
-                validateEventDateTime(comp.getDateTime(), "Competition '" + comp.getName() + "'");
+                validateEventDateTime(comp.getDateTime(), "Competition '" + comp.getName() + "'", true);
                 comp.setEvent(event);
             }
         }
@@ -178,7 +180,8 @@ public class EventServiceImpl implements EventService {
             event.setName(updatedData.getName().trim());
             event.setVenue(updatedData.getVenue().trim());
             if (updatedData.getDateTime() != null) {
-                validateEventDateTime(updatedData.getDateTime(), "Event");
+                boolean dateChanged = !updatedData.getDateTime().equals(event.getDateTime());
+                validateEventDateTime(updatedData.getDateTime(), "Event", dateChanged);
                 event.setDateTime(updatedData.getDateTime());
             }
             event.setDescription(updatedData.getDescription());
@@ -193,17 +196,66 @@ public class EventServiceImpl implements EventService {
             }
             event.setInChargeStaffName(updatedData.getInChargeStaffName());
             event.setInChargeStaffContact(updatedData.getInChargeStaffContact());
+            event.setRegistrationDeadline(updatedData.getRegistrationDeadline());
+            event.setRulesGuidelines(updatedData.getRulesGuidelines());
             
-            // Sync competitions list
-            event.getCompetitions().clear();
-            if (updatedData.getCompetitions() != null) {
-                for (Competition comp : updatedData.getCompetitions()) {
-                    validateEventDateTime(comp.getDateTime(), "Competition '" + comp.getName() + "'");
-                    comp.setEvent(event);
-                    event.getCompetitions().add(comp);
+            // Sync competitions list using in-place merge to avoid orphanRemoval issues
+            java.util.Map<Long, Competition> existingComps = new java.util.HashMap<>();
+            for (Competition c : event.getCompetitions()) {
+                if (c.getId() != null) {
+                    existingComps.put(c.getId(), c);
                 }
             }
-            Event saved = eventRepository.save(event);
+            
+            java.util.List<Competition> incomingComps = updatedData.getCompetitions();
+            java.util.Set<Long> incomingIds = new java.util.HashSet<>();
+            if (incomingComps != null) {
+                for (Competition comp : incomingComps) {
+                    if (comp.getId() != null) {
+                        incomingIds.add(comp.getId());
+                    }
+                }
+            }
+            
+            // 1. Remove orphaned competitions (present in DB but not in incoming update)
+            event.getCompetitions().removeIf(c -> c.getId() != null && !incomingIds.contains(c.getId()));
+            
+            // 2. Add or update incoming competitions
+            if (incomingComps != null) {
+                for (Competition comp : incomingComps) {
+                    boolean checkPastDate = true;
+                    if (comp.getId() != null && existingComps.containsKey(comp.getId())) {
+                        // Update existing in-place
+                        Competition targetComp = existingComps.get(comp.getId());
+                        if (comp.getDateTime() != null && comp.getDateTime().equals(targetComp.getDateTime())) {
+                            checkPastDate = false;
+                        }
+                        validateEventDateTime(comp.getDateTime(), "Competition '" + comp.getName() + "'", checkPastDate);
+                        
+                        targetComp.setName(comp.getName());
+                        targetComp.setVenue(comp.getVenue());
+                        targetComp.setDateTime(comp.getDateTime());
+                        targetComp.setInChargeStaffName(comp.getInChargeStaffName());
+                        targetComp.setInChargeStaffContact(comp.getInChargeStaffContact());
+                        targetComp.setCompetitionType(comp.getCompetitionType());
+                        targetComp.setMaxParticipants(comp.getMaxParticipants());
+                    } else {
+                        // Create and add new
+                        validateEventDateTime(comp.getDateTime(), "Competition '" + comp.getName() + "'", checkPastDate);
+                        Competition newComp = new Competition();
+                        newComp.setEvent(event);
+                        newComp.setName(comp.getName());
+                        newComp.setVenue(comp.getVenue());
+                        newComp.setDateTime(comp.getDateTime());
+                        newComp.setInChargeStaffName(comp.getInChargeStaffName());
+                        newComp.setInChargeStaffContact(comp.getInChargeStaffContact());
+                        newComp.setCompetitionType(comp.getCompetitionType());
+                        newComp.setMaxParticipants(comp.getMaxParticipants());
+                        event.getCompetitions().add(newComp);
+                    }
+                }
+            }
+            Event saved = eventRepository.saveAndFlush(event);
             emailService.sendScheduleUpdate(saved, "Event coordinates or schedule updated by coordinator.");
             return saved;
         }).orElseThrow(() -> new RuntimeException("Event not found with ID: " + id));

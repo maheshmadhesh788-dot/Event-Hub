@@ -5,35 +5,37 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "bookmarks", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"student_id", "event_id"})
-})
+@Table(name = "certificates")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Bookmark {
-    
+public class Certificate {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "student_id", nullable = false)
-    @JsonIgnoreProperties({"password", "hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Student student;
-    
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "event_id", nullable = false)
-    @JsonIgnoreProperties({"competitions", "hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Event event;
-    
-    @Transient
-    private LocalDateTime bookmarkedAt;
 
-    public Bookmark() {}
+    @Column(name = "certificate_name", nullable = false)
+    private String certificateName;
 
-    public Bookmark(Student student, Event event, LocalDateTime bookmarkedAt) {
+    @Column(name = "issued_date", nullable = false)
+    private LocalDateTime issuedDate;
+
+    public Certificate() {}
+
+    public Certificate(Student student, Event event, String certificateName, LocalDateTime issuedDate) {
         this.student = student;
         this.event = event;
-        this.bookmarkedAt = bookmarkedAt;
+        this.certificateName = certificateName;
+        this.issuedDate = issuedDate;
     }
 
     public Long getId() {
@@ -60,11 +62,19 @@ public class Bookmark {
         this.event = event;
     }
 
-    public LocalDateTime getBookmarkedAt() {
-        return bookmarkedAt;
+    public String getCertificateName() {
+        return certificateName;
     }
 
-    public void setBookmarkedAt(LocalDateTime bookmarkedAt) {
-        this.bookmarkedAt = bookmarkedAt;
+    public void setCertificateName(String certificateName) {
+        this.certificateName = certificateName;
+    }
+
+    public LocalDateTime getIssuedDate() {
+        return issuedDate;
+    }
+
+    public void setIssuedDate(LocalDateTime issuedDate) {
+        this.issuedDate = issuedDate;
     }
 }

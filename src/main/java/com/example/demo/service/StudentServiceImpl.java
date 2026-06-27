@@ -2,8 +2,10 @@ package com.example.demo.service;
 
 import com.example.demo.model.Student;
 import com.example.demo.model.Registration;
+import com.example.demo.model.User;
 import com.example.demo.repository.StudentRepository;
 import com.example.demo.repository.RegistrationRepository;
+import com.example.demo.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,14 +19,20 @@ public class StudentServiceImpl implements StudentService {
 
     private final StudentRepository studentRepository;
     private final RegistrationRepository registrationRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public StudentServiceImpl(StudentRepository studentRepository,
                               RegistrationRepository registrationRepository,
-                              PasswordEncoder passwordEncoder) {
+                              UserRepository userRepository,
+                              PasswordEncoder passwordEncoder,
+                              EmailService emailService) {
         this.studentRepository = studentRepository;
         this.registrationRepository = registrationRepository;
+        this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @Override
@@ -46,13 +54,26 @@ public class StudentServiceImpl implements StudentService {
         student.setContactNumber(student.getContactNumber().trim());
         student.setEmail(student.getEmail().trim());
         student.setPassword(passwordEncoder.encode(student.getPassword().trim()));
-        return studentRepository.save(student);
+        Student saved = studentRepository.saveAndFlush(student);
+
+        // Sync to users table
+        User user = new User(saved.getRollNumber(), saved.getPassword(), "ROLE_STUDENT", saved.getStudentName(), saved.getEmail(), saved.getContactNumber());
+        userRepository.saveAndFlush(user);
+
+        try {
+            emailService.sendStudentAccountCreated(saved);
+        } catch (Exception e) {
+            // Log or ignore
+        }
+
+        return saved;
     }
 
     @Override
     @Transactional
     public Student updateStudentProfile(String rollNumber, Student updatedStudentData) {
         return studentRepository.findByRollNumberIgnoreCase(rollNumber.trim()).map(student -> {
+            String oldRollNumber = student.getRollNumber();
             if (updatedStudentData.getStudentName() != null) {
                 student.setStudentName(updatedStudentData.getStudentName().trim());
             }
@@ -68,7 +89,22 @@ public class StudentServiceImpl implements StudentService {
             if (updatedStudentData.getPassword() != null && !updatedStudentData.getPassword().trim().isEmpty()) {
                 student.setPassword(passwordEncoder.encode(updatedStudentData.getPassword().trim()));
             }
-            return studentRepository.save(student);
+            Student saved = studentRepository.saveAndFlush(student);
+
+            // Sync to users table
+            userRepository.findByUsernameIgnoreCase(oldRollNumber).ifPresentOrElse(user -> {
+                user.setUsername(saved.getRollNumber());
+                user.setPassword(saved.getPassword());
+                user.setName(saved.getStudentName());
+                user.setEmail(saved.getEmail());
+                user.setContactNumber(saved.getContactNumber());
+                userRepository.saveAndFlush(user);
+            }, () -> {
+                User user = new User(saved.getRollNumber(), saved.getPassword(), "ROLE_STUDENT", saved.getStudentName(), saved.getEmail(), saved.getContactNumber());
+                userRepository.saveAndFlush(user);
+            });
+
+            return saved;
         }).orElseThrow(() -> new RuntimeException("Student not found with roll number: " + rollNumber));
     }
 
@@ -82,14 +118,17 @@ public class StudentServiceImpl implements StudentService {
     public void deleteStudent(String rollNumber) {
         studentRepository.findByRollNumberIgnoreCase(rollNumber.trim()).ifPresent(student -> {
             // Delete student registrations first (Cascade)
-            List<Registration> registrations = registrationRepository.findByRollNumberIgnoreCase(student.getRollNumber());
+            List<Registration> registrations = registrationRepository.findByStudentRollNumberIgnoreCase(student.getRollNumber());
             registrationRepository.deleteAll(registrations);
             studentRepository.delete(student);
+
+            // Sync to users table (remove user record)
+            userRepository.findByUsernameIgnoreCase(student.getRollNumber()).ifPresent(userRepository::delete);
         });
     }
 
     @Override
     public List<Registration> getRegistrationHistory(String rollNumber) {
-        return registrationRepository.findByRollNumberIgnoreCase(rollNumber.trim());
+        return registrationRepository.findByStudentRollNumberIgnoreCase(rollNumber.trim());
     }
 }

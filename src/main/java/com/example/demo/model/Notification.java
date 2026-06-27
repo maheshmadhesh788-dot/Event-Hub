@@ -14,17 +14,21 @@ public class Notification {
     @Column(nullable = false)
     private String title;
     
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String content;
     
-    @Column(nullable = false)
+    @Transient
     private String sender; // e.g. "College Admin" or "Department of IT"
     
-    @Column(nullable = false)
+    @Column(name = "created_date", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = true)
+    @Transient
     private Long eventId;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id", nullable = true)
+    private User user;
 
     public Notification() {}
 
@@ -90,5 +94,13 @@ public class Notification {
 
     public void setEventId(Long eventId) {
         this.eventId = eventId;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

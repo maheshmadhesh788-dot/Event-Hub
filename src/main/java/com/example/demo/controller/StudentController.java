@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 import java.util.*;
 
 @SuppressWarnings("null")
@@ -89,6 +91,20 @@ public class StudentController {
             }
             
             Long eventId = Long.valueOf(eventIdObj.toString());
+
+            // Validate that the event has not expired and registration deadline has not passed
+            Optional<Event> eventOpt = eventService.getEventById(eventId);
+            if (eventOpt.isPresent()) {
+                Event event = eventOpt.get();
+                if (event.getRegistrationDeadline() != null && event.getRegistrationDeadline().isBefore(LocalDateTime.now())) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Registration Closed. The registration deadline has expired."));
+                }
+                if (event.getDateTime() != null && event.getDateTime().isBefore(LocalDateTime.now())) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Registration failed: This event has expired and is no longer open for registration."));
+                }
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "Registration failed: Event not found."));
+            }
 
             if (studentName == null || studentName.trim().isEmpty() ||
                 rollNumber == null || rollNumber.trim().isEmpty() ||
@@ -167,6 +183,26 @@ public class StudentController {
         }
         List<Registration> list = studentService.getRegistrationHistory(rollNumber);
         return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/registrations/validate/{regId}")
+    public ResponseEntity<?> validateCertificateEligibility(@PathVariable Long regId) {
+        Optional<Registration> regOpt = registrationService.getRegistrationById(regId);
+        if (regOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("eligible", false, "error", "Registration not found"));
+        }
+        Registration reg = regOpt.get();
+        String status = reg.getStatus() != null ? reg.getStatus().toLowerCase() : "";
+        boolean attended = status.contains("attend") || status.contains("present");
+        if (!attended) {
+            return ResponseEntity.badRequest().body(Map.of("eligible", false, "error", "You are not eligible for a certificate because you did not attend the event."));
+        }
+        return ResponseEntity.ok(Map.of(
+            "eligible", true, 
+            "studentName", reg.getStudentName(), 
+            "eventName", reg.getEvent().getName(), 
+            "eventType", reg.getEvent().getType()
+        ));
     }
 
 

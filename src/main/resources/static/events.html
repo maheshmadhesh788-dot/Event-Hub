@@ -29,6 +29,11 @@
                     <li class="nav-item"><a class="nav-link nav-link-custom active" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>
                     <li class="nav-item" id="nav-dynamic"></li>
                     <li class="nav-item ms-lg-2">
+                        <button class="btn btn-glass" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0;">
+                            <i id="theme-toggle-icon" class="fa-solid fa-sun text-warning"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item ms-lg-2">
                         <button class="btn btn-primary-gradient position-relative" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
                             <i class="fa-solid fa-bell"></i> Notices
                             <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
@@ -323,7 +328,6 @@
                                         <option value="1st Year">1st Year</option>
                                         <option value="2nd Year">2nd Year</option>
                                         <option value="3rd Year">3rd Year</option>
-                                        <option value="4th Year">4th Year</option>
                                     </select>
                                 </div>
 
@@ -336,7 +340,7 @@
                                 <!-- Email Address -->
                                 <div class="col-md-6">
                                     <label class="form-label text-muted small fw-bold">Email Address</label>
-                                    <input type="email" id="modal-email" class="form-control form-control-custom" required placeholder="e.g. mahesh@gmail.com">
+                                    <input type="email" id="modal-email" class="form-control form-control-custom" autocomplete="new-email" required placeholder="e.g. mahesh@gmail.com">
                                 </div>
 
                                 <!-- Access Password -->
@@ -374,6 +378,7 @@
         let selectedSort = "date_asc";
         let searchQuery = "";
         let filtersModalObj = null;
+        let searchTimeout = null;
 
         document.addEventListener("DOMContentLoaded", () => {
             filtersModalObj = new bootstrap.Modal(document.getElementById('filtersModal'));
@@ -505,7 +510,16 @@
                 calBtn.classList.remove("active");
                 gridEl.style.display = "flex";
                 calEl.style.display = "none";
-                loadFilteredEvents();
+                
+                if (allEvents && allEvents.length > 0) {
+                    let filtered = allEvents;
+                    if (selectedDept !== "ALL") {
+                        filtered = allEvents.filter(e => e.department && e.department.id.toString() === selectedDept.toString());
+                    }
+                    displayEvents(filtered);
+                } else {
+                    loadFilteredEvents();
+                }
             } else {
                 calBtn.classList.add("active");
                 gridBtn.classList.remove("active");
@@ -576,11 +590,20 @@
                 
                 let eventBadges = "";
                 dayEvents.forEach(ev => {
-                    eventBadges += `
-                        <div class="calendar-event-badge mt-1" onclick="openEventsRegModal(${ev.id})" title="${ev.name}">
-                            ${ev.name.substring(0, 15)}...
-                        </div>
-                    `;
+                    const evEnded = new Date(ev.dateTime) < new Date();
+                    if (evEnded) {
+                        eventBadges += `
+                            <div class="calendar-event-badge mt-1 bg-secondary text-muted" style="cursor: not-allowed; opacity: 0.65; background: #374151 !important;" title="${ev.name} (Ended)">
+                                ${ev.name.substring(0, 15)}...
+                            </div>
+                        `;
+                    } else {
+                        eventBadges += `
+                            <div class="calendar-event-badge mt-1" onclick="openEventsRegModal(${ev.id})" title="${ev.name}">
+                                ${ev.name.substring(0, 15)}...
+                            </div>
+                        `;
+                    }
                 });
                 
                 const isToday = new Date().toDateString() === cellDate.toDateString() ? "calendar-cell-today" : "";
@@ -625,10 +648,13 @@
             loadFilteredEvents();
         }
 
-        // Search filter
+        // Search filter with 300ms debounce to prevent constant server API spam
         function handleSearch(val) {
-            searchQuery = val.trim().toLowerCase();
-            refreshViews();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchQuery = val.trim().toLowerCase();
+                refreshViews();
+            }, 300);
         }
 
         // Modal filter operations
@@ -712,11 +738,19 @@
                 const cardClass = isDept ? "event-card-dept" : "event-card-college";
                 const isBookmarked = studentBookmarks.includes(event.id);
 
+                const isEnded = new Date(event.dateTime) < new Date();
+                const isDeadlinePassed = event.registrationDeadline ? (new Date(event.registrationDeadline) < new Date()) : false;
+                const isClosed = isEnded || isDeadlinePassed;
+                const endedBadge = isEnded ? 
+                    `<span class="event-card-badge bg-danger text-white border-danger" style="left: 15px; right: auto; border: 1px solid rgba(239,68,68,0.4);"><i class="fa-solid fa-hourglass-end me-1"></i>Event Ended</span>` : 
+                    (isDeadlinePassed ? `<span class="event-card-badge bg-danger text-white border-danger" style="left: 15px; right: auto; border: 1px solid rgba(239,68,68,0.4);"><i class="fa-solid fa-hourglass-end me-1"></i>Registration Closed</span>` : '');
+
                 html += `
                     <div class="col-lg-4 col-md-6">
-                        <div class="glass-panel event-card ${cardClass}">
+                        <div class="glass-panel event-card ${cardClass}" style="${isEnded ? 'opacity: 0.85;' : ''}">
                             <div class="event-card-img-wrapper">
                                 <span class="event-card-badge ${badgeClass}">${badgeText}</span>
+                                ${endedBadge}
                                 <img id="poster-${event.id}" class="event-card-img" alt="${event.name}">
                             </div>
                             <div class="p-4">
@@ -729,7 +763,10 @@
                                     ${event.description || 'No description provided.'}
                                 </p>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-primary-gradient w-100" onclick="openEventsRegModal(${event.id})">Register Event</button>
+                                    ${isClosed ?
+                                        `<button class="btn btn-secondary w-100" disabled style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); color: var(--text-muted) !important; cursor: not-allowed;">Registration Closed</button>` :
+                                        `<button class="btn btn-primary-gradient w-100" onclick="openEventsRegModal(${event.id})">Register Event</button>`
+                                    }
                                     <button class="btn btn-outline-secondary btn-bookmark-toggle" onclick="toggleStudentBookmark(${event.id}, this)" title="Bookmark Event" style="border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.05); color: #fff; width: 45px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.3s ease;">
                                         <i class="${isBookmarked ? 'fa-solid' : 'fa-regular'} fa-bookmark text-primary"></i>
                                     </button>
@@ -799,6 +836,13 @@
             selectedEventIdForModal = eventId;
             const event = allEvents.find(e => e.id.toString() === eventId.toString());
             if (!event) return;
+
+            const isEnded = new Date(event.dateTime) < new Date();
+            const isDeadlinePassed = event.registrationDeadline ? (new Date(event.registrationDeadline) < new Date()) : false;
+            if (isEnded || isDeadlinePassed) {
+                alert("Registration Closed. The registration deadline has expired.");
+                return;
+            }
 
             document.getElementById("modal-event-title").innerText = event.name;
             document.getElementById("modal-event-meta").innerText = `${event.venue} | ${formatEventDate(event.dateTime)}`;
@@ -948,6 +992,15 @@
             errorDiv.style.display = "none";
 
             const event = allEvents.find(e => e.id.toString() === selectedEventIdForModal.toString());
+            if (event) {
+                const isEnded = new Date(event.dateTime) < new Date();
+                const isDeadlinePassed = event.registrationDeadline ? (new Date(event.registrationDeadline) < new Date()) : false;
+                if (isEnded || isDeadlinePassed) {
+                    alert("Registration Closed. The registration deadline has expired.");
+                    return;
+                }
+            }
+
             if (event && event.competitions && event.competitions.length > 0 && selectedCompIds.length === 0) {
                 errorText.innerText = "Please select at least one competition to register.";
                 errorDiv.style.display = "block";
@@ -996,12 +1049,60 @@
 
                 registerModalObj.hide();
                 showSuccessPopup("Successfully Registered 😊");
+                
+                // Show QR Pass Modal after a short delay so the student sees their pass immediately
+                setTimeout(() => {
+                    const eventName = event.name;
+                    const compNames = selectedCompIds.map(cid => {
+                        if (!event.competitions) return "";
+                        const comp = event.competitions.find(c => c.id.toString() === cid.toString());
+                        return comp ? comp.name : "";
+                    }).filter(Boolean).join(", ");
+                    const eventDisplayName = eventName + (compNames ? ` - ${compNames}` : "");
+                    showQrModal(data.id, eventDisplayName);
+                }, 800);
             })
             .catch(err => {
                 errorText.innerText = err.message;
                 errorDiv.style.display = "block";
             });
         }
+
+        // --- Entry Pass QR Modal Helper ---
+        let qrModalObj = null;
+        function showQrModal(regId, eventName) {
+            document.getElementById("qr-code-img").src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${regId}`;
+            document.getElementById("qr-event-name").innerText = eventName;
+            document.getElementById("qr-reg-id").innerText = `Registration ID: ${regId}`;
+            
+            if (!qrModalObj) {
+                qrModalObj = new bootstrap.Modal(document.getElementById('qrModal'));
+            }
+            qrModalObj.show();
+        }
     </script>
+
+    <!-- Entry Pass QR Code Modal -->
+    <div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+            <div class="modal-content modal-content-custom text-center" style="background: #0f1322; border: 1px solid rgba(255, 255, 255, 0.15);">
+                <div class="modal-header modal-header-custom border-secondary justify-content-between">
+                    <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-qrcode text-primary me-2"></i>Entry Pass QR</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Present this QR code to the event organizers for check-in validation.</p>
+                    <div class="bg-white p-3 d-inline-block rounded mb-3">
+                        <img id="qr-code-img" src="" alt="Registration QR Code" style="width: 200px; height: 200px;">
+                    </div>
+                    <h5 id="qr-event-name" class="text-white fw-bold mb-1">Event Name</h5>
+                    <p id="qr-reg-id" class="text-primary small mb-0 fw-bold">ID: 102</p>
+                </div>
+                <div class="modal-footer modal-footer-custom border-secondary justify-content-center">
+                    <button type="button" class="btn btn-glass btn-sm" data-bs-dismiss="modal">Close Pass</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

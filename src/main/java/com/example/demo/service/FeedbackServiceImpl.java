@@ -63,4 +63,14 @@ public class FeedbackServiceImpl implements FeedbackService {
     public boolean hasSubmittedFeedback(String rollNumber, Long eventId) {
         return feedbackRepository.existsByStudentRollNumberIgnoreCaseAndEventId(rollNumber.trim(), eventId);
     }
+
+    @Override
+    public List<Feedback> getFeedbackForDepartment(Long departmentId) {
+        return feedbackRepository.findByDepartmentId(departmentId);
+    }
+
+    @Override
+    public List<Feedback> getFeedbackForCollege() {
+        return feedbackRepository.findByCollegeEvents();
+    }
 }

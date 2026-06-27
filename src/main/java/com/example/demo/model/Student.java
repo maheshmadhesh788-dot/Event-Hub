@@ -9,23 +9,29 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class Student {
     
     @Id
-    @Column(nullable = false, unique = true)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(name = "register_number", nullable = false, unique = true)
     private String rollNumber;
     
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false)
     private String studentName;
     
-    @Column(nullable = false)
+    @Column(name = "department", nullable = false)
     private String department;
     
-    @Column(nullable = false)
+    @Column(name = "phone", nullable = false)
     private String contactNumber;
     
-    @Column(nullable = false)
+    @Column(name = "email", nullable = false)
     private String email;
     
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password; // hashed password
+
+    @Column(name = "year")
+    private String year;
 
     public Student() {}
 
@@ -85,5 +91,21 @@ public class Student {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getYear() {
+        return year;
+    }
+
+    public void setYear(String year) {
+        this.year = year;
     }
 }

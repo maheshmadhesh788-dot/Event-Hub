@@ -29,6 +29,11 @@
                     <li class="nav-item"><a class="nav-link nav-link-custom active" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>
                     <li class="nav-item" id="nav-dynamic"></li>
                     <li class="nav-item ms-lg-2">
+                        <button class="btn btn-glass" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0;">
+                            <i id="theme-toggle-icon" class="fa-solid fa-sun text-warning"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item ms-lg-2">
                         <button class="btn btn-primary-gradient position-relative" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
                             <i class="fa-solid fa-bell"></i> Notices
                             <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
@@ -104,7 +109,6 @@
                             <option value="1st Year">1st Year</option>
                             <option value="2nd Year">2nd Year</option>
                             <option value="3rd Year">3rd Year</option>
-                            <option value="4th Year">4th Year</option>
                         </select>
                     </div>
 
@@ -117,7 +121,7 @@
                     <!-- Email Address -->
                     <div class="col-md-6">
                         <label class="form-label text-muted small">Email Address</label>
-                        <input type="email" id="email" class="form-control form-control-custom" required placeholder="e.g. mahesh@gmail.com">
+                        <input type="email" id="email" class="form-control form-control-custom" autocomplete="new-email" required placeholder="e.g. mahesh@gmail.com">
                     </div>
 
                     <!-- Access Password -->

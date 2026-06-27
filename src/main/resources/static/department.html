@@ -167,6 +167,12 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link text-white border-0 bg-transparent fw-bold" id="dept-checkin-tab" data-bs-toggle="tab" data-bs-target="#dept-checkin-pane" type="button" role="tab"><i class="fa-solid fa-square-check text-secondary me-2"></i>QR Check-In</button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white border-0 bg-transparent fw-bold" id="dept-participants-tab" data-bs-toggle="tab" data-bs-target="#dept-participants-pane" type="button" role="tab" onclick="loadDeptParticipants()"><i class="fa-solid fa-users text-secondary me-2"></i>Participants Roster</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white border-0 bg-transparent fw-bold" id="dept-feedback-tab" data-bs-toggle="tab" data-bs-target="#dept-feedback-pane" type="button" role="tab" onclick="loadDeptFeedback()"><i class="fa-solid fa-comments text-secondary me-2"></i>Feedback</button>
+                </li>
             </ul>
 
             <!-- Tab Panes Content -->
@@ -178,22 +184,28 @@
                     <!-- Dashboard Statistics & Charts Section (Premium) -->
                     <div class="row g-4 mb-5">
                         <!-- Stats Cards -->
-                        <div class="col-md-4">
-                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center">
+                        <div class="col-md-3">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center" style="cursor: pointer;" onclick="document.getElementById('dept-events-tab').click()">
                                 <span class="text-muted small fw-bold d-block mb-1">TOTAL EVENTS</span>
                                 <h2 class="fw-bold text-white mb-0" id="stats-total-events">0</h2>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center">
+                        <div class="col-md-3">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center" style="cursor: pointer;" onclick="document.getElementById('dept-registrations-tab').click()">
                                 <span class="text-muted small fw-bold d-block mb-1">TOTAL REGISTRATIONS</span>
                                 <h2 class="fw-bold text-primary mb-0" id="stats-total-registrations">0</h2>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center">
-                                <span class="text-muted small fw-bold d-block mb-1">ATTENDANCE RATE</span>
-                                <h2 class="fw-bold text-success mb-0" id="stats-attendance-rate">0%</h2>
+                        <div class="col-md-3">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center" style="cursor: pointer;" onclick="document.getElementById('dept-participants-tab').click()">
+                                <span class="text-muted small fw-bold d-block mb-1">TOTAL PARTICIPANTS</span>
+                                <h2 class="fw-bold text-success mb-0" id="stats-total-participants">0</h2>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center" style="cursor: pointer;" onclick="document.getElementById('dept-feedback-tab').click()">
+                                <span class="text-muted small fw-bold d-block mb-1">AVG FEEDBACK RATING</span>
+                                <h2 class="fw-bold text-warning mb-0" id="stats-avg-rating">0.0 ★</h2>
                             </div>
                         </div>
                         
@@ -319,6 +331,104 @@
                     </div>
                 </div>
 
+                <!-- Tab 5: Participants Pane -->
+                <div class="tab-pane fade" id="dept-participants-pane" role="tabpanel">
+                    <div class="glass-panel p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                            <h4 class="text-white fw-bold mb-0">Department Participant check-in roster</h4>
+                            <button class="btn btn-glass btn-sm" onclick="loadDeptParticipants()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-custom table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Student Name</th>
+                                        <th>Roll Number</th>
+                                        <th>Event Name</th>
+                                        <th>Competition Name</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dept-participants-tbody">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 6: Feedback Pane -->
+                <div class="tab-pane fade" id="dept-feedback-pane" role="tabpanel">
+                    <!-- Statistics cards -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center">
+                                <span class="text-muted small fw-bold d-block mb-1">TOTAL FEEDBACKS</span>
+                                <h2 class="fw-bold text-white mb-0" id="feedback-total-count">0</h2>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center">
+                                <span class="text-muted small fw-bold d-block mb-1">AVERAGE RATING</span>
+                                <h2 class="fw-bold text-warning mb-0" id="feedback-avg-rating">0.0 / 5.0</h2>
+                                <div id="feedback-avg-stars-container" class="mt-1 text-warning" style="font-size: 0.95rem;">
+                                    <!-- stars loaded dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rating breakdowns by Event -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-12">
+                            <div class="glass-panel p-4" style="min-height: 250px;">
+                                <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-trophy text-primary me-2"></i>Event-wise Average Ratings</h5>
+                                <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                    <table class="table table-custom table-hover table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Event Name</th>
+                                                <th>Avg Rating</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="feedback-event-ratings-tbody">
+                                            <!-- Loaded dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feed of Recent Feedbacks -->
+                    <div class="glass-panel p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                            <h4 class="text-white fw-bold mb-0">Department Feedback Feed</h4>
+                            <button class="btn btn-glass btn-sm" onclick="loadDeptFeedback()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-custom table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Student Name</th>
+                                        <th>Email</th>
+                                        <th>Event Name</th>
+                                        <th>Rating</th>
+                                        <th>Comment</th>
+                                        <th>Submitted At</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="feedback-tbody">
+                                    <!-- Loaded dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
         </div>
@@ -365,6 +475,22 @@
                                 <label class="form-label text-muted small">Date and Time</label>
                                 <input type="datetime-local" id="event-datetime" class="form-control form-control-custom" required>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">In-Charge Staff Name</label>
+                                <input type="text" id="event-staff-name" class="form-control form-control-custom" required placeholder="e.g. Dr. A. Kumar">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">In-Charge Contact Number</label>
+                                <input type="tel" id="event-staff-contact" class="form-control form-control-custom" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+                            </div>
+                            <div class="col-md-6" style="display: none;">
+                                <label class="form-label text-muted small">Maximum Participants</label>
+                                <input type="number" id="event-capacity" class="form-control form-control-custom" placeholder="e.g. 100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Registration Deadline</label>
+                                <input type="datetime-local" id="event-deadline" class="form-control form-control-custom" required>
+                            </div>
                             <div class="col-12">
                                 <label class="form-label text-muted small">Upload Poster Image</label>
                                 <input type="file" id="event-poster-file" class="form-control form-control-custom" accept="image/*" onchange="uploadPoster(this)">
@@ -374,6 +500,10 @@
                             <div class="col-12">
                                 <label class="form-label text-muted small">Event Description</label>
                                 <textarea id="event-desc" class="form-control form-control-custom" rows="3" required placeholder="Outline event challenges, criteria, details, contact..."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted small">Rules & Guidelines</label>
+                                <textarea id="event-rules" class="form-control form-control-custom" rows="3" required placeholder="Provide event rules, registration guidelines..."></textarea>
                             </div>
                             <div class="col-12" id="poster-preview-container" style="display: none;">
                                 <label class="form-label text-muted small">Poster Preview</label>
@@ -415,6 +545,10 @@
                                         <div class="col-md-6">
                                             <label class="form-label text-muted small">Contact Number of In-Charge Staff</label>
                                             <input type="tel" id="comp-staff-contact" class="form-control form-control-custom" placeholder="e.g. 9876543210" pattern="[0-9]{10}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted small">Maximum Participants</label>
+                                            <input type="number" id="comp-max-participants" class="form-control form-control-custom" placeholder="e.g. 50">
                                         </div>
                                     </div>
                                     
@@ -462,11 +596,23 @@
                             <div class="col-12">
                                 <label class="form-label text-muted small fw-bold">Access Password</label>
                                 <div class="input-group">
-                                    <input type="password" id="workspace-password" class="form-control form-control-custom password-input-with-eye" required placeholder="Access password">
+                                    <input type="password" id="workspace-password" class="form-control form-control-custom password-input-with-eye" placeholder="Access password">
                                     <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('workspace-password', this)">
                                         <i class="fa-solid fa-eye"></i>
                                     </button>
                                 </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">HOD Name</label>
+                                <input type="text" id="workspace-hod" class="form-control form-control-custom" required placeholder="e.g. Dr. A. Suresh">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">HOD Email</label>
+                                <input type="email" id="workspace-email" class="form-control form-control-custom" required placeholder="e.g. hodcs@kasc.ac.in">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">HOD Contact Number</label>
+                                <input type="tel" id="workspace-contact" class="form-control form-control-custom" required placeholder="e.g. 9876543210" pattern="[0-9]{10}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold">Upload Logo</label>
@@ -502,6 +648,8 @@
     <script>
         let currentDept = null;
         let eventModalObj = null;
+        let detailsModalObj = null;
+        let participantsModal = null;
 
         function setMinDateTime() {
             const now = new Date();
@@ -512,17 +660,21 @@
             document.getElementById("event-datetime").setAttribute("min", minDateStr);
             const compDt = document.getElementById("comp-datetime");
             if (compDt) compDt.setAttribute("min", minDateStr);
+            const eventDl = document.getElementById("event-deadline");
+            if (eventDl) eventDl.setAttribute("min", minDateStr);
         }
 
-        function validateEventDateTime(dateTimeStr) {
+        function validateEventDateTime(dateTimeStr, checkPastDate = true) {
             if (!dateTimeStr) return { valid: false, message: "Please select a date and time." };
             
             const selectedDate = new Date(dateTimeStr);
-            const now = new Date();
-            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            
-            if (selectedDate < todayStart) {
-                return { valid: false, message: "The date must be from the current date onward. Past dates are not allowed." };
+            if (checkPastDate) {
+                const now = new Date();
+                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                
+                if (selectedDate < todayStart) {
+                    return { valid: false, message: "The date must be from the current date onward. Past dates are not allowed." };
+                }
             }
             
             const hours = selectedDate.getHours();
@@ -537,10 +689,53 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             eventModalObj = new bootstrap.Modal(document.getElementById('eventModal'));
+            detailsModalObj = new bootstrap.Modal(document.getElementById('detailsModal'));
+            participantsModal = new bootstrap.Modal(document.getElementById('participantsModal'));
 
-            // Check if department is already logged in
+            // Check if department or staff is already logged in
+            const staffSession = localStorage.getItem("eventhub_staff_session");
             currentDept = checkDepartmentAuth();
-            if (currentDept) {
+
+            if (staffSession) {
+                const staff = JSON.parse(staffSession);
+                currentDept = {
+                    id: staff.id,
+                    name: staff.department,
+                    code: staff.code || "UG",
+                    description: staff.description || "",
+                    logoUrl: staff.logoUrl,
+                    coverImageUrl: staff.coverImageUrl
+                };
+                showWorkspace();
+
+                // Show welcome banner for Tutor/HOD
+                const welcomeTitle = document.createElement("div");
+                welcomeTitle.className = "text-warning small fw-bold mb-1";
+                welcomeTitle.innerHTML = `<i class="fa-solid fa-user-tie me-1"></i> Logged in as: ${staff.name} (${staff.role === 'ROLE_HOD' ? 'HOD' : 'Tutor'})`;
+
+                const titleHeader = document.getElementById("dept-title-header");
+                if (titleHeader) {
+                    titleHeader.parentElement.insertBefore(welcomeTitle, titleHeader);
+                }
+
+                // Hide Edit Workspace Details button for Tutor
+                if (staff.role === 'ROLE_TUTOR') {
+                    const buttons = Array.from(document.querySelectorAll("button"));
+                    const editBtn = buttons.find(btn => btn.textContent.includes("Edit Workspace Details"));
+                    if (editBtn) editBtn.style.display = "none";
+                }
+
+                // Add a link/button to open the Student Achievement Module
+                const actionContainer = document.querySelector(".d-flex.gap-2.flex-wrap");
+                if (actionContainer && !document.getElementById("btn-ach-module")) {
+                    const achBtn = document.createElement("a");
+                    achBtn.id = "btn-ach-module";
+                    achBtn.href = "achievements.html";
+                    achBtn.className = "btn btn-primary-gradient btn-sm";
+                    achBtn.innerHTML = `<i class="fa-solid fa-trophy me-1"></i> Student Achievements`;
+                    actionContainer.insertBefore(achBtn, actionContainer.firstChild);
+                }
+            } else if (currentDept) {
                 showWorkspace();
             } else {
                 if (window.location.search.includes("register=true")) {
@@ -576,11 +771,14 @@
             document.getElementById("register-panel").style.display = "none";
             document.getElementById("workspace-panel").style.display = "block";
             
-            document.getElementById("dept-title-header").innerText = `Department of ${currentDept.name}`;
-            document.getElementById("dept-code-badge").innerText = `${currentDept.code} Level`;
+            const name = currentDept.name && currentDept.name !== "null" ? currentDept.name : "Department Workspace";
+            const code = currentDept.code && currentDept.code !== "null" ? currentDept.code : "UG";
+
+            document.getElementById("dept-title-header").innerText = `Department of ${name}`;
+            document.getElementById("dept-code-badge").innerText = `${code} Level`;
 
             const coverImg = document.getElementById("dept-cover-img");
-            if (currentDept.coverImageUrl) {
+            if (currentDept.coverImageUrl && currentDept.coverImageUrl !== "null" && currentDept.coverImageUrl !== "undefined") {
                 coverImg.src = currentDept.coverImageUrl;
                 coverImg.style.display = "block";
             } else {
@@ -589,7 +787,7 @@
 
             const logoImg = document.getElementById("dept-logo-img");
             const logoIcon = document.getElementById("dept-logo-icon");
-            if (currentDept.logoUrl) {
+            if (currentDept.logoUrl && currentDept.logoUrl !== "null" && currentDept.logoUrl !== "undefined") {
                 logoImg.src = currentDept.logoUrl;
                 logoImg.style.display = "block";
                 logoIcon.style.display = "none";
@@ -600,7 +798,7 @@
 
             const descBox = document.getElementById("dept-desc-box");
             const descText = document.getElementById("dept-description-text");
-            if (currentDept.description && currentDept.description.trim() !== "") {
+            if (currentDept.description && currentDept.description.trim() !== "" && currentDept.description !== "null" && currentDept.description !== "undefined") {
                 descText.innerText = currentDept.description;
                 descBox.style.display = "block";
             } else {
@@ -611,18 +809,21 @@
             renderDepartmentAnalytics();
         }
 
-        let detailsModalObj = null;
-
         function openDetailsModal() {
-            if (!detailsModalObj) {
-                detailsModalObj = new bootstrap.Modal(document.getElementById('detailsModal'));
-            }
             document.getElementById("details-form").reset();
             document.getElementById("details-error-message").style.display = "none";
 
             document.getElementById("workspace-name").value = currentDept.name || "";
             document.getElementById("workspace-code").value = currentDept.code || "";
+            
+            // Password preloading (stored plain text)
             document.getElementById("workspace-password").value = currentDept.password || "";
+            document.getElementById("workspace-password").placeholder = "Enter password";
+            
+            document.getElementById("workspace-hod").value = currentDept.hodName || "";
+            document.getElementById("workspace-email").value = currentDept.email || "";
+            document.getElementById("workspace-contact").value = currentDept.contactNumber || "";
+
             document.getElementById("workspace-logo-url").value = currentDept.logoUrl || "";
             document.getElementById("workspace-cover-url").value = currentDept.coverImageUrl || "";
             document.getElementById("workspace-description").value = currentDept.description || "";
@@ -671,7 +872,10 @@
                 password: document.getElementById("workspace-password").value,
                 description: document.getElementById("workspace-description").value,
                 logoUrl: document.getElementById("workspace-logo-url").value,
-                coverImageUrl: document.getElementById("workspace-cover-url").value
+                coverImageUrl: document.getElementById("workspace-cover-url").value,
+                hodName: document.getElementById("workspace-hod").value,
+                email: document.getElementById("workspace-email").value,
+                contactNumber: document.getElementById("workspace-contact").value
             };
 
             fetch(`/api/departments/${currentDept.id}/details`, {
@@ -690,6 +894,9 @@
                 currentDept.description = data.description;
                 currentDept.logoUrl = data.logoUrl;
                 currentDept.coverImageUrl = data.coverImageUrl;
+                currentDept.hodName = data.hodName;
+                currentDept.email = data.email;
+                currentDept.contactNumber = data.contactNumber;
                 localStorage.setItem("eventhub_dept_session", JSON.stringify(currentDept));
                 
                 detailsModalObj.hide();
@@ -759,10 +966,15 @@
                 return res.json().then(err => { throw new Error(err.error || "Login failed") });
             })
             .then(data => {
-                // Save session cache in local storage
-                localStorage.setItem("eventhub_dept_session", JSON.stringify(data));
-                currentDept = data;
-                showWorkspace();
+                if (data.role === "ROLE_TUTOR" || data.role === "ROLE_HOD") {
+                    localStorage.setItem("eventhub_staff_session", JSON.stringify(data));
+                    localStorage.removeItem("eventhub_dept_session");
+                } else {
+                    localStorage.setItem("eventhub_dept_session", JSON.stringify(data));
+                    localStorage.removeItem("eventhub_staff_session");
+                }
+                // Reload page to run DOMContentLoaded init cleanly
+                window.location.reload();
             })
             .catch(err => {
                 errDiv.innerText = err.message;
@@ -827,6 +1039,7 @@
             document.getElementById("comp-datetime").value = comp.dateTime ? comp.dateTime.substring(0, 16) : "";
             document.getElementById("comp-staff-name").value = comp.inChargeStaffName || "";
             document.getElementById("comp-staff-contact").value = comp.inChargeStaffContact || "";
+            document.getElementById("comp-max-participants").value = comp.maxParticipants || "";
             
             if (currentCompStep > 0) {
                 document.getElementById("wizard-prev-btn").style.display = "block";
@@ -845,7 +1058,7 @@
         }
 
         function isCompStepValid(comp) {
-            return comp && comp.name && comp.venue && comp.dateTime && comp.inChargeStaffName && comp.inChargeStaffContact;
+            return comp && comp.name && comp.venue && comp.dateTime && comp.inChargeStaffName && comp.inChargeStaffContact && comp.maxParticipants;
         }
 
         function goToPrevCompStep() {
@@ -864,13 +1077,18 @@
             const dateTime = document.getElementById("comp-datetime").value.trim();
             const staffName = document.getElementById("comp-staff-name").value.trim();
             const staffContact = document.getElementById("comp-staff-contact").value.trim();
+            const maxParticipantsVal = document.getElementById("comp-max-participants").value.trim();
+            const maxParticipants = maxParticipantsVal ? parseInt(maxParticipantsVal) : null;
             
+            const comp = competitionsArray[currentCompStep];
             competitionsArray[currentCompStep] = {
+                id: comp ? comp.id : undefined,
                 name: name,
                 venue: venue,
                 dateTime: dateTime,
                 inChargeStaffName: staffName,
-                inChargeStaffContact: staffContact
+                inChargeStaffContact: staffContact,
+                maxParticipants: maxParticipants
             };
             
             return true;
@@ -882,8 +1100,9 @@
             const dateTime = document.getElementById("comp-datetime").value.trim();
             const staffName = document.getElementById("comp-staff-name").value.trim();
             const staffContact = document.getElementById("comp-staff-contact").value.trim();
+            const maxParticipantsVal = document.getElementById("comp-max-participants").value.trim();
             
-            if (!name || !venue || !dateTime || !staffName || !staffContact) {
+            if (!name || !venue || !dateTime || !staffName || !staffContact || !maxParticipantsVal) {
                 alert("Please fill in all details for this competition before saving.");
                 return;
             }
@@ -896,6 +1115,11 @@
             
             if (staffContact.length !== 10 || isNaN(staffContact)) {
                 alert("Please enter a valid 10-digit contact number.");
+                return;
+            }
+            
+            if (isNaN(maxParticipantsVal) || parseInt(maxParticipantsVal) <= 0) {
+                alert("Please enter a valid maximum number of participants.");
                 return;
             }
             
@@ -983,6 +1207,12 @@
             document.getElementById("modalTitle").innerText = "Create Department Event";
             document.getElementById("upload-status").innerText = "";
             
+            document.getElementById("event-staff-name").value = "";
+            document.getElementById("event-staff-contact").value = "";
+            document.getElementById("event-capacity").value = "";
+            document.getElementById("event-deadline").value = "";
+            document.getElementById("event-rules").value = "";
+
             // Reset wizard
             competitionsArray = [];
             currentCompStep = 0;
@@ -1027,11 +1257,14 @@
             });
         }
 
+        let editingEvent = null;
+
         // Save (Add/Update) Event
         function saveEvent(e) {
             e.preventDefault();
 
             const eventId = document.getElementById("event-id").value;
+            const isEdit = !!eventId;
             const numCompetitions = parseInt(document.getElementById("event-num-competitions").value);
             
             if (!numCompetitions || isNaN(numCompetitions)) {
@@ -1043,22 +1276,50 @@
             saveFieldsToStep();
 
             const eventDateTime = document.getElementById("event-datetime").value;
-            const eventValidation = validateEventDateTime(eventDateTime);
+            let checkEventPastDate = true;
+            if (isEdit && editingEvent && editingEvent.dateTime) {
+                if (eventDateTime.substring(0, 16) === editingEvent.dateTime.substring(0, 16)) {
+                    checkEventPastDate = false;
+                }
+            }
+
+            const eventValidation = validateEventDateTime(eventDateTime, checkEventPastDate);
             if (!eventValidation.valid) {
                 alert("Event Date/Time: " + eventValidation.message);
+                return;
+            }
+
+            // Deadline validation
+            const eventDeadline = document.getElementById("event-deadline").value;
+            const dlValidation = validateEventDateTime(eventDeadline, checkEventPastDate);
+            if (!dlValidation.valid) {
+                alert("Registration Deadline: " + dlValidation.message);
+                return;
+            }
+            if (new Date(eventDeadline) > new Date(eventDateTime)) {
+                alert("Registration Deadline must be before the Event Date and Time.");
                 return;
             }
             
             // Validate all wizard steps
             for (let i = 0; i < numCompetitions; i++) {
                 const comp = competitionsArray[i];
-                if (!comp || !comp.name || !comp.venue || !comp.dateTime || !comp.inChargeStaffName || !comp.inChargeStaffContact) {
+                if (!comp || !comp.name || !comp.venue || !comp.dateTime || !comp.inChargeStaffName || !comp.inChargeStaffContact || !comp.maxParticipants) {
                     alert(`Competition ${i + 1} is not fully configured. Please fill in all fields in the wizard.`);
                     currentCompStep = i;
                     renderWizardStep();
                     return;
                 }
-                const compValidation = validateEventDateTime(comp.dateTime);
+                
+                let checkCompPastDate = true;
+                if (isEdit && editingEvent && editingEvent.competitions) {
+                    const origComp = editingEvent.competitions.find(oc => oc.id === comp.id) || editingEvent.competitions[i];
+                    if (origComp && origComp.dateTime && comp.dateTime.substring(0, 16) === origComp.dateTime.substring(0, 16)) {
+                        checkCompPastDate = false;
+                    }
+                }
+
+                const compValidation = validateEventDateTime(comp.dateTime, checkCompPastDate);
                 if (!compValidation.valid) {
                     alert(`Competition ${i + 1} Date/Time: ${compValidation.message}`);
                     currentCompStep = i;
@@ -1070,9 +1331,14 @@
             const payload = {
                 name: document.getElementById("event-name").value,
                 venue: document.getElementById("event-venue").value,
-                dateTime: document.getElementById("event-datetime").value,
+                dateTime: eventDateTime,
                 description: document.getElementById("event-desc").value,
                 posterUrl: document.getElementById("event-poster-url").value,
+                inChargeStaffName: document.getElementById("event-staff-name").value,
+                inChargeStaffContact: document.getElementById("event-staff-contact").value,
+                capacity: document.getElementById("event-capacity").value ? parseInt(document.getElementById("event-capacity").value) : null,
+                registrationDeadline: eventDeadline,
+                rulesGuidelines: document.getElementById("event-rules").value,
                 competitions: competitionsArray
             };
 
@@ -1105,6 +1371,7 @@
                 .then(events => {
                     const event = events.find(e => e.id.toString() === id.toString());
                     if (!event) return;
+                    editingEvent = event;
 
                     document.getElementById("event-id").value = event.id;
                     document.getElementById("event-name").value = event.name;
@@ -1114,6 +1381,16 @@
                         document.getElementById("event-datetime").value = event.dateTime.substring(0, 16);
                     }
                     
+                    document.getElementById("event-staff-name").value = event.inChargeStaffName || "";
+                    document.getElementById("event-staff-contact").value = event.inChargeStaffContact || "";
+                    document.getElementById("event-capacity").value = event.capacity || "";
+                    if (event.registrationDeadline) {
+                        document.getElementById("event-deadline").value = event.registrationDeadline.substring(0, 16);
+                    } else {
+                        document.getElementById("event-deadline").value = "";
+                    }
+                    document.getElementById("event-rules").value = event.rulesGuidelines || "";
+
                     document.getElementById("event-desc").value = event.description || "";
                     document.getElementById("event-poster-url").value = event.posterUrl || "";
                     document.getElementById("upload-status").innerText = "";
@@ -1355,12 +1632,7 @@
             }
         }
         // --- Participant breakdown grouping by competition ---
-        let participantsModal = null;
-
         function showEventParticipants(eventId, eventName) {
-            if (!participantsModal) {
-                participantsModal = new bootstrap.Modal(document.getElementById('participantsModal'));
-            }
             
             document.getElementById("participantsModalTitle").innerText = `Participants - ${eventName}`;
             const content = document.getElementById("participants-content");
@@ -1492,10 +1764,24 @@
                 // Update stats cards
                 document.getElementById("stats-total-events").innerText = events.length;
                 document.getElementById("stats-total-registrations").innerText = registrations.length;
+                document.getElementById("stats-total-participants").innerText = registrations.length;
+
+                // Load average rating
+                fetch(`/api/departments/${currentDept.id}/feedback`)
+                    .then(res => res.json())
+                    .then(feedbacks => {
+                        if (feedbacks.length > 0) {
+                            let sum = 0;
+                            feedbacks.forEach(f => sum += f.rating);
+                            const avg = (sum / feedbacks.length).toFixed(1);
+                            document.getElementById("stats-avg-rating").innerText = `${avg} ★`;
+                        } else {
+                            document.getElementById("stats-avg-rating").innerText = `0.0 ★`;
+                        }
+                    })
+                    .catch(err => console.error("Error loading feedback for stats card:", err));
                 
                 const checkedInCount = registrations.filter(r => r.status && r.status.toLowerCase().includes("attend")).length;
-                const attendanceRate = registrations.length > 0 ? Math.round((checkedInCount / registrations.length) * 100) : 0;
-                document.getElementById("stats-attendance-rate").innerText = `${attendanceRate}%`;
 
                 // Calculate registrations per event
                 const eventRegMap = {};
@@ -1619,6 +1905,160 @@
                     html5QrcodeScanner = null;
                 }).catch(err => console.log(err));
             }
+        }
+
+        function loadDeptParticipants() {
+            const tbody = document.getElementById("dept-participants-tbody");
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4"><div class="spinner-border text-secondary" role="status"></div></td></tr>';
+
+            fetch(`/api/departments/${currentDept.id}/registrations`)
+                .then(res => res.json())
+                .then(regs => {
+                    if (regs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">No participants registered for your department events yet.</td></tr>';
+                        return;
+                    }
+
+                    // Sort by registration date descending
+                    regs.sort((a, b) => new Date(b.registrationDate) - new Date(a.registrationDate));
+
+                    let html = "";
+                    regs.forEach((reg, index) => {
+                        const isCheckedIn = reg.status && reg.status.toLowerCase().includes("attend");
+                        const statusBadge = isCheckedIn 
+                            ? `<span class="badge bg-success">Checked In</span>`
+                            : `<span class="badge bg-warning">Registered</span>`;
+                        
+                        const actionBtn = isCheckedIn
+                            ? `<span class="text-success small fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Checked-In</span>`
+                            : `<button class="btn btn-outline-success btn-sm" onclick="manualCheckIn(${reg.id})"><i class="fa-solid fa-square-check me-1"></i>Check-In</button>`;
+
+                        const compText = reg.competition ? reg.competition.name : "Event Level / General";
+
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><strong class="text-white">${reg.studentName}</strong></td>
+                                <td>${reg.rollNumber}</td>
+                                <td><span class="fw-bold text-white">${reg.event.name}</span></td>
+                                <td><small class="text-muted">${compText}</small></td>
+                                <td>${statusBadge}</td>
+                                <td>${actionBtn}</td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error("Error loading participants:", err);
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger p-4">Error loading participants directory.</td></tr>';
+                });
+        }
+
+        function manualCheckIn(id) {
+            fetch(`/api/departments/${currentDept.id}/checkin/${id}`, {
+                method: "POST"
+            })
+            .then(res => {
+                if (res.ok) {
+                    showSuccessPopup("Student Checked In!");
+                    loadDeptParticipants();
+                    renderDepartmentAnalytics();
+                } else {
+                    alert("Check-in failed");
+                }
+            })
+            .catch(err => console.error("Error during manual check-in:", err));
+        }
+
+        function loadDeptFeedback() {
+            const tbody = document.getElementById("feedback-tbody");
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4"><div class="spinner-border text-secondary" role="status"></div></td></tr>';
+
+            fetch(`/api/departments/${currentDept.id}/feedback`)
+                .then(res => res.json())
+                .then(feedbacks => {
+                    document.getElementById("feedback-total-count").innerText = feedbacks.length;
+
+                    if (feedbacks.length === 0) {
+                        document.getElementById("feedback-avg-rating").innerText = "0.0 / 5.0";
+                        document.getElementById("feedback-avg-stars-container").innerHTML = "";
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-4">No department event feedback found.</td></tr>';
+                        document.getElementById("feedback-event-ratings-tbody").innerHTML = '<tr><td colspan="2" class="text-center text-muted p-2">No data</td></tr>';
+                        return;
+                    }
+
+                    let sum = 0;
+                    let eventRatings = {};
+
+                    feedbacks.forEach(f => {
+                        sum += f.rating;
+                        
+                        if (f.event) {
+                            const eName = f.event.name;
+                            if (!eventRatings[eName]) eventRatings[eName] = { sum: 0, count: 0 };
+                            eventRatings[eName].sum += f.rating;
+                            eventRatings[eName].count++;
+                        }
+                    });
+
+                    const avg = (sum / feedbacks.length).toFixed(1);
+                    document.getElementById("feedback-avg-rating").innerText = `${avg} / 5.0`;
+
+                    // Generate average stars
+                    let avgStarsHtml = "";
+                    for (let i = 1; i <= 5; i++) {
+                        if (i <= Math.round(avg)) {
+                            avgStarsHtml += `<i class="fa-solid fa-star text-warning"></i>`;
+                        } else {
+                            avgStarsHtml += `<i class="fa-regular fa-star text-secondary"></i>`;
+                        }
+                    }
+                    document.getElementById("feedback-avg-stars-container").innerHTML = avgStarsHtml;
+
+                    // Populate Event Ratings
+                    let eventHtml = "";
+                    Object.keys(eventRatings).forEach(eName => {
+                        const eAvg = (eventRatings[eName].sum / eventRatings[eName].count).toFixed(1);
+                        eventHtml += `
+                            <tr>
+                                <td>${eName}</td>
+                                <td><span class="badge bg-warning text-dark"><i class="fa-solid fa-star me-1"></i>${eAvg}</span></td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById("feedback-event-ratings-tbody").innerHTML = eventHtml || '<tr><td colspan="2" class="text-center text-muted p-2">No data</td></tr>';
+
+                    // Populate Feed Table
+                    let tableHtml = "";
+                    feedbacks.forEach((f, idx) => {
+                        const fDate = new Date(f.createdAt).toLocaleDateString() + ' ' + new Date(f.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        let starsHtml = "";
+                        for (let i = 1; i <= 5; i++) {
+                            if (i <= f.rating) {
+                                starsHtml += `<i class="fa-solid fa-star text-warning"></i>`;
+                            } else {
+                                starsHtml += `<i class="fa-regular fa-star text-secondary"></i>`;
+                            }
+                        }
+                        tableHtml += `
+                            <tr>
+                                <td>${idx + 1}</td>
+                                <td><strong class="text-white">${f.student ? f.student.studentName : 'N/A'}</strong></td>
+                                <td>${f.student ? f.student.email : 'N/A'}</td>
+                                <td><span class="fw-bold text-white">${f.event ? f.event.name : 'N/A'}</span></td>
+                                <td><span class="font-monospace">${starsHtml}</span></td>
+                                <td>${f.comment || '<span class="text-muted italic">No comments</span>'}</td>
+                                <td><small class="text-secondary">${fDate}</small></td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = tableHtml;
+                })
+                .catch(err => {
+                    console.error("Error loading feedback:", err);
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger p-4">Error loading feedback.</td></tr>';
+                });
         }
     </script>
 

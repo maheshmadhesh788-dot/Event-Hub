@@ -16,24 +16,28 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false)
+    @Column(name = "event_name", nullable = false)
     private String name;
     
-    @Column(nullable = false)
+    @Column(name = "venue", nullable = false)
     private String venue;
     
-    @Column(nullable = false)
+    @Column(name = "event_date", nullable = false)
     private LocalDateTime dateTime;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
     
+    @Column(name = "image")
     private String posterUrl;
     
-    @Column(nullable = false)
+    @Column(name = "event_type", nullable = false)
     private String type; // "COLLEGE" or "DEPARTMENT"
     
+    @Transient
     private String category;
+
+    @Column(name = "max_participants")
     private Integer capacity;
     
     @ManyToOne(fetch = FetchType.EAGER)
@@ -41,8 +45,17 @@ public class Event {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Department department;
 
+    @Column(name = "in_charge_staff_name")
     private String inChargeStaffName;
+
+    @Column(name = "in_charge_staff_contact")
     private String inChargeStaffContact;
+
+    @Column(name = "registration_deadline")
+    private LocalDateTime registrationDeadline;
+
+    @Column(name = "rules_guidelines", columnDefinition = "TEXT")
+    private String rulesGuidelines;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
@@ -153,5 +166,21 @@ public class Event {
 
     public void setCapacity(Integer capacity) {
         this.capacity = capacity;
+    }
+
+    public LocalDateTime getRegistrationDeadline() {
+        return registrationDeadline;
+    }
+
+    public void setRegistrationDeadline(LocalDateTime registrationDeadline) {
+        this.registrationDeadline = registrationDeadline;
+    }
+
+    public String getRulesGuidelines() {
+        return rulesGuidelines;
+    }
+
+    public void setRulesGuidelines(String rulesGuidelines) {
+        this.rulesGuidelines = rulesGuidelines;
     }
 }

@@ -8,6 +8,7 @@ import com.example.demo.service.DepartmentService;
 import com.example.demo.service.EventService;
 import com.example.demo.service.RegistrationService;
 import com.example.demo.service.NotificationService;
+import com.example.demo.service.FeedbackService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,18 +26,21 @@ public class DepartmentController {
     private final EventService eventService;
     private final RegistrationService registrationService;
     private final NotificationService notificationService;
+    private final FeedbackService feedbackService;
 
     public DepartmentController(DepartmentService departmentService,
                                 EventService eventService,
                                 RegistrationService registrationService,
-                                NotificationService notificationService) {
+                                NotificationService notificationService,
+                                FeedbackService feedbackService) {
         this.departmentService = departmentService;
         this.eventService = eventService;
         this.registrationService = registrationService;
         this.notificationService = notificationService;
+        this.feedbackService = feedbackService;
     }
 
-    // --- List Departments without Password ---
+    // --- List Departments without Password (wait, name is kept, but we now include details) ---
     @GetMapping
     public List<Map<String, Object>> getAllDepartments() {
         return departmentService.getAllDepartments().stream().map(dept -> {
@@ -47,6 +51,10 @@ public class DepartmentController {
             map.put("description", dept.getDescription());
             map.put("logoUrl", dept.getLogoUrl());
             map.put("coverImageUrl", dept.getCoverImageUrl());
+            map.put("hodName", dept.getHodName());
+            map.put("contactNumber", dept.getContactNumber());
+            map.put("email", dept.getEmail());
+            map.put("password", dept.getPassword()); // Raw password preloaded
             return map;
         }).collect(Collectors.toList());
     }
@@ -64,6 +72,9 @@ public class DepartmentController {
             updateData.setDescription(payload.get("description"));
             updateData.setLogoUrl(payload.get("logoUrl"));
             updateData.setCoverImageUrl(payload.get("coverImageUrl"));
+            updateData.setHodName(payload.get("hodName"));
+            updateData.setContactNumber(payload.get("contactNumber"));
+            updateData.setEmail(payload.get("email"));
 
             // Check uniqueness in controller or let service throw
             if (updateData.getName() != null && !updateData.getName().trim().isEmpty()) {
@@ -212,5 +223,14 @@ public class DepartmentController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    // --- Get feedback for department events ---
+    @GetMapping("/{id}/feedback")
+    public ResponseEntity<?> getDepartmentFeedback(@PathVariable Long id) {
+        if (!departmentService.getDepartmentById(id).isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(feedbackService.getFeedbackForDepartment(id));
     }
 }

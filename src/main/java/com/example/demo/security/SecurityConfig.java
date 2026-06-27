@@ -39,7 +39,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Public Static Resources
-                .requestMatchers("/", "/favicon.ico", "/error", "/index.html", "/login.html", "/events.html", "/dashboard.html", "/department.html", "/admin.html", "/register.html", "/history.html").permitAll()
+                .requestMatchers("/", "/favicon.ico", "/error", "/index.html", "/login.html", "/events.html", "/dashboard.html", "/department.html", "/admin.html", "/superadmin.html", "/register.html", "/history.html", "/achievements.html").permitAll()
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**").permitAll()
                 
                 // Public Authentication and Initial Operations
@@ -53,14 +53,20 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/student/check/**").permitAll()
                 .requestMatchers("/api/student/register").permitAll()
                 
+                // Secure Super Admin endpoints
+                .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN")
+                
                 // Secure Admin endpoints
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 
                 // Secure Department endpoints
                 .requestMatchers("/api/departments/**").hasRole("DEPARTMENT")
                 
                 // Secure Student endpoints
                 .requestMatchers("/api/student/**").hasRole("STUDENT")
+                
+                // Secure Achievement endpoints
+                .requestMatchers("/api/achievements/**").hasAnyRole("TUTOR", "HOD", "ADMIN", "SUPER_ADMIN", "DEPARTMENT")
                 
                 // Catch-all
                 .anyRequest().authenticated()

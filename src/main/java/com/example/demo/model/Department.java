@@ -12,20 +12,32 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false, unique = true)
+    @Column(name = "department_name", nullable = false, unique = true)
     private String name;
     
-    @Column(nullable = false, unique = true)
+    @Column(name = "department_code", nullable = false, unique = true)
     private String code;
     
-    @Column(nullable = false)
+    @Column(name = "password")
     private String password;
 
-    @Column(length = 1000)
+    @Column(name = "description", length = 1000)
     private String description;
 
+    @Column(name = "logo_url")
     private String logoUrl;
+
+    @Column(name = "cover_image_url")
     private String coverImageUrl;
+
+    @Column(name = "hod_name")
+    private String hodName;
+
+    @Column(name = "contact_number")
+    private String contactNumber;
+
+    @Column(name = "email")
+    private String email;
 
     public Department() {}
 
@@ -90,5 +102,29 @@ public class Department {
 
     public void setCoverImageUrl(String coverImageUrl) {
         this.coverImageUrl = coverImageUrl;
+    }
+
+    public String getHodName() {
+        return hodName;
+    }
+
+    public void setHodName(String hodName) {
+        this.hodName = hodName;
+    }
+
+    public String getContactNumber() {
+        return contactNumber;
+    }
+
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

@@ -14,18 +14,27 @@ public class Competition {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(nullable = false)
+    @Column(name = "competition_name", nullable = false)
     private String name;
     
-    @Column(nullable = false)
+    @Column(name = "venue")
     private String venue;
     
-    @Column(nullable = false)
+    @Column(name = "date_time")
     private LocalDateTime dateTime;
     
+    @Column(name = "in_charge_staff_name")
     private String inChargeStaffName;
+
+    @Column(name = "in_charge_staff_contact")
     private String inChargeStaffContact;
     
+    @Column(name = "competition_type")
+    private String competitionType;
+
+    @Column(name = "max_participants")
+    private Integer maxParticipants;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
     @JsonBackReference
@@ -96,5 +105,21 @@ public class Competition {
 
     public void setEvent(Event event) {
         this.event = event;
+    }
+
+    public String getCompetitionType() {
+        return competitionType;
+    }
+
+    public void setCompetitionType(String competitionType) {
+        this.competitionType = competitionType;
+    }
+
+    public Integer getMaxParticipants() {
+        return maxParticipants;
+    }
+
+    public void setMaxParticipants(Integer maxParticipants) {
+        this.maxParticipants = maxParticipants;
     }
 }

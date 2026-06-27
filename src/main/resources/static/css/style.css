@@ -254,6 +254,90 @@ body {
     color: var(--text-primary);
 }
 
+/* Super Admin Input/Filter Theme Visibility */
+#user-search, #role-filter {
+    background-color: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary) !important;
+    font-weight: 500;
+}
+
+#user-search::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 1;
+}
+
+[data-theme="light"] #user-search,
+[data-theme="light"] #role-filter {
+    background-color: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.2) !important;
+    color: #111827 !important;
+}
+
+[data-theme="light"] #user-search::placeholder {
+    color: #4b5563 !important;
+}
+
+[data-theme="light"] #role-filter option {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+}
+
+[data-theme="dark"] #user-search,
+[data-theme="dark"] #role-filter,
+body:not([data-theme="light"]) #user-search,
+body:not([data-theme="light"]) #role-filter {
+    background-color: rgba(15, 23, 42, 0.65) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] #user-search::placeholder,
+body:not([data-theme="light"]) #user-search::placeholder {
+    color: #9ca3af !important;
+}
+
+[data-theme="dark"] #role-filter option,
+body:not([data-theme="light"]) #role-filter option {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+/* Super Admin Crown Gentle Animation */
+.crown-glow-shake {
+    animation: crown-gentle-shake 2.5s ease-in-out infinite;
+    display: inline-block;
+}
+
+@keyframes crown-gentle-shake {
+    0%, 100% {
+        transform: rotate(0deg) scale(1);
+    }
+    20% {
+        transform: rotate(-10deg) scale(1.08);
+    }
+    40% {
+        transform: rotate(8deg) scale(1.05);
+    }
+    60% {
+        transform: rotate(-6deg) scale(1.08);
+    }
+    80% {
+        transform: rotate(4deg) scale(1.05);
+    }
+}
+
+/* Disable past calendar dates */
+.fc-day-past {
+    opacity: 0.45 !important;
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    pointer-events: none !important;
+}
+
+[data-theme="light"] .fc-day-past {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
 /* Notifications Card */
 .notif-card {
     border-left: 4px solid var(--primary);
@@ -1779,5 +1863,81 @@ p.text-muted {
 
 .modal-content-custom {
     background: var(--modal-bg) !important;
+}
+
+/* Home Page Light Mode Adjustments */
+[data-theme="light"] body.home-page {
+    background: linear-gradient(rgba(240, 244, 248, 0.92), rgba(240, 244, 248, 0.96)), 
+                url('../images/wallpaper.png') no-repeat center center fixed;
+    background-size: cover;
+    background-blend-mode: multiply;
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .hero-title {
+    background: linear-gradient(135deg, #111827 30%, #1e3a8a) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+
+[data-theme="light"] .home-toggle-btn {
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+[data-theme="light"] .home-toggle-btn i {
+    color: var(--primary) !important;
+}
+
+[data-theme="light"] .home-toggle-btn.active {
+    background-color: var(--primary) !important;
+    color: #ffffff !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 16px rgba(30, 58, 138, 0.35) !important;
+}
+
+[data-theme="light"] .home-toggle-btn.active i {
+    color: #ffffff !important;
+}
+
+[data-theme="light"] .gallery-category-title {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .gallery-card-hover-overlay i {
+    color: #ffffff !important;
+}
+
+[data-theme="light"] .gallery-category-card:hover .gallery-category-title {
+    color: var(--primary) !important;
+}
+
+/* Super Admin Profile Section Animations */
+.superadmin-profile-section {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--glass-border) !important;
+}
+
+.superadmin-profile-section:hover {
+    transform: translateY(-2px);
+    border-color: var(--secondary) !important;
+    background: rgba(217, 119, 6, 0.08) !important;
+    box-shadow: 0 0 20px rgba(217, 119, 6, 0.45) !important;
+    animation: superAdminPulse 2s infinite alternate;
+}
+
+.superadmin-profile-section:active {
+    transform: scale(0.98);
+}
+
+@keyframes superAdminPulse {
+    0% {
+        box-shadow: 0 0 15px rgba(217, 119, 6, 0.25);
+    }
+    100% {
+        box-shadow: 0 0 30px rgba(217, 119, 6, 0.55);
+    }
 }
 

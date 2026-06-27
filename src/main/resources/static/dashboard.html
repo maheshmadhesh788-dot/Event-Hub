@@ -80,7 +80,7 @@
                     <label class="form-label text-muted small fw-bold">Password</label>
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-secondary text-muted"><i class="fa-solid fa-lock"></i></span>
-                        <input type="password" id="password-input" class="form-control form-control-custom password-input-with-eye" placeholder="Enter your access password" required>
+                        <input type="password" id="password-input" class="form-control form-control-custom password-input-with-eye" autocomplete="new-password" placeholder="Enter your access password" required>
                         <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('password-input', this)">
                             <i class="fa-solid fa-eye"></i>
                         </button>
@@ -148,7 +148,7 @@
                     <!-- Email -->
                     <div class="col-md-6">
                         <label class="form-label text-muted small fw-bold">Email Address</label>
-                        <input type="email" id="reg-email" class="form-control form-control-custom" required placeholder="e.g. mahesh@gmail.com">
+                        <input type="email" id="reg-email" class="form-control form-control-custom" autocomplete="new-email" required placeholder="e.g. mahesh@gmail.com">
                     </div>
                     <!-- Password -->
                     <div class="col-12">
@@ -243,6 +243,7 @@
                                         <th>Venue</th>
                                         <th>Date & Time</th>
                                         <th>Status</th>
+                                        <th class="text-center">QR Pass</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
@@ -330,7 +331,6 @@
                                 <option value="1st Year">1st Year</option>
                                 <option value="2nd Year">2nd Year</option>
                                 <option value="3rd Year">3rd Year</option>
-                                <option value="4th Year">4th Year</option>
                             </select>
                         </div>
                     </div>
@@ -399,6 +399,8 @@
 
     <!-- Bootstrap 5 Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- html2canvas for certificate image downloads -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- App JS -->
     <script src="js/app.js"></script>
     <script>
@@ -439,6 +441,19 @@
             document.getElementById("login-panel").style.display = "block";
             document.getElementById("register-panel").style.display = "none";
             document.getElementById("workspace-panel").style.display = "none";
+            // Programmatically clear fields to prevent autofill issues
+            const rollInput = document.getElementById("roll-number-input");
+            const passInput = document.getElementById("password-input");
+            if (rollInput) rollInput.value = "";
+            if (passInput) passInput.value = "";
+            setTimeout(() => {
+                if (rollInput) rollInput.value = "";
+                if (passInput) passInput.value = "";
+            }, 100);
+            setTimeout(() => {
+                if (rollInput) rollInput.value = "";
+                if (passInput) passInput.value = "";
+            }, 300);
         }
 
         function showLoginPanel() {
@@ -452,6 +467,9 @@
             document.getElementById("register-error").style.display = "none";
             document.getElementById("register-success").style.display = "none";
         }
+
+        let studentRegistrations = [];
+        let studentBookmarks = [];
 
         function showWorkspace(student) {
             document.getElementById("login-panel").style.display = "none";
@@ -468,18 +486,47 @@
 
             const roll = student.rollNumber || student.username;
 
-            // Fetch registration history, bookmarks list, and calendar entries
-            loadStudentHistory(roll);
-            loadStudentBookmarks(roll);
-            loadCalendar(roll);
+            // Batch fetch to optimize performance (load workspace data in parallel)
+            refreshStudentWorkspace(roll);
+        }
+
+        function refreshStudentWorkspace(rollNumber) {
+            const tbody = document.getElementById("records-tbody");
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4"><div class="spinner-border text-secondary" role="status"></div></td></tr>';
+            }
+
+            Promise.all([
+                fetch(`/api/student/registrations/${rollNumber}`).then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error("Failed to load registration history");
+                }),
+                fetch(`/api/student/bookmarks/${rollNumber}`).then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error("Failed to load bookmarks");
+                })
+            ])
+            .then(([registrations, bookmarks]) => {
+                studentRegistrations = registrations;
+                studentBookmarks = bookmarks;
+                
+                renderStudentHistory(registrations);
+                renderStudentBookmarks(bookmarks);
+                renderCalendarEvents(registrations, bookmarks);
+            })
+            .catch(err => {
+                console.error("Error refreshing student workspace:", err);
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger">Failed to fetch data. Ensure the server is online.</td></tr>`;
+                }
+            });
         }
 
         // Logout Student
         function logoutStudent() {
-            localStorage.removeItem("eventhub_student_session");
-            localStorage.removeItem("eventhub_student_password");
+            localStorage.clear();
             currentStudent = null;
-            showLogin();
+            window.location.href = "login.html";
         }
 
         // Load Departments for select lists
@@ -596,87 +643,85 @@
             });
         }
 
-        // Fetch student history from REST API
-        function loadStudentHistory(rollNumber) {
+        // Render student history into the DOM table
+        function renderStudentHistory(registrations) {
             const tbody = document.getElementById("records-tbody");
             const emptyPanel = document.getElementById("empty-records-panel");
             const tablePanel = document.getElementById("table-panel");
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4"><div class="spinner-border text-secondary" role="status"></div></td></tr>';
+            
+            document.getElementById("records-count").innerText = `${registrations.length} Competitions`;
+            if (registrations.length === 0) {
+                tablePanel.style.display = "none";
+                emptyPanel.style.display = "block";
+                return;
+            }
 
-            fetch(`/api/student/registrations/${rollNumber}`)
-                .then(res => {
-                    if (res.ok) return res.json();
-                    throw new Error("Failed to load registration history");
-                })
-                .then(registrations => {
-                    document.getElementById("records-count").innerText = `${registrations.length} Competitions`;
-                    if (registrations.length === 0) {
-                        tablePanel.style.display = "none";
-                        emptyPanel.style.display = "block";
-                        return;
-                    }
+            emptyPanel.style.display = "none";
+            tablePanel.style.display = "block";
 
-                    emptyPanel.style.display = "none";
-                    tablePanel.style.display = "block";
+            // Populate table
+            let html = "";
+            registrations.forEach((reg, index) => {
+                const event = reg.event;
+                const eventType = event.type === "COLLEGE" ? "College Level" : "Department Level";
+                const typeBadge = event.type === "COLLEGE" ? "bg-primary" : "bg-secondary";
+                const compName = reg.competition ? ` - ${reg.competition.name}` : "";
 
-                    // Populate table
-                    let html = "";
-                    registrations.forEach((reg, index) => {
-                        const event = reg.event;
-                        const eventType = event.type === "COLLEGE" ? "College Level" : "Department Level";
-                        const typeBadge = event.type === "COLLEGE" ? "bg-primary" : "bg-secondary";
-                        const compName = reg.competition ? ` - ${reg.competition.name}` : "";
+                // Dynamic status badge generation (Requirement 6)
+                let statusBadgeHtml = "";
+                const statusVal = reg.status ? reg.status.toLowerCase() : "";
+                if (statusVal.includes("success") || statusVal.includes("approve") || statusVal.includes("confirm") || statusVal.includes("register") || statusVal.includes("attend")) {
+                    statusBadgeHtml = `<span class="status-badge-success"><i class="fa-solid fa-circle-check"></i>${reg.status}</span>`;
+                } else if (statusVal.includes("pending") || statusVal.includes("wait") || statusVal.includes("incomplete")) {
+                    statusBadgeHtml = `<span class="status-badge-warning"><i class="fa-solid fa-triangle-exclamation"></i>${reg.status}</span>`;
+                } else {
+                    statusBadgeHtml = `<span class="status-badge-danger"><i class="fa-solid fa-circle-xmark"></i>${reg.status}</span>`;
+                }
 
-                        // Dynamic status badge generation (Requirement 6)
-                        let statusBadgeHtml = "";
-                        const statusVal = reg.status ? reg.status.toLowerCase() : "";
-                        if (statusVal.includes("success") || statusVal.includes("approve") || statusVal.includes("confirm") || statusVal.includes("register") || statusVal.includes("attend")) {
-                            statusBadgeHtml = `<span class="status-badge-success"><i class="fa-solid fa-circle-check"></i>${reg.status}</span>`;
-                        } else if (statusVal.includes("pending") || statusVal.includes("wait") || statusVal.includes("incomplete")) {
-                            statusBadgeHtml = `<span class="status-badge-warning"><i class="fa-solid fa-triangle-exclamation"></i>${reg.status}</span>`;
-                        } else {
-                            statusBadgeHtml = `<span class="status-badge-danger"><i class="fa-solid fa-circle-xmark"></i>${reg.status}</span>`;
-                        }
+                // Actions buttons
+                let actionButtonsHtml = `<div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">`;
+                const isAttended = statusVal.includes("attend");
+                
+                actionButtonsHtml += `
+                    <button class="btn btn-outline-primary btn-sm px-2 py-1" onclick="showQrModal(${reg.id}, '${event.name.replace(/'/g, "\\'")}${compName.replace(/'/g, "\\'")}')" title="View Entry Pass QR">
+                        <i class="fa-solid fa-qrcode"></i> Pass
+                    </button>
+                `;
 
-                        // Actions buttons
-                        let actionButtonsHtml = "";
-                        const isAttended = statusVal.includes("attend");
-                        
-                        actionButtonsHtml += `
-                            <button class="btn btn-outline-primary btn-sm px-2 py-1" onclick="showQrModal(${reg.id}, '${event.name.replace(/'/g, "\\'")}${compName.replace(/'/g, "\\'")}')" title="View Entry Pass QR">
-                                <i class="fa-solid fa-qrcode"></i> Pass
-                            </button>
-                        `;
+                if (isAttended) {
+                    actionButtonsHtml += `
+                        <button class="btn btn-outline-success btn-sm px-2 py-1" onclick="showCertificate(${reg.id}, '${reg.studentName.replace(/'/g, "\\'")}', '${event.name.replace(/'/g, "\\'")}${compName.replace(/'/g, "\\'")}', '${event.type}')" title="Print/Download Certificate">
+                            <i class="fa-solid fa-award"></i> Cert
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm px-2 py-1" onclick="openFeedbackModal(${reg.id}, ${event.id}, '${event.name.replace(/'/g, "\\'")}')" title="Submit Feedback">
+                            <i class="fa-solid fa-comment-dots"></i> Feedback
+                        </button>
+                    `;
+                }
+                actionButtonsHtml += `</div>`;
 
-                        if (isAttended) {
-                            actionButtonsHtml += `
-                                <button class="btn btn-outline-success btn-sm px-2 py-1 ms-1" onclick="printCertificate(${reg.id}, '${reg.studentName.replace(/'/g, "\\'")}', '${event.name.replace(/'/g, "\\'")}${compName.replace(/'/g, "\\'")}', '${event.type}')" title="Print/Download Certificate">
-                                    <i class="fa-solid fa-award"></i> Cert
-                                </button>
-                                <button class="btn btn-outline-warning btn-sm px-2 py-1 ms-1" onclick="openFeedbackModal(${reg.id}, ${event.id}, '${event.name.replace(/'/g, "\\'")}')" title="Submit Feedback">
-                                    <i class="fa-solid fa-comment-dots"></i> Feedback
-                                </button>
-                            `;
-                        }
-
-                        html += `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td><strong class="text-white">${event.name}${compName}</strong></td>
-                                <td><span class="badge ${typeBadge}">${eventType}</span></td>
-                                <td>${event.venue}</td>
-                                <td>${formatEventDate(event.dateTime)}</td>
-                                <td>${statusBadgeHtml}</td>
-                                <td class="text-center align-middle">${actionButtonsHtml}</td>
-                            </tr>
-                        `;
-                    });
-                    tbody.innerHTML = html;
-                })
-                .catch(err => {
-                    console.error("Error loading history:", err);
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Failed to fetch registrations. Ensure the server is online.</td></tr>`;
-                });
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong class="text-white">${event.name}${compName}</strong></td>
+                        <td><span class="badge ${typeBadge}">${eventType}</span></td>
+                        <td>${event.venue}</td>
+                        <td>${formatEventDate(event.dateTime)}</td>
+                        <td>${statusBadgeHtml}</td>
+                        <td>
+                            <div class="text-center">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${reg.id}" 
+                                     alt="Pass QR" 
+                                     style="width: 45px; height: 45px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.15);"
+                                     onclick="showQrModal(${reg.id}, '${event.name.replace(/'/g, "\\'")}${compName.replace(/'/g, "\\'")}')"
+                                     title="Click to view larger QR code">
+                            </div>
+                        </td>
+                        <td class="text-center align-middle">${actionButtonsHtml}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
         }
 
         function openRegistrationModal() {
@@ -727,8 +772,12 @@
             })
             .then(data => {
                 registerModalObj.hide();
-                loadStudentHistory(currentStudent.rollNumber);
-                alert("Successfully registered for event!");
+                refreshStudentWorkspace(currentStudent.rollNumber);
+                
+                // Show their entry pass QR code modal immediately
+                const eventName = data.event ? data.event.name : "Event";
+                const compName = data.competition ? ` - ${data.competition.name}` : "";
+                showQrModal(data.id, eventName + compName);
             })
             .catch(err => {
                 errText.innerText = err.message;
@@ -826,15 +875,66 @@
         }
 
         // --- Dynamic Certificate Generator & Printing ---
+        let certificateModalObj = null;
+        let activeCertDetails = null;
+
+        function showCertificate(regId, studentName, eventName, eventType) {
+            fetch(`/api/student/registrations/validate/${regId}`)
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(err => { throw new Error(err.error || "Verification failed") });
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.eligible) {
+                        activeCertDetails = data;
+                        document.getElementById("preview-cert-student-name").innerText = data.studentName.toUpperCase();
+                        document.getElementById("preview-cert-event-name").innerText = data.eventName.toUpperCase();
+                        document.getElementById("preview-cert-event-type").innerText = data.eventType === "COLLEGE" ? "College" : "Department";
+
+                        document.getElementById("cert-student-name").innerText = data.studentName.toUpperCase();
+                        document.getElementById("cert-event-name").innerText = data.eventName.toUpperCase();
+                        document.getElementById("cert-event-type").innerText = data.eventType === "COLLEGE" ? "College" : "Department";
+
+                        if (!certificateModalObj) {
+                            certificateModalObj = new bootstrap.Modal(document.getElementById('certificateModal'));
+                        }
+                        certificateModalObj.show();
+                    } else {
+                        alert("You are not eligible for a certificate.");
+                    }
+                })
+                .catch(err => {
+                    alert(err.message);
+                });
+        }
+
         function printCertificate(regId, studentName, eventName, eventType) {
-            document.getElementById("cert-student-name").innerText = studentName.toUpperCase();
-            document.getElementById("cert-event-name").innerText = eventName.toUpperCase();
-            document.getElementById("cert-event-type").innerText = eventType === "COLLEGE" ? "College" : "Department";
-            
+            showCertificate(regId, studentName, eventName, eventType);
+        }
+
+        function triggerPrintFromPreview() {
             const printArea = document.getElementById("certificate-print-area");
             printArea.style.display = "block";
             window.print();
             printArea.style.display = "none";
+        }
+
+        function triggerDownloadImageFromPreview() {
+            const element = document.getElementById("certificate-preview-card");
+            html2canvas(element, {
+                scale: 3,
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement("a");
+                link.download = `Certificate_${activeCertDetails.studentName.replace(/\s+/g, '_')}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            }).catch(err => {
+                console.error("Error generating image:", err);
+                alert("Failed to save certificate as image.");
+            });
         }
 
         // --- Feedback and Ratings Modal System ---
@@ -927,44 +1027,35 @@
         }
 
         // --- Bookmarks and Wishlist (Premium) ---
-        function loadStudentBookmarks(rollNumber) {
+        function renderStudentBookmarks(bookmarks) {
             const container = document.getElementById("wishlist-container");
             if (!container) return;
-            container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm" role="status"></div></div>';
 
-            fetch(`/api/student/bookmarks/${rollNumber}`)
-                .then(res => res.json())
-                .then(bookmarks => {
-                    if (bookmarks.length === 0) {
-                        container.innerHTML = '<div class="text-center py-4 text-muted small"><i class="fa-regular fa-bookmark mb-2 d-block"></i>No bookmarked events.</div>';
-                        return;
-                    }
+            if (bookmarks.length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-muted small"><i class="fa-regular fa-bookmark mb-2 d-block"></i>No bookmarked events.</div>';
+                return;
+            }
 
-                    let html = "";
-                    bookmarks.forEach(b => {
-                        const event = b.event;
-                        const eventTime = formatEventDate(event.dateTime);
-                        
-                        html += `
-                            <div class="d-flex justify-content-between align-items-center p-3 rounded" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease;">
-                                <div style="min-width: 0;">
-                                    <h6 class="text-white fw-bold mb-1 text-truncate" title="${event.name}">${event.name}</h6>
-                                    <small class="text-muted d-block text-truncate"><i class="fa-solid fa-location-dot me-1"></i>${event.venue}</small>
-                                    <small class="text-secondary d-block text-truncate" style="font-size: 0.75rem;"><i class="fa-solid fa-clock me-1"></i>${eventTime}</small>
-                                </div>
-                                <div class="d-flex gap-2 ms-2">
-                                    <a href="events.html?eventId=${event.id}" class="btn btn-primary-gradient btn-sm px-2 py-1" style="font-size: 0.75rem;"><i class="fa-solid fa-eye"></i></a>
-                                    <button class="btn btn-outline-danger btn-sm px-2 py-1" onclick="removeBookmarkFromDashboard(${event.id})" style="font-size: 0.75rem;"><i class="fa-solid fa-trash-can"></i></button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    container.innerHTML = html;
-                })
-                .catch(err => {
-                    console.error("Error loading bookmarks:", err);
-                    container.innerHTML = '<div class="text-center py-4 text-danger small">Failed to load bookmarks.</div>';
-                });
+            let html = "";
+            bookmarks.forEach(b => {
+                const event = b.event;
+                const eventTime = formatEventDate(event.dateTime);
+                
+                html += `
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease;">
+                        <div style="min-width: 0;">
+                            <h6 class="text-white fw-bold mb-1 text-truncate" title="${event.name}">${event.name}</h6>
+                            <small class="text-muted d-block text-truncate"><i class="fa-solid fa-location-dot me-1"></i>${event.venue}</small>
+                            <small class="text-secondary d-block text-truncate" style="font-size: 0.75rem;"><i class="fa-solid fa-clock me-1"></i>${eventTime}</small>
+                        </div>
+                        <div class="d-flex gap-2 ms-2">
+                            <a href="events.html?eventId=${event.id}" class="btn btn-primary-gradient btn-sm px-2 py-1" style="font-size: 0.75rem;"><i class="fa-solid fa-eye"></i></a>
+                            <button class="btn btn-outline-danger btn-sm px-2 py-1" onclick="removeBookmarkFromDashboard(${event.id})" style="font-size: 0.75rem;"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
         }
 
         function removeBookmarkFromDashboard(eventId) {
@@ -978,85 +1069,71 @@
             .then(res => res.json())
             .then(data => {
                 showSuccessPopup("Bookmark removed!");
-                loadStudentBookmarks(roll);
-                loadCalendar(roll);
+                refreshStudentWorkspace(roll);
             })
             .catch(err => {
                 console.error("Error removing bookmark:", err);
             });
         }
 
-        // --- FullCalendar Load (Premium) ---
-        let calendarInstance = null;
-
-        function loadCalendar(rollNumber) {
+        function renderCalendarEvents(registrations, bookmarks) {
             const calendarEl = document.getElementById("student-calendar");
             if (!calendarEl) return;
 
-            // Fetch registrations and bookmarks in parallel
-            Promise.all([
-                fetch(`/api/student/registrations/${rollNumber}`).then(res => res.json()),
-                fetch(`/api/student/bookmarks/${rollNumber}`).then(res => res.json())
-            ])
-            .then(([registrations, bookmarks]) => {
-                const events = [];
+            const events = [];
 
-                // Add registered events (Blue color)
-                registrations.forEach(r => {
-                    const event = r.event;
-                    const compSuffix = r.competition ? ` - ${r.competition.name}` : "";
+            // Add registered events (Blue color)
+            registrations.forEach(r => {
+                const event = r.event;
+                const compSuffix = r.competition ? ` - ${r.competition.name}` : "";
+                events.push({
+                    id: 'reg-' + r.id,
+                    title: `Registered: ${event.name}${compSuffix}`,
+                    start: event.dateTime,
+                    color: '#6366f1',
+                    textColor: '#ffffff',
+                    url: `events.html?eventId=${event.id}`
+                });
+            });
+
+            // Add bookmarked events (Purple color)
+            bookmarks.forEach(b => {
+                const event = b.event;
+                const alreadyReg = registrations.some(r => r.event.id === event.id);
+                if (!alreadyReg) {
                     events.push({
-                        id: 'reg-' + r.id,
-                        title: `Registered: ${event.name}${compSuffix}`,
+                        id: 'book-' + event.id,
+                        title: `Wishlist: ${event.name}`,
                         start: event.dateTime,
-                        color: '#6366f1',
+                        color: '#a855f7',
                         textColor: '#ffffff',
                         url: `events.html?eventId=${event.id}`
                     });
-                });
-
-                // Add bookmarked events (Purple color)
-                bookmarks.forEach(b => {
-                    const event = b.event;
-                    const alreadyReg = registrations.some(r => r.event.id === event.id);
-                    if (!alreadyReg) {
-                        events.push({
-                            id: 'book-' + event.id,
-                            title: `Wishlist: ${event.name}`,
-                            start: event.dateTime,
-                            color: '#a855f7',
-                            textColor: '#ffffff',
-                            url: `events.html?eventId=${event.id}`
-                        });
-                    }
-                });
-
-                if (calendarInstance) {
-                    calendarInstance.destroy();
                 }
-
-                calendarInstance = new FullCalendar.Calendar(calendarEl, {
-                    initialView: 'dayGridMonth',
-                    headerToolbar: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'dayGridMonth,timeGridWeek'
-                    },
-                    events: events,
-                    themeSystem: 'standard',
-                    eventClick: function(info) {
-                        if (info.event.url) {
-                            info.jsEvent.preventDefault();
-                            window.location.href = info.event.url;
-                        }
-                    }
-                });
-
-                calendarInstance.render();
-            })
-            .catch(err => {
-                console.error("Error loading calendar events:", err);
             });
+
+            if (calendarInstance) {
+                calendarInstance.destroy();
+            }
+
+            calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek'
+                },
+                events: events,
+                themeSystem: 'standard',
+                eventClick: function(info) {
+                    if (info.event.url) {
+                        info.jsEvent.preventDefault();
+                        window.location.href = info.event.url;
+                    }
+                }
+            });
+
+            calendarInstance.render();
         }
     </script>
 
@@ -1120,6 +1197,44 @@
                         <button type="submit" class="btn btn-primary-gradient">Submit Feedback</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certificate Preview Modal -->
+    <div class="modal fade" id="certificateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header modal-header-custom border-secondary">
+                    <h5 class="modal-title text-white fw-bold"><i class="fa-solid fa-award text-primary me-2"></i>Certificate Preview</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 d-flex justify-content-center bg-light" style="overflow-x: auto;">
+                    <div id="certificate-preview-card" style="border: 15px double #b58d3d; padding: 40px; text-align: center; font-family: 'Georgia', serif; background: #fff; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 700px; min-height: 480px; color: #111;">
+                        <div style="color: #222; font-size: 1.8rem; font-weight: bold; margin-bottom: 5px; letter-spacing: 1px; line-height: 1.2;">KONGUNADU ARTS AND SCIENCE COLLEGE</div>
+                        <div style="color: #555; font-size: 0.85rem; font-style: italic; margin-bottom: 20px; letter-spacing: 2px;">(Autonomous) - Coimbatore, Tamil Nadu</div>
+                        <div style="border-top: 2px solid #b58d3d; border-bottom: 2px solid #b58d3d; width: 60%; margin: 15px 0; padding: 5px 0; color: #b58d3d; font-size: 1.1rem; font-weight: bold; letter-spacing: 3px;">CERTIFICATE OF PARTICIPATION</div>
+                        <div style="font-size: 0.95rem; color: #444; margin-top: 20px;">This is to certify that</div>
+                        <div style="font-size: 1.5rem; color: #111; font-weight: bold; border-bottom: 1px dashed #777; padding: 5px 30px; margin: 10px 0; font-family: 'Times New Roman', serif;" id="preview-cert-student-name">STUDENT NAME</div>
+                        <div style="font-size: 0.95rem; color: #444;">of Kongunadu Arts and Science College has successfully attended / participated in</div>
+                        <div style="font-size: 1.2rem; color: #111; font-weight: bold; margin: 10px 0; font-family: 'Times New Roman', serif;" id="preview-cert-event-name">EVENT NAME</div>
+                        <div style="font-size: 0.95rem; color: #444;">conducted as a <span id="preview-cert-event-type">College</span> Level Event.</div>
+                        
+                        <div style="display: flex; justify-content: space-between; width: 80%; margin-top: 40px;">
+                            <div style="text-align: center; font-size: 0.8rem; color: #333;">
+                                <div style="border-top: 1px solid #999; width: 120px; margin-top: 20px; padding-top: 5px;">Event Coordinator</div>
+                            </div>
+                            <div style="text-align: center; font-size: 0.8rem; color: #333;">
+                                <div style="border-top: 1px solid #999; width: 120px; margin-top: 20px; padding-top: 5px;">Principal</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer modal-footer-custom border-secondary">
+                    <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary-gradient" onclick="triggerPrintFromPreview()"><i class="fa-solid fa-print me-1"></i> Print Certificate</button>
+                    <button type="button" class="btn btn-success" onclick="triggerDownloadImageFromPreview()"><i class="fa-solid fa-image me-1"></i> Save as Image</button>
+                </div>
             </div>
         </div>
     </div>

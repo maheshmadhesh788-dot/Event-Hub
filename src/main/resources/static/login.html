@@ -29,6 +29,11 @@
                     <li class="nav-item"><a class="nav-link nav-link-custom" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>
                     <li class="nav-item" id="nav-dynamic"></li>
                     <li class="nav-item ms-lg-2">
+                        <button class="btn btn-glass" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0;">
+                            <i id="theme-toggle-icon" class="fa-solid fa-sun text-warning"></i>
+                        </button>
+                    </li>
+                    <li class="nav-item ms-lg-2">
                         <button class="btn btn-primary-gradient position-relative" data-bs-toggle="offcanvas" data-bs-target="#notificationDrawer">
                             <i class="fa-solid fa-bell"></i> Notices
                             <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
@@ -53,18 +58,19 @@
             <div id="login-error" class="alert alert-danger" style="display: none;" role="alert"></div>
 
             <form onsubmit="handleUnifiedLogin(event)">
-                <div class="mb-3">
+                <div class="mb-3 position-relative">
                     <label class="form-label text-muted small fw-bold">Roll Number / Username / Dept Name</label>
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-secondary text-muted"><i class="fa-solid fa-user"></i></span>
-                        <input type="text" id="login-username" class="form-control form-control-custom" placeholder="e.g. 22IT045 or admin" required>
+                        <input type="text" id="login-username" class="form-control form-control-custom" placeholder="e.g. 22IT045 or admin" required autocomplete="off">
                     </div>
+                    <div id="suggestions-box" class="list-group position-absolute w-100 mt-1" style="display: none; z-index: 1000; max-height: 250px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;"></div>
                 </div>
                 <div class="mb-4">
                     <label class="form-label text-muted small fw-bold">Password</label>
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-secondary text-muted"><i class="fa-solid fa-lock"></i></span>
-                        <input type="password" id="login-password" class="form-control form-control-custom password-input-with-eye" placeholder="Enter your password" required>
+                        <input type="password" id="login-password" class="form-control form-control-custom password-input-with-eye" autocomplete="new-password" placeholder="Enter your password" required>
                         <button class="btn btn-eye-toggle" type="button" onclick="togglePasswordVisibility('login-password', this)">
                             <i class="fa-solid fa-eye"></i>
                         </button>
@@ -120,11 +126,99 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             startNotificationPolling();
+
+            // Suggestions Box Implementation
+            const usernameInput = document.getElementById("login-username");
+            const suggestionsBox = document.getElementById("suggestions-box");
+
+            if (usernameInput && suggestionsBox) {
+                usernameInput.addEventListener("input", function() {
+                    const val = this.value.trim();
+                    if (val.length < 1) {
+                        suggestionsBox.style.display = "none";
+                        return;
+                    }
+
+                    fetch(`/api/auth/search/suggestions?q=${encodeURIComponent(val)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.length === 0) {
+                                suggestionsBox.style.display = "none";
+                                return;
+                            }
+
+                            suggestionsBox.innerHTML = "";
+                            data.forEach(item => {
+                                const btn = document.createElement("button");
+                                btn.type = "button";
+                                btn.className = "list-group-item list-group-item-action text-white d-flex justify-content-between align-items-center";
+                                btn.style.background = "#151c2e";
+                                btn.style.borderColor = "rgba(255,255,255,0.08)";
+                                btn.style.transition = "all 0.2s ease";
+                                
+                                const icon = item.type === "STUDENT" ? '<i class="fa-solid fa-graduation-cap text-primary me-2"></i>' : '<i class="fa-solid fa-building-columns text-success me-2"></i>';
+                                const badgeClass = item.type === "STUDENT" ? "bg-primary" : "bg-success";
+                                const label = item.type === "STUDENT" ? "Student" : "Dept";
+
+                                btn.innerHTML = `
+                                    <div class="d-flex align-items-center text-truncate" style="gap: 8px;">
+                                        ${icon}
+                                        <div class="text-truncate" style="text-align: left;">
+                                            <div class="fw-bold text-truncate" style="font-size: 0.9rem;">${item.name}</div>
+                                            <small class="text-muted" style="font-size: 0.75rem;">${item.code}</small>
+                                        </div>
+                                    </div>
+                                    <span class="badge ${badgeClass} text-dark font-monospace px-2 py-1 small fw-bold" style="font-size: 0.7rem; min-width: 55px; text-align: center;">${label}</span>
+                                `;
+
+                                btn.addEventListener("mouseenter", () => {
+                                    btn.style.background = "rgba(255, 255, 255, 0.1)";
+                                });
+                                btn.addEventListener("mouseleave", () => {
+                                    btn.style.background = "#151c2e";
+                                });
+
+                                btn.addEventListener("click", () => {
+                                    usernameInput.value = item.value;
+                                    suggestionsBox.style.display = "none";
+                                    const pwdInput = document.getElementById("login-password");
+                                    if (pwdInput) pwdInput.focus();
+                                });
+
+                                suggestionsBox.appendChild(btn);
+                            });
+
+                            suggestionsBox.style.display = "block";
+                        })
+                        .catch(err => console.error("Error loading suggestions:", err));
+                });
+
+                document.addEventListener("click", function(e) {
+                    if (e.target !== usernameInput && e.target !== suggestionsBox && !suggestionsBox.contains(e.target)) {
+                        suggestionsBox.style.display = "none";
+                    }
+                });
+            }
+            
+            // Programmatically clear username and password fields to prevent password autofill issues
+            const passwordInput = document.getElementById("login-password");
+            if (usernameInput) usernameInput.value = "";
+            if (passwordInput) passwordInput.value = "";
+            setTimeout(() => {
+                if (usernameInput) usernameInput.value = "";
+                if (passwordInput) passwordInput.value = "";
+            }, 100);
+            setTimeout(() => {
+                if (usernameInput) usernameInput.value = "";
+                if (passwordInput) passwordInput.value = "";
+            }, 300);
             
             // If already logged in, redirect to respective pages
             const student = localStorage.getItem("eventhub_student_session");
             const dept = localStorage.getItem("eventhub_dept_session");
+            const staff = localStorage.getItem("eventhub_staff_session");
             const admin = localStorage.getItem("eventhub_admin_token");
+            const superadmin = localStorage.getItem("eventhub_superadmin_token");
             
             const urlParams = new URLSearchParams(window.location.search);
             const redirectUrl = urlParams.get("redirect");
@@ -132,11 +226,15 @@
             if (redirectUrl) {
                 if (student && redirectUrl === "dashboard.html") window.location.href = redirectUrl;
                 if (dept && redirectUrl === "department.html") window.location.href = redirectUrl;
+                if (staff && redirectUrl === "achievements.html") window.location.href = redirectUrl;
                 if (admin && redirectUrl === "admin.html") window.location.href = redirectUrl;
+                if (superadmin && redirectUrl === "superadmin.html") window.location.href = redirectUrl;
             } else {
                 if (student) window.location.href = "dashboard.html";
                 if (dept) window.location.href = "department.html";
+                if (staff) window.location.href = "achievements.html";
                 if (admin) window.location.href = "admin.html";
+                if (superadmin) window.location.href = "superadmin.html";
             }
         });
 
@@ -161,14 +259,20 @@
                 // Clear any previous sessions
                 localStorage.removeItem("eventhub_student_session");
                 localStorage.removeItem("eventhub_dept_session");
+                localStorage.removeItem("eventhub_staff_session");
                 localStorage.removeItem("eventhub_admin_token");
+                localStorage.removeItem("eventhub_superadmin_token");
                 localStorage.removeItem("eventhub_student_password");
 
                 const role = data.role;
                 if (role === "ROLE_ADMIN") {
                     localStorage.setItem("eventhub_admin_token", data.token);
+                } else if (role === "ROLE_SUPER_ADMIN") {
+                    localStorage.setItem("eventhub_superadmin_token", data.token);
                 } else if (role === "ROLE_DEPARTMENT") {
                     localStorage.setItem("eventhub_dept_session", JSON.stringify(data));
+                } else if (role === "ROLE_TUTOR" || role === "ROLE_HOD") {
+                    localStorage.setItem("eventhub_staff_session", JSON.stringify(data));
                 } else if (role === "ROLE_STUDENT") {
                     localStorage.setItem("eventhub_student_session", JSON.stringify(data));
                     localStorage.setItem("eventhub_student_rollnumber", data.rollNumber);
@@ -185,18 +289,24 @@
                     if (redirect) {
                         // Ensure the redirect matches the logged-in role's expected page
                         if ((role === "ROLE_ADMIN" && redirect === "admin.html") ||
+                            (role === "ROLE_SUPER_ADMIN" && redirect === "superadmin.html") ||
                             (role === "ROLE_DEPARTMENT" && redirect === "department.html") ||
+                            ((role === "ROLE_TUTOR" || role === "ROLE_HOD") && (redirect === "achievements.html" || redirect === "department.html")) ||
                             (role === "ROLE_STUDENT" && redirect === "dashboard.html")) {
                             window.location.href = redirect;
                         } else {
                             // Fallback to role-specific default if mismatch
                             if (role === "ROLE_ADMIN") window.location.href = "admin.html";
+                            else if (role === "ROLE_SUPER_ADMIN") window.location.href = "superadmin.html";
                             else if (role === "ROLE_DEPARTMENT") window.location.href = "department.html";
+                            else if (role === "ROLE_TUTOR" || role === "ROLE_HOD") window.location.href = "achievements.html";
                             else if (role === "ROLE_STUDENT") window.location.href = "dashboard.html";
                         }
                     } else {
                         if (role === "ROLE_ADMIN") window.location.href = "admin.html";
+                        else if (role === "ROLE_SUPER_ADMIN") window.location.href = "superadmin.html";
                         else if (role === "ROLE_DEPARTMENT") window.location.href = "department.html";
+                        else if (role === "ROLE_TUTOR" || role === "ROLE_HOD") window.location.href = "achievements.html";
                         else if (role === "ROLE_STUDENT") window.location.href = "dashboard.html";
                     }
                 }, 1000);

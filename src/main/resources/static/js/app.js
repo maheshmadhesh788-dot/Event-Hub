@@ -8,7 +8,9 @@ window.fetch = function (url, options) {
 
     let token = null;
     if (url.includes("/api/admin")) {
-        token = localStorage.getItem("eventhub_admin_token");
+        token = localStorage.getItem("eventhub_admin_token") || localStorage.getItem("eventhub_superadmin_token");
+    } else if (url.includes("/api/superadmin")) {
+        token = localStorage.getItem("eventhub_superadmin_token");
     } else if (url.includes("/api/departments")) {
         const deptSession = localStorage.getItem("eventhub_dept_session");
         if (deptSession) {
@@ -23,6 +25,20 @@ window.fetch = function (url, options) {
                 token = JSON.parse(studentSession).token;
             } catch (e) {}
         }
+    } else if (url.includes("/api/achievements")) {
+        token = localStorage.getItem("eventhub_admin_token") || localStorage.getItem("eventhub_superadmin_token");
+        if (!token) {
+            const deptSession = localStorage.getItem("eventhub_dept_session");
+            if (deptSession) {
+                try { token = JSON.parse(deptSession).token; } catch (e) {}
+            }
+        }
+        if (!token) {
+            const staffSession = localStorage.getItem("eventhub_staff_session");
+            if (staffSession) {
+                try { token = JSON.parse(staffSession).token; } catch (e) {}
+            }
+        }
     }
     
     if (token) {
@@ -36,8 +52,10 @@ window.fetch = function (url, options) {
     }
     
     return originalFetch(url, options).then(response => {
-        if ((response.status === 401 || response.status === 403) && !url.includes("/login")) {
+        if ((response.status === 401 || response.status === 403) && !url.includes("/login") && !url.includes("/api/auth/")) {
             console.warn("Unauthorized access to " + url);
+            localStorage.clear();
+            window.location.href = "login.html";
         }
         return response;
     });
@@ -260,8 +278,8 @@ function checkStudentAuth() {
 }
 
 function logoutDepartment() {
-    localStorage.removeItem("eventhub_dept_session");
-    window.location.href = "department.html";
+    localStorage.clear();
+    window.location.href = "login.html";
 }
 
 // Reusable function to toggle password input visibility and update the icon
@@ -410,7 +428,9 @@ function renderDynamicNavbar() {
     // Check sessions
     const studentSession = localStorage.getItem("eventhub_student_session");
     const deptSession = localStorage.getItem("eventhub_dept_session");
+    const staffSession = localStorage.getItem("eventhub_staff_session");
     const adminToken = localStorage.getItem("eventhub_admin_token");
+    const superAdminToken = localStorage.getItem("eventhub_superadmin_token");
 
     // Get current page filename
     const path = window.location.pathname;
@@ -427,19 +447,36 @@ function renderDynamicNavbar() {
     // Create the correct set of links
     const homeActive = (page === 'index.html' || page === '') ? 'active' : '';
     const eventsActive = (page === 'events.html' || page === 'register.html') ? 'active' : '';
+    const achievementsActive = (page === 'achievements.html') ? 'active' : '';
     const loginActive = (page === 'login.html') ? 'active' : '';
-    const dashboardActive = (page === 'dashboard.html' || page === 'department.html' || page === 'admin.html' || page === 'history.html') ? 'active' : '';
+    
+    // Separate active states for different dashboards/consoles to avoid multiple active indicators
+    const studentActive = (page === 'dashboard.html' || page === 'history.html') ? 'active' : '';
+    const departmentActive = (page === 'department.html') ? 'active' : '';
+    const staffActive = (page === 'achievements.html') ? 'active' : '';
+    const adminActive = (page === 'admin.html') ? 'active' : '';
+    const superAdminActive = (page === 'superadmin.html') ? 'active' : '';
 
     let linksHtml = "";
     linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${homeActive}" href="index.html"><i class="fa-solid fa-house me-1"></i> Home</a></li>`;
     linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${eventsActive}" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>`;
 
+    // Only show Achievements in header for admin, super admin, and department roles (staff see it under Staff Workspace)
+    const hasAchievementsAccess = superAdminToken || adminToken || deptSession;
+    if (hasAchievementsAccess) {
+        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${achievementsActive}" href="achievements.html"><i class="fa-solid fa-trophy text-warning me-1"></i> Achievements</a></li>`;
+    }
+
     if (studentSession) {
-        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${dashboardActive}" href="dashboard.html"><i class="fa-solid fa-circle-user me-1"></i> Student Dashboard</a></li>`;
+        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${studentActive}" href="dashboard.html"><i class="fa-solid fa-circle-user me-1"></i> Student Dashboard</a></li>`;
     } else if (deptSession) {
-        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${dashboardActive}" href="department.html"><i class="fa-solid fa-building-columns me-1"></i> Department Workspace</a></li>`;
+        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${departmentActive}" href="department.html"><i class="fa-solid fa-building-columns me-1"></i> Department Workspace</a></li>`;
+    } else if (staffSession) {
+        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${staffActive}" href="achievements.html"><i class="fa-solid fa-graduation-cap me-1"></i> Staff Workspace</a></li>`;
     } else if (adminToken) {
-        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${dashboardActive}" href="admin.html"><i class="fa-solid fa-lock me-1"></i> Admin Console</a></li>`;
+        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${adminActive}" href="admin.html"><i class="fa-solid fa-lock me-1"></i> Admin Console</a></li>`;
+    } else if (superAdminToken) {
+        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${superAdminActive}" href="superadmin.html"><i class="fa-solid fa-crown me-1 text-warning"></i> Super Admin Console</a></li>`;
     } else {
         linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${loginActive}" href="login.html"><i class="fa-solid fa-right-to-bracket me-1"></i> Login</a></li>`;
     }
