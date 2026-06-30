@@ -903,7 +903,7 @@ body:not([data-theme="light"]) #role-filter option {
 /* 1. Global Wallpaper background with high-quality display and text contrast overlay for Home Page */
 body.home-page {
     background: linear-gradient(rgba(7, 11, 19, 0.84), rgba(7, 11, 19, 0.88)), 
-                url('../images/wallpaper.png') no-repeat center center fixed;
+                url('../images/wallpaper.jpg') no-repeat center center fixed;
     background-size: cover;
     background-blend-mode: multiply;
 }
@@ -1868,7 +1868,7 @@ p.text-muted {
 /* Home Page Light Mode Adjustments */
 [data-theme="light"] body.home-page {
     background: linear-gradient(rgba(240, 244, 248, 0.92), rgba(240, 244, 248, 0.96)), 
-                url('../images/wallpaper.png') no-repeat center center fixed;
+                url('../images/wallpaper.jpg') no-repeat center center fixed;
     background-size: cover;
     background-blend-mode: multiply;
     color: var(--text-primary);

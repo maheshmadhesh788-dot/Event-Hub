@@ -43,6 +43,9 @@ public class Achievement {
     @Column(name = "created_by_username", nullable = false)
     private String createdByUsername;
 
+    @Column(name = "competition")
+    private String competition;
+
     public Achievement() {}
 
     public Achievement(String studentName, String registerNumber, String department, String tutorName, 
@@ -58,6 +61,22 @@ public class Achievement {
         this.eventDate = eventDate;
         this.academicYear = academicYear;
         this.createdByUsername = createdByUsername;
+    }
+
+    public Achievement(String studentName, String registerNumber, String department, String tutorName, 
+                       String eventName, String eventType, String achievement, LocalDate eventDate, 
+                       String academicYear, String createdByUsername, String competition) {
+        this.studentName = studentName;
+        this.registerNumber = registerNumber;
+        this.department = department;
+        this.tutorName = tutorName;
+        this.eventName = eventName;
+        this.eventType = eventType;
+        this.achievement = achievement;
+        this.eventDate = eventDate;
+        this.academicYear = academicYear;
+        this.createdByUsername = createdByUsername;
+        this.competition = competition;
     }
 
     public Long getId() {
@@ -85,11 +104,11 @@ public class Achievement {
     }
 
     public String getDepartment() {
-        return department;
+        return com.example.demo.util.DepartmentNormalizer.normalize(department);
     }
 
     public void setDepartment(String department) {
-        this.department = department;
+        this.department = com.example.demo.util.DepartmentNormalizer.normalize(department);
     }
 
     public String getTutorName() {
@@ -146,5 +165,13 @@ public class Achievement {
 
     public void setCreatedByUsername(String createdByUsername) {
         this.createdByUsername = createdByUsername;
+    }
+
+    public String getCompetition() {
+        return competition;
+    }
+
+    public void setCompetition(String competition) {
+        this.competition = competition;
     }
 }

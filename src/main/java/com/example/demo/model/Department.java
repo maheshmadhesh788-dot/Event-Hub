@@ -57,11 +57,11 @@ public class Department {
     }
 
     public String getName() {
-        return name;
+        return com.example.demo.util.DepartmentNormalizer.normalize(name);
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name = com.example.demo.util.DepartmentNormalizer.normalize(name);
     }
 
     public String getCode() {

@@ -36,3 +36,4 @@ build/
 *.log
 uploads/
 data/
+admin_diff*.txt

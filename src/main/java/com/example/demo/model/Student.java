@@ -62,11 +62,11 @@ public class Student {
     }
 
     public String getDepartment() {
-        return department;
+        return com.example.demo.util.DepartmentNormalizer.normalize(department);
     }
 
     public void setDepartment(String department) {
-        this.department = department;
+        this.department = com.example.demo.util.DepartmentNormalizer.normalize(department);
     }
 
     public String getContactNumber() {

@@ -78,9 +78,12 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "All fields are required"));
         }
 
-        Optional<Student> studentOpt = studentRepository.findByRollNumberIgnoreCase(rollNumber.trim());
-        if (studentOpt.isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "A student with this roll number is already registered."));
+        try {
+            com.example.demo.util.StudentValidator.validateStudentRegistration(
+                studentName, rollNumber, department, departmentRepository, studentRepository
+            );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
 
         Student newStudent = new Student();
@@ -144,11 +147,12 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Department name and password are required"));
         }
 
-        if (departmentRepository.findByNameIgnoreCase(name.trim()).isPresent()) {
+        String normalizedName = com.example.demo.util.DepartmentNormalizer.normalize(name.trim());
+        if (departmentRepository.findByNameIgnoreCase(normalizedName).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Department workspace already exists"));
         }
 
-        String code = generateCode(name);
+        String code = generateCode(normalizedName);
         int count = 1;
         String tempCode = code;
         while (departmentRepository.findByCode(tempCode).isPresent()) {
@@ -156,7 +160,7 @@ public class AuthController {
         }
         code = tempCode;
 
-        Department dept = new Department(name.trim(), code, passwordEncoder.encode(password.trim()));
+        Department dept = new Department(normalizedName, code, passwordEncoder.encode(password.trim()));
         Department saved = departmentRepository.save(dept);
 
         // Sync to users table
@@ -195,8 +199,10 @@ public class AuthController {
         String trimmedName = name.trim();
         String lookupName = trimmedName;
         Optional<Department> deptByCodeOpt = departmentRepository.findByCode(trimmedName.toUpperCase());
-        if (deptByCodeOpt.isPresent() && deptByCodeOpt.get().getName().equalsIgnoreCase("B.Sc Artificial Intelligence & Data Science")) {
+        if (deptByCodeOpt.isPresent()) {
             lookupName = deptByCodeOpt.get().getName();
+        } else {
+            lookupName = com.example.demo.util.DepartmentNormalizer.normalize(trimmedName);
         }
 
         Optional<User> userOpt = userRepository.findByUsernameIgnoreCase(lookupName);
@@ -213,31 +219,16 @@ public class AuthController {
                             resp.setDescription(dept.getDescription());
                             resp.setLogoUrl(dept.getLogoUrl());
                             resp.setCoverImageUrl(dept.getCoverImageUrl());
+                            resp.setHodName(dept.getHodName());
+                            resp.setEmail(dept.getEmail());
+                            resp.setContactNumber(dept.getContactNumber());
+                            resp.setPassword(dept.getPassword());
                             ResponseEntity<?> okResponse = ResponseEntity.ok(resp);
                             return okResponse;
                         });
                     return responseOpt.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "The department profile does not exist.")));
-                } else if ("ROLE_TUTOR".equals(user.getRole()) || "ROLE_HOD".equals(user.getRole())) {
-                    String token = tokenProvider.generateToken(user.getUsername(), user.getRole());
-                    AuthResponse resp = new AuthResponse(token, user.getUsername(), user.getRole(), user.getName());
-                    
-                    Optional<StaffProfile> profileOpt = staffProfileRepository.findByUsernameIgnoreCase(user.getUsername());
-                    if (profileOpt.isPresent()) {
-                        StaffProfile profile = profileOpt.get();
-                        resp.setName(profile.getName());
-                        resp.setDepartment(profile.getDepartment());
-                        
-                        departmentRepository.findByNameIgnoreCase(profile.getDepartment()).ifPresent(dept -> {
-                            resp.setId(dept.getId());
-                            resp.setCode(dept.getCode());
-                            resp.setDescription(dept.getDescription());
-                            resp.setLogoUrl(dept.getLogoUrl());
-                            resp.setCoverImageUrl(dept.getCoverImageUrl());
-                        });
-                    }
-                    return ResponseEntity.ok(resp);
                 } else {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access Denied: Only Department, HOD or Tutor roles can login to workspace"));
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access Denied: Only Department role can login to workspace"));
                 }
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Wrong Password"));
@@ -283,15 +274,20 @@ public class AuthController {
         String trimmedPass = password.trim();
 
         String lookupUsername = trimmedUser;
-        // Resolve department code to department name if needed ONLY for B.Sc Artificial Intelligence & Data Science
+        // Resolve department code to department name if needed
         Optional<Department> deptByCodeOpt = departmentRepository.findByCode(trimmedUser.toUpperCase());
-        if (deptByCodeOpt.isPresent() && deptByCodeOpt.get().getName().equalsIgnoreCase("B.Sc Artificial Intelligence & Data Science")) {
+        if (deptByCodeOpt.isPresent()) {
             lookupUsername = deptByCodeOpt.get().getName();
+        } else {
+            lookupUsername = com.example.demo.util.DepartmentNormalizer.normalize(trimmedUser);
         }
 
         Optional<User> userOpt = userRepository.findByUsernameIgnoreCase(lookupUsername);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
+            if ("ROLE_TUTOR".equals(user.getRole()) || "ROLE_HOD".equals(user.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access Denied: Tutor and HOD roles are deprecated. Use Department login instead."));
+            }
             if (passwordEncoder.matches(trimmedPass, user.getPassword())) {
                 String token = tokenProvider.generateToken(user.getUsername(), user.getRole());
                 AuthResponse resp = new AuthResponse(token, user.getUsername(), user.getRole(), user.getName());
@@ -312,11 +308,6 @@ public class AuthController {
                         resp.setDescription(dept.getDescription());
                         resp.setLogoUrl(dept.getLogoUrl());
                         resp.setCoverImageUrl(dept.getCoverImageUrl());
-                    });
-                } else if ("ROLE_TUTOR".equals(user.getRole()) || "ROLE_HOD".equals(user.getRole())) {
-                    staffProfileRepository.findByUsernameIgnoreCase(user.getUsername()).ifPresent(profile -> {
-                        resp.setName(profile.getName());
-                        resp.setDepartment(profile.getDepartment());
                     });
                 }
                 return ResponseEntity.ok(resp);

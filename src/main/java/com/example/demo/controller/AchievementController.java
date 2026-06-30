@@ -1,17 +1,22 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.Achievement;
-import com.example.demo.model.TutorStudentAssignment;
 import com.example.demo.model.StaffProfile;
 import com.example.demo.model.Student;
+import com.example.demo.model.Event;
 import com.example.demo.repository.AchievementRepository;
-import com.example.demo.repository.TutorStudentAssignmentRepository;
 import com.example.demo.repository.StaffProfileRepository;
 import com.example.demo.repository.StudentRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.DepartmentRepository;
+import com.example.demo.repository.EventRepository;
+import com.example.demo.model.User;
+import com.example.demo.model.Department;
+import com.example.demo.service.EmailService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -24,22 +29,34 @@ import java.util.stream.Collectors;
 public class AchievementController {
 
     private final AchievementRepository achievementRepository;
-    private final TutorStudentAssignmentRepository assignmentRepository;
     private final StaffProfileRepository staffProfileRepository;
     private final StudentRepository studentRepository;
+    private final EventRepository eventRepository;
+    private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public AchievementController(AchievementRepository achievementRepository,
-                                 TutorStudentAssignmentRepository assignmentRepository,
                                  StaffProfileRepository staffProfileRepository,
-                                 StudentRepository studentRepository) {
+                                 StudentRepository studentRepository,
+                                 EventRepository eventRepository,
+                                 UserRepository userRepository,
+                                 DepartmentRepository departmentRepository,
+                                 PasswordEncoder passwordEncoder,
+                                 EmailService emailService) {
         this.achievementRepository = achievementRepository;
-        this.assignmentRepository = assignmentRepository;
         this.staffProfileRepository = staffProfileRepository;
         this.studentRepository = studentRepository;
+        this.eventRepository = eventRepository;
+        this.userRepository = userRepository;
+        this.departmentRepository = departmentRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     // ==========================================
-    // 1. AUTO-FILL STUDENT LOOKUP
+    // 1. AUTO-FILL STUDENT & TUTOR LOOKUP
     // ==========================================
     @GetMapping("/student/{registerNumber}")
     public ResponseEntity<?> getStudentByRegisterNumber(@PathVariable String registerNumber) {
@@ -49,6 +66,73 @@ public class AchievementController {
                         "department", student.getDepartment()
                 )))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Student not found")));
+    }
+
+    @GetMapping("/tutors")
+    public ResponseEntity<?> getAllTutors() {
+        return ResponseEntity.ok(staffProfileRepository.findAll());
+    }
+
+    @PostMapping("/add-account")
+    public ResponseEntity<?> addAccount(@RequestBody Map<String, String> payload) {
+        String username = payload.get("username");
+        String password = payload.get("password");
+        String role = payload.get("role"); // ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_STUDENT, ROLE_DEPARTMENT
+        String name = payload.get("name");
+        String email = payload.get("email");
+        String contactNumber = payload.get("contactNumber");
+        String departmentCode = payload.get("departmentCode"); // only for department/student
+
+        if (username == null || password == null || role == null || name == null ||
+            username.trim().isEmpty() || password.trim().isEmpty() || role.trim().isEmpty() || name.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Username, password, role, and name are required."));
+        }
+
+        username = username.trim();
+        role = role.trim().toUpperCase();
+        name = name.trim();
+
+        if (userRepository.findByUsernameIgnoreCase(username).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Username already exists in the system."));
+        }
+
+        String encodedPassword = passwordEncoder.encode(password.trim());
+
+        // Create specific profiles based on role
+        if ("ROLE_STUDENT".equals(role)) {
+            try {
+                com.example.demo.util.StudentValidator.validateStudentRegistration(
+                    name, username, departmentCode != null ? departmentCode : "IT", departmentRepository, studentRepository
+                );
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            }
+
+            Student student = new Student(username.toUpperCase(), name, departmentCode != null ? departmentCode : "IT",
+                    contactNumber != null ? contactNumber : "0000000000", email != null ? email : "student@example.com", encodedPassword);
+            Student savedStudent = studentRepository.saveAndFlush(student);
+            try {
+                emailService.sendStudentAccountCreated(savedStudent);
+            } catch (Exception e) {
+                // Log or ignore
+            }
+        }
+        String finalUsername = username;
+        if ("ROLE_DEPARTMENT".equals(role)) {
+            finalUsername = com.example.demo.util.DepartmentNormalizer.normalize(username);
+            if (departmentRepository.findByNameIgnoreCase(finalUsername).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Department with this name already exists."));
+            }
+            String code = departmentCode != null ? departmentCode.trim().toUpperCase() : finalUsername.substring(0, Math.min(finalUsername.length(), 3)).toUpperCase();
+            Department dept = new Department(finalUsername, code, encodedPassword);
+            dept.setDescription("Workspace created by Achievement Add Account");
+            departmentRepository.saveAndFlush(dept);
+        }
+
+        User user = new User(finalUsername, encodedPassword, role, name, email, contactNumber);
+        User savedUser = userRepository.saveAndFlush(user);
+
+        return ResponseEntity.ok(savedUser);
     }
 
     // ==========================================
@@ -64,45 +148,32 @@ public class AchievementController {
             achievement.getEventType() == null || achievement.getEventType().trim().isEmpty() ||
             achievement.getAchievement() == null || achievement.getAchievement().trim().isEmpty() ||
             achievement.getEventDate() == null ||
-            achievement.getAcademicYear() == null || achievement.getAcademicYear().trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "All fields are required."));
+            achievement.getAcademicYear() == null || achievement.getAcademicYear().trim().isEmpty() ||
+            achievement.getCompetition() == null || achievement.getCompetition().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "All fields, including Competition Category, are required."));
         }
 
         achievement.setStudentName(achievement.getStudentName().trim());
         achievement.setRegisterNumber(achievement.getRegisterNumber().trim().toUpperCase());
-        achievement.setDepartment(achievement.getDepartment().trim());
+        achievement.setDepartment(com.example.demo.util.DepartmentNormalizer.normalize(achievement.getDepartment().trim()));
         achievement.setTutorName(achievement.getTutorName().trim());
         achievement.setEventName(achievement.getEventName().trim());
         achievement.setEventType(achievement.getEventType().trim().toUpperCase());
         achievement.setAchievement(achievement.getAchievement().trim());
         achievement.setAcademicYear(achievement.getAcademicYear().trim());
+        achievement.setCompetition(achievement.getCompetition().trim());
         achievement.setCreatedByUsername(authentication.getName());
 
         String username = authentication.getName();
         String role = authentication.getAuthorities().iterator().next().getAuthority();
 
-        if ("ROLE_TUTOR".equals(role)) {
-            Optional<StaffProfile> profileOpt = staffProfileRepository.findByUsernameIgnoreCase(username);
-            if (profileOpt.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Tutor profile not found."));
-            }
-            String tutorDept = profileOpt.get().getDepartment();
-            if (!achievement.getDepartment().equalsIgnoreCase(tutorDept)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You can only manage achievements for your department (" + tutorDept + ")."));
-            }
-            boolean assigned = assignmentRepository.existsByTutorUsernameIgnoreCaseAndStudentRegisterNumberIgnoreCase(username, achievement.getRegisterNumber());
-            if (!assigned) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You can only manage achievements for your assigned students."));
-            }
-        } else if ("ROLE_HOD".equals(role) || "ROLE_DEPARTMENT".equals(role)) {
+        if ("ROLE_DEPARTMENT".equals(role)) {
             String deptName = username;
-            Optional<StaffProfile> profileOpt = staffProfileRepository.findByUsernameIgnoreCase(username);
-            if (profileOpt.isPresent()) {
-                deptName = profileOpt.get().getDepartment();
-            }
-            if (!achievement.getDepartment().equalsIgnoreCase(deptName)) {
+            if (!com.example.demo.util.DepartmentNormalizer.normalize(achievement.getDepartment()).equalsIgnoreCase(com.example.demo.util.DepartmentNormalizer.normalize(deptName))) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You can only manage achievements for your department (" + deptName + ")."));
             }
+        } else if (!"ROLE_ADMIN".equals(role) && !"ROLE_SUPER_ADMIN".equals(role)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access Denied"));
         }
 
         Achievement saved = achievementRepository.save(achievement);
@@ -124,40 +195,10 @@ public class AchievementController {
         List<Achievement> achievements = new ArrayList<>();
 
         // Role-based scoping
-        if ("ROLE_TUTOR".equals(role)) {
-            // Tutor: Only their assigned students' achievements, OR achievements they created
-            List<TutorStudentAssignment> assignments = assignmentRepository.findByTutorUsernameIgnoreCase(username);
-            List<String> assignedRegs = assignments.stream()
-                    .map(a -> a.getStudentRegisterNumber().toUpperCase())
-                    .collect(Collectors.toList());
-
-            if (assignedRegs.isEmpty()) {
-                achievements = achievementRepository.findByCreatedByUsername(username);
-            } else {
-                // Find by assigned register numbers
-                List<Achievement> byAssigned = achievementRepository.findByRegisterNumberIn(assignedRegs);
-                // Find by creator
-                List<Achievement> byCreator = achievementRepository.findByCreatedByUsername(username);
-                // Combine and de-duplicate
-                Set<Long> seenIds = new HashSet<>();
-                for (Achievement a : byAssigned) {
-                    achievements.add(a);
-                    seenIds.add(a.getId());
-                }
-                for (Achievement a : byCreator) {
-                    if (!seenIds.contains(a.getId())) {
-                        achievements.add(a);
-                    }
-                }
-            }
-        } else if ("ROLE_HOD".equals(role) || "ROLE_DEPARTMENT".equals(role)) {
-            // HOD / Department: achievements belonging to their department
+        if ("ROLE_DEPARTMENT".equals(role)) {
+            // Department: achievements belonging to their department
             String deptName = username;
-            Optional<StaffProfile> profileOpt = staffProfileRepository.findByUsernameIgnoreCase(username);
-            if (profileOpt.isPresent()) {
-                deptName = profileOpt.get().getDepartment();
-            }
-            achievements = achievementRepository.findByDepartmentIgnoreCase(deptName);
+            achievements = achievementRepository.findByDepartmentIgnoreCase(com.example.demo.util.DepartmentNormalizer.normalize(deptName));
         } else if ("ROLE_ADMIN".equals(role) || "ROLE_SUPER_ADMIN".equals(role)) {
             // Admin & Superadmin: all achievements
             achievements = achievementRepository.findAll();
@@ -169,7 +210,7 @@ public class AchievementController {
         // Apply filters
         final String fAcademicYear = academicYear != null ? academicYear.trim() : null;
         final String fEventType = eventType != null ? eventType.trim().toUpperCase() : null;
-        final String fDepartment = department != null ? department.trim() : null;
+        final String fDepartment = department != null ? com.example.demo.util.DepartmentNormalizer.normalize(department.trim()) : null;
 
         LocalDate fFromDate = null;
         LocalDate fToDate = null;
@@ -188,15 +229,27 @@ public class AchievementController {
         final LocalDate finalTo = fToDate;
 
         List<Achievement> filtered = achievements.stream()
-                .filter(a -> fAcademicYear == null || fAcademicYear.isEmpty() || a.getAcademicYear().equalsIgnoreCase(fAcademicYear))
-                .filter(a -> fEventType == null || fEventType.isEmpty() || a.getEventType().equalsIgnoreCase(fEventType))
-                .filter(a -> fDepartment == null || fDepartment.isEmpty() || a.getDepartment().equalsIgnoreCase(fDepartment))
-                .filter(a -> finalFrom == null || !a.getEventDate().isBefore(finalFrom))
-                .filter(a -> finalTo == null || !a.getEventDate().isAfter(finalTo))
-                .sorted((a1, a2) -> a2.getEventDate().compareTo(a1.getEventDate())) // Date-wise sorted by default
+                .filter(a -> fAcademicYear == null || fAcademicYear.isEmpty() || (a.getAcademicYear() != null && a.getAcademicYear().equalsIgnoreCase(fAcademicYear)))
+                .filter(a -> fEventType == null || fEventType.isEmpty() || (a.getEventType() != null && a.getEventType().equalsIgnoreCase(fEventType)))
+                .filter(a -> fDepartment == null || fDepartment.isEmpty() || (a.getDepartment() != null && a.getDepartment().equalsIgnoreCase(fDepartment)))
+                .filter(a -> finalFrom == null || (a.getEventDate() != null && !a.getEventDate().isBefore(finalFrom)))
+                .filter(a -> finalTo == null || (a.getEventDate() != null && !a.getEventDate().isAfter(finalTo)))
+                .sorted((a1, a2) -> {
+                    if (a1.getEventDate() == null && a2.getEventDate() == null) return 0;
+                    if (a1.getEventDate() == null) return 1;
+                    if (a2.getEventDate() == null) return -1;
+                    return a2.getEventDate().compareTo(a1.getEventDate());
+                })
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(filtered);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getAchievementById(@PathVariable Long id) {
+        return achievementRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
@@ -209,18 +262,9 @@ public class AchievementController {
 
             if ("ROLE_SUPER_ADMIN".equals(role) || "ROLE_ADMIN".equals(role)) {
                 authorized = true;
-            } else if ("ROLE_HOD".equals(role) || "ROLE_DEPARTMENT".equals(role)) {
+            } else if ("ROLE_DEPARTMENT".equals(role)) {
                 String deptName = username;
-                Optional<StaffProfile> profileOpt = staffProfileRepository.findByUsernameIgnoreCase(username);
-                if (profileOpt.isPresent()) {
-                    deptName = profileOpt.get().getDepartment();
-                }
-                if (a.getDepartment().equalsIgnoreCase(deptName)) {
-                    authorized = true;
-                }
-            } else if ("ROLE_TUTOR".equals(role)) {
-                if (a.getCreatedByUsername().equalsIgnoreCase(username) ||
-                    assignmentRepository.existsByTutorUsernameIgnoreCaseAndStudentRegisterNumberIgnoreCase(username, a.getRegisterNumber())) {
+                if (com.example.demo.util.DepartmentNormalizer.normalize(a.getDepartment()).equalsIgnoreCase(com.example.demo.util.DepartmentNormalizer.normalize(deptName))) {
                     authorized = true;
                 }
             }
@@ -235,165 +279,40 @@ public class AchievementController {
     }
 
     // ==========================================
-    // 3. TUTOR-STUDENT ASSIGNMENTS ENDPOINTS
+    // 3. EDIT ACHIEVEMENT ENDPOINT
     // ==========================================
-    @GetMapping("/assignments")
-    public ResponseEntity<?> getAssignments(Authentication authentication) {
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateAchievement(@PathVariable Long id, @RequestBody Achievement payload, Authentication authentication) {
+        String role = authentication.getAuthorities().iterator().next().getAuthority();
         String username = authentication.getName();
-        String role = authentication.getAuthorities().iterator().next().getAuthority();
 
-        List<TutorStudentAssignment> list;
-        if ("ROLE_TUTOR".equals(role)) {
-            list = assignmentRepository.findByTutorUsernameIgnoreCase(username);
-        } else if ("ROLE_HOD".equals(role) || "ROLE_DEPARTMENT".equals(role)) {
-            String deptName = username;
-            Optional<StaffProfile> profileOpt = staffProfileRepository.findByUsernameIgnoreCase(username);
-            if (profileOpt.isPresent()) {
-                deptName = profileOpt.get().getDepartment();
-            }
-            final String finalDept = deptName;
-            
-            // Find all profiles in the same department
-            List<String> usernames = staffProfileRepository.findByDepartmentIgnoreCase(finalDept).stream()
-                    .map(StaffProfile::getUsername)
-                    .collect(Collectors.toList());
-            
-            // Also include department user accounts just in case
-            usernames.add(username);
-            
-            list = assignmentRepository.findAll().stream()
-                    .filter(a -> usernames.contains(a.getTutorUsername()))
-                    .collect(Collectors.toList());
-        } else {
-            // Admin and Super Admin see all
-            list = assignmentRepository.findAll();
-        }
-
-        // Map list to DTO with student name for convenience
-        List<Map<String, Object>> responseList = new ArrayList<>();
-        for (TutorStudentAssignment assign : list) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("id", assign.getId());
-            map.put("tutorUsername", assign.getTutorUsername());
-            map.put("studentRegisterNumber", assign.getStudentRegisterNumber());
-            
-            // Look up student details
-            studentRepository.findByRollNumberIgnoreCase(assign.getStudentRegisterNumber())
-                    .ifPresentOrElse(student -> {
-                        map.put("studentName", student.getStudentName());
-                        map.put("department", student.getDepartment());
-                    }, () -> {
-                        map.put("studentName", "Unknown Student");
-                        map.put("department", "Unknown");
-                    });
-            responseList.add(map);
-        }
-
-        return ResponseEntity.ok(responseList);
-    }
-
-    @PostMapping("/assignments")
-    public ResponseEntity<?> createAssignment(@RequestBody Map<String, String> payload, Authentication authentication) {
-        String rollNumber = payload.get("studentRegisterNumber");
-        String tutorUsername = payload.get("tutorUsername");
-
-        String loggedInUser = authentication.getName();
-        String role = authentication.getAuthorities().iterator().next().getAuthority();
-
-        if (rollNumber == null || rollNumber.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Student register number is required."));
-        }
-
-        String studentReg = rollNumber.trim().toUpperCase();
-
-        if (tutorUsername == null || tutorUsername.trim().isEmpty()) {
-            tutorUsername = loggedInUser;
-        } else {
-            tutorUsername = tutorUsername.trim();
-        }
-
-        // Access check
-        if ("ROLE_TUTOR".equals(role)) {
-            // Tutor can only self-assign
-            tutorUsername = loggedInUser;
-        }
-
-        if (assignmentRepository.existsByTutorUsernameIgnoreCaseAndStudentRegisterNumberIgnoreCase(tutorUsername, studentReg)) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Assignment already exists."));
-        }
-
-        // Fetch tutor profile to check department
-        Optional<StaffProfile> tutorProfileOpt = staffProfileRepository.findByUsernameIgnoreCase(tutorUsername);
-        if (tutorProfileOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Tutor profile not found."));
-        }
-        StaffProfile tutorProfile = tutorProfileOpt.get();
-
-        if ("ROLE_HOD".equals(role) || "ROLE_DEPARTMENT".equals(role)) {
-            String deptName = loggedInUser;
-            Optional<StaffProfile> profileOpt = staffProfileRepository.findByUsernameIgnoreCase(loggedInUser);
-            if (profileOpt.isPresent()) {
-                deptName = profileOpt.get().getDepartment();
-            }
-            if (!tutorProfile.getDepartment().equalsIgnoreCase(deptName)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Tutor does not belong to your department (" + deptName + ")."));
-            }
-            Optional<Student> studentOpt = studentRepository.findByRollNumberIgnoreCase(studentReg);
-            if (studentOpt.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Student not found."));
-            }
-            if (!studentOpt.get().getDepartment().equalsIgnoreCase(deptName)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Student does not belong to your department (" + deptName + ")."));
-            }
-        } else if ("ROLE_TUTOR".equals(role)) {
-            Optional<Student> studentOpt = studentRepository.findByRollNumberIgnoreCase(studentReg);
-            if (studentOpt.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Student not found."));
-            }
-            if (!studentOpt.get().getDepartment().equalsIgnoreCase(tutorProfile.getDepartment())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Student does not belong to your department (" + tutorProfile.getDepartment() + ")."));
-            }
-        }
-
-        TutorStudentAssignment assignment = new TutorStudentAssignment(tutorUsername, studentReg);
-        TutorStudentAssignment saved = assignmentRepository.save(assignment);
-        
-        return ResponseEntity.ok(saved);
-    }
-
-    @DeleteMapping("/assignments/{id}")
-    public ResponseEntity<?> deleteAssignment(@PathVariable Long id, Authentication authentication) {
-        String username = authentication.getName();
-        String role = authentication.getAuthorities().iterator().next().getAuthority();
-
-        return assignmentRepository.findById(id).map(assign -> {
+        return achievementRepository.findById(id).map(existing -> {
             boolean authorized = false;
-
             if ("ROLE_SUPER_ADMIN".equals(role) || "ROLE_ADMIN".equals(role)) {
                 authorized = true;
-            } else if ("ROLE_TUTOR".equals(role) && assign.getTutorUsername().equalsIgnoreCase(username)) {
-                authorized = true;
-            } else if ("ROLE_HOD".equals(role) || "ROLE_DEPARTMENT".equals(role)) {
-                // If the tutor belongs to HOD's department
+            } else if ("ROLE_DEPARTMENT".equals(role)) {
                 String deptName = username;
-                Optional<StaffProfile> profileOpt = staffProfileRepository.findByUsernameIgnoreCase(username);
-                if (profileOpt.isPresent()) {
-                    deptName = profileOpt.get().getDepartment();
-                }
-                
-                final String finalDept = deptName;
-                Optional<StaffProfile> tutorProfileOpt = staffProfileRepository.findByUsernameIgnoreCase(assign.getTutorUsername());
-                if (tutorProfileOpt.isPresent() && tutorProfileOpt.get().getDepartment().equalsIgnoreCase(finalDept)) {
+                if (com.example.demo.util.DepartmentNormalizer.normalize(existing.getDepartment()).equalsIgnoreCase(com.example.demo.util.DepartmentNormalizer.normalize(deptName))) {
                     authorized = true;
                 }
             }
 
-            if (authorized) {
-                assignmentRepository.delete(assign);
-                return ResponseEntity.ok(Map.of("success", true));
-            } else {
+            if (!authorized) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Access Denied"));
             }
-        }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Assignment not found")));
+
+            existing.setStudentName(payload.getStudentName());
+            existing.setRegisterNumber(payload.getRegisterNumber());
+            existing.setDepartment(com.example.demo.util.DepartmentNormalizer.normalize(payload.getDepartment()));
+            existing.setTutorName(payload.getTutorName());
+            existing.setEventName(payload.getEventName());
+            existing.setCompetition(payload.getCompetition());
+            existing.setEventType(payload.getEventType());
+            existing.setAchievement(payload.getAchievement());
+            existing.setEventDate(payload.getEventDate());
+            existing.setAcademicYear(payload.getAcademicYear());
+
+            return ResponseEntity.ok(achievementRepository.save(existing));
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

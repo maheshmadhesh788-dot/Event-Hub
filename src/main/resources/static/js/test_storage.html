@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Storage</title>
+</head>
+<body>
+    <h1>LocalStorage Form Draft Keys:</h1>
+    <ul id="keys-list"></ul>
+    <script>
+        const list = document.getElementById("keys-list");
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const val = localStorage.getItem(key);
+            const li = document.createElement("li");
+            li.textContent = key + " = " + val;
+            list.appendChild(li);
+        }
+    </script>
+</body>
+</html>

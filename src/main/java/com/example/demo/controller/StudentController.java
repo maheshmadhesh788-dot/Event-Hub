@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import com.example.demo.repository.DepartmentRepository;
+import com.example.demo.repository.StudentRepository;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -30,19 +32,25 @@ public class StudentController {
     private final FeedbackService feedbackService;
     private final BookmarkService bookmarkService;
     private final PasswordEncoder passwordEncoder;
+    private final DepartmentRepository departmentRepository;
+    private final StudentRepository studentRepository;
 
     public StudentController(StudentService studentService,
                              EventService eventService,
                              RegistrationService registrationService,
                              FeedbackService feedbackService,
                              BookmarkService bookmarkService,
-                             PasswordEncoder passwordEncoder) {
+                             PasswordEncoder passwordEncoder,
+                             DepartmentRepository departmentRepository,
+                             StudentRepository studentRepository) {
         this.studentService = studentService;
         this.eventService = eventService;
         this.registrationService = registrationService;
         this.feedbackService = feedbackService;
         this.bookmarkService = bookmarkService;
         this.passwordEncoder = passwordEncoder;
+        this.departmentRepository = departmentRepository;
+        this.studentRepository = studentRepository;
     }
 
     // --- View Events ---
@@ -125,6 +133,14 @@ public class StudentController {
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Wrong Password"));
                 }
             } else {
+                try {
+                    com.example.demo.util.StudentValidator.validateStudentRegistration(
+                        studentName, rollNumber, department, departmentRepository, studentRepository
+                    );
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+                }
+
                 // Pre-register the student profile with the correct password provided by the user
                 Student newStudent = new Student();
                 newStudent.setRollNumber(rollNumber.trim().toUpperCase());

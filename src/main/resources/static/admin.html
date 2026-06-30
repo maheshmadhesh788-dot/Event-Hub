@@ -14,6 +14,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <!-- Custom CSS -->
     <link href="css/style.css" rel="stylesheet">
+    <style>
+        .category-box-premium {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .category-box-premium:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.5);
+            background: rgba(99, 102, 241, 0.05);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.15);
+        }
+        .category-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+    </style>
 </head>
 <body>
 
@@ -110,6 +132,9 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link text-white border-0 bg-transparent fw-bold" id="checkin-tab" data-bs-toggle="tab" data-bs-target="#checkin-pane" type="button" role="tab" onclick="stopQRScanner()"><i class="fa-solid fa-square-check text-primary me-2"></i>QR Check-In</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white border-0 bg-transparent fw-bold" id="participation-tab" data-bs-toggle="tab" data-bs-target="#participation-pane" type="button" role="tab"><i class="fa-solid fa-medal text-primary me-2"></i>Event Participation</button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link text-white border-0 bg-transparent fw-bold" id="feedback-tab" data-bs-toggle="tab" data-bs-target="#feedback-pane" type="button" role="tab" onclick="loadCollegeFeedback()"><i class="fa-solid fa-comments text-primary me-2"></i>Feedback</button>
@@ -331,6 +356,10 @@
                                     <label class="form-label text-muted small">Notice Content</label>
                                     <textarea id="notice-content" class="form-control form-control-custom" rows="4" required placeholder="Describe the notice announcement details..."></textarea>
                                 </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small">Notice Image (Optional)</label>
+                                    <input type="file" id="notice-image" class="form-control form-control-custom" accept="image/*">
+                                </div>
                                 <div class="d-grid">
                                     <button type="submit" class="btn btn-primary-gradient"><i class="fa-solid fa-paper-plane me-2"></i> Send Announcement</button>
                                 </div>
@@ -482,6 +511,127 @@
                             </thead>
                             <tbody id="feedback-tbody">
                                 <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Event Participation -->
+            <div class="tab-pane fade" id="participation-pane" role="tabpanel">
+                <!-- Section 1: Event Category Selection Boxes -->
+                <div class="glass-panel p-4 mb-4">
+                    <h4 class="text-white fw-bold mb-4"><i class="fa-solid fa-medal text-primary me-2"></i>Event Participation Management</h4>
+                    <p class="text-muted small">Select an event category below to record student participation details.</p>
+                    
+                    <div class="row g-4 justify-content-center" id="event-categories-container">
+                        <!-- Debate Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('Debate')" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-primary-glow text-primary mb-3">
+                                    <i class="fa-solid fa-microphone fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Debate</h5>
+                            </div>
+                        </div>
+                        <!-- Conference Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('Conference')" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-success-glow text-success mb-3">
+                                    <i class="fa-solid fa-users fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Conference</h5>
+                            </div>
+                        </div>
+                        <!-- Seminar Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('Seminar')" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-info-glow text-info mb-3">
+                                    <i class="fa-solid fa-calendar-days fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Seminar</h5>
+                            </div>
+                        </div>
+                        <!-- Workshop Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('Workshop')" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-warning-glow text-warning mb-3">
+                                    <i class="fa-solid fa-trophy fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Workshop</h5>
+                            </div>
+                        </div>
+                        <!-- Other Events Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="handleOtherEventsClick()" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-danger-glow text-danger mb-3">
+                                    <i class="fa-solid fa-award fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Other Events</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Report Generator Section -->
+                <div class="glass-panel p-4 no-print mb-4">
+                    <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-filter text-secondary me-2"></i>Participation Report Filters</h5>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">Event Category</label>
+                            <select id="filter-part-category" class="form-select form-control-custom form-select-custom">
+                                <option value="All">All Categories</option>
+                                <option value="Debate">Debate</option>
+                                <option value="Conference">Conference</option>
+                                <option value="Seminar">Seminar</option>
+                                <option value="Workshop">Workshop</option>
+                                <option value="Other Events">Other Events</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">From Date</label>
+                            <input type="date" id="filter-part-from-date" class="form-control form-control-custom">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small fw-bold">To Date</label>
+                            <input type="date" id="filter-part-to-date" class="form-control form-control-custom">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button class="btn btn-glass px-4 fw-bold text-muted" onclick="resetPartReportFilters()"><i class="fa-solid fa-redo me-2"></i>Reset</button>
+                        <button class="btn btn-primary-gradient px-4 fw-bold" onclick="generateParticipationReport()"><i class="fa-solid fa-file-invoice me-2"></i>Generate Report</button>
+                    </div>
+                </div>
+
+                <!-- Export Controls & Results -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
+                    <h5 class="fw-bold text-white mb-0"><i class="fa-solid fa-table text-primary me-2"></i>Generated Report Preview</h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-glass text-white" onclick="printPartReport()"><i class="fa-solid fa-print me-1"></i> Print Report</button>
+                        <button class="btn btn-sm btn-glass text-success" onclick="savePartReport()"><i class="fa-solid fa-file-excel me-1"></i> Save Report</button>
+                        <button class="btn btn-sm btn-glass text-danger" onclick="exportPartReportPdf()"><i class="fa-solid fa-file-pdf me-1"></i> Export PDF</button>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4">
+                    <div class="table-responsive">
+                        <table class="table table-custom table-hover" id="part-report-print-area">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Roll Number</th>
+                                    <th>Department</th>
+                                    <th>Event Name</th>
+                                    <th>Event Category</th>
+                                    <th>Event Date</th>
+                                    <th>Result</th>
+                                    <th class="text-end no-print">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participation-report-tbody">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">No records generated. Set date filters and click Generate Report.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -800,6 +950,16 @@
             return { valid: true };
         }
         document.addEventListener("DOMContentLoaded", () => {
+            // Check cross-role access
+            if (localStorage.getItem("eventhub_student_session")) {
+                window.location.href = "dashboard.html";
+                return;
+            }
+            if (localStorage.getItem("eventhub_dept_session")) {
+                window.location.href = "department.html";
+                return;
+            }
+
             editModal = new bootstrap.Modal(document.getElementById('eventModal'));
             deptModalObj = new bootstrap.Modal(document.getElementById('deptModal'));
             studentModalObj = new bootstrap.Modal(document.getElementById('studentModal'));
@@ -817,6 +977,7 @@
                 document.getElementById("admin-workspace").style.display = "block";
                 renderAdminAnalytics();
                 startNotificationPolling();
+                renderEventCategories();
                 
                 // Switch tabs programmatically if 'tab' param is specified in URL query
                 const urlParams = new URLSearchParams(window.location.search);
@@ -2025,11 +2186,20 @@
                     let html = "";
                     adminNotifs.forEach(notif => {
                         const formattedTime = new Date(notif.createdAt).toLocaleDateString() + ' ' + new Date(notif.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        let imgHtml = "";
+                        if (notif.imageUrl) {
+                            imgHtml = `
+                                <div class="mt-2 mb-2">
+                                    <img src="${notif.imageUrl}" alt="Notice image" style="max-width: 100%; max-height: 180px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);">
+                                </div>
+                            `;
+                        }
                         html += `
                             <div class="notif-card d-flex justify-content-between align-items-start">
                                 <div style="max-width: 85%;">
                                     <h6 class="mb-1 text-white fw-bold">${notif.title}</h6>
                                     <p class="mb-2 text-muted small">${notif.content}</p>
+                                    ${imgHtml}
                                     <small class="text-secondary" style="font-size: 0.75rem;"><i class="fa-solid fa-clock me-1"></i> ${formattedTime}</small>
                                 </div>
                                 <button class="btn btn-danger-custom btn-sm" onclick="deleteNotice(${notif.id})"><i class="fa-solid fa-trash-can"></i></button>
@@ -2044,25 +2214,54 @@
         function submitNotice(e) {
             e.preventDefault();
 
-            const payload = {
-                title: document.getElementById("notice-title").value,
-                content: document.getElementById("notice-content").value
+            const imageInput = document.getElementById("notice-image");
+            
+            const postNoticePayload = (uploadedUrl) => {
+                const payload = {
+                    title: document.getElementById("notice-title").value,
+                    content: document.getElementById("notice-content").value,
+                    imageUrl: uploadedUrl
+                };
+
+                fetch("/api/admin/notifications", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => {
+                    if (res.ok) {
+                        document.getElementById("notice-form").reset();
+                        loadAdminNotices();
+                    } else {
+                        alert("Failed to publish notice.");
+                    }
+                })
+                .catch(err => console.error("Error publishing notice:", err));
             };
 
-            fetch("/api/admin/notifications", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            })
-            .then(res => {
-                if (res.ok) {
-                    document.getElementById("notice-form").reset();
-                    loadAdminNotices();
-                } else {
-                    alert("Failed to publish notice");
-                }
-            })
-            .catch(err => console.error("Error posting notice:", err));
+            if (imageInput && imageInput.files.length > 0) {
+                const formData = new FormData();
+                formData.append("file", imageInput.files[0]);
+
+                fetch("/api/files/upload", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.url) {
+                        postNoticePayload(data.url);
+                    } else {
+                        alert("Image upload failed: " + (data.error || "unknown error"));
+                    }
+                })
+                .catch(err => {
+                    console.error("Error uploading notice image:", err);
+                    alert("Error uploading notice image.");
+                });
+            } else {
+                postNoticePayload(null);
+            }
         }
 
         function deleteNotice(id) {
@@ -2278,6 +2477,405 @@
                     content.innerHTML = '<div class="text-center text-danger p-4">Error loading participant breakdown.</div>';
                 });
         }
+
+        // ==========================================
+        // EVENT PARTICIPATION MODULE LOGIC
+        // ==========================================
+        let participationModalObj = null;
+
+        function updateYearOptions() {
+            const deptInput = document.getElementById("part-department");
+            const yearSelect = document.getElementById("part-year");
+            if (!deptInput || !yearSelect) return;
+
+            const deptValue = deptInput.value.trim().toLowerCase();
+            let isFourYears = false;
+
+            if (deptValue.includes("engineering") || deptValue.includes("b.tech") || deptValue.includes("b.e.")) {
+                isFourYears = true;
+            }
+
+            const currentSelected = yearSelect.value;
+
+            let html = '<option value="" disabled selected>Select Year</option>';
+            html += '<option value="1st Year">1st Year</option>';
+            html += '<option value="2nd Year">2nd Year</option>';
+            html += '<option value="3rd Year">3rd Year</option>';
+            if (isFourYears) {
+                html += '<option value="4th Year">4th Year</option>';
+            }
+
+            yearSelect.innerHTML = html;
+
+            if (currentSelected && (currentSelected !== "4th Year" || isFourYears)) {
+                yearSelect.value = currentSelected;
+            }
+        }
+
+        function openParticipationForm(category, id = null) {
+            if (!participationModalObj) {
+                participationModalObj = new bootstrap.Modal(document.getElementById('participationModal'));
+            }
+            
+            const form = document.getElementById("participation-form");
+            form.reset();
+            document.getElementById("part-id").value = id || "";
+            document.getElementById("part-roll-status").style.display = "none";
+
+            if (id) {
+                document.getElementById("participationModalTitle").innerText = "Edit Student Participation";
+                // Fetch all records temporarily to extract details of this specific record
+                fetch(`/api/participation/report?startDate=2000-01-01&endDate=2099-12-31`)
+                    .then(res => res.json())
+                    .then(records => {
+                        const rec = records.find(r => r.id == id);
+                        if (rec) {
+                            document.getElementById("part-roll-number").value = rec.rollNumber;
+                            document.getElementById("part-student-name").value = rec.studentName;
+                            document.getElementById("part-department").value = rec.department;
+                            document.getElementById("part-tutor-name").value = rec.tutorName;
+                            document.getElementById("part-event-category").value = rec.eventCategory;
+                            
+                            // Check if category is Other Events
+                            if (rec.eventCategory === "Other Events") {
+                                document.getElementById("part-other-event-name").value = rec.eventName;
+                                document.getElementById("part-event-name").value = "";
+                                document.getElementById("part-other-event-group").style.display = "block";
+                                document.getElementById("part-standard-event-group").style.display = "none";
+                                document.getElementById("part-other-event-name").required = true;
+                                document.getElementById("part-event-name").required = false;
+                            } else {
+                                document.getElementById("part-event-name").value = rec.eventName;
+                                document.getElementById("part-other-event-name").value = "";
+                                document.getElementById("part-other-event-group").style.display = "none";
+                                document.getElementById("part-standard-event-group").style.display = "block";
+                                document.getElementById("part-other-event-name").required = false;
+                                document.getElementById("part-event-name").required = true;
+                            }
+                            
+                            document.getElementById("part-event-date").value = rec.eventDate;
+                            document.getElementById("part-result").value = rec.result;
+                            document.getElementById("part-cert-status").value = rec.certificateStatus;
+                            
+                            // Load year options and set value
+                            updateYearOptions();
+                            document.getElementById("part-year").value = rec.year;
+                        }
+                    })
+                    .catch(err => console.error("Error loading record for edit:", err));
+            } else {
+                document.getElementById("participationModalTitle").innerText = "Record Student Participation";
+                document.getElementById("part-event-category").value = category;
+                
+                // Show/hide other events fields
+                if (category === "Other Events") {
+                    document.getElementById("part-other-event-name").value = "";
+                    document.getElementById("part-event-name").value = "";
+                    document.getElementById("part-other-event-group").style.display = "block";
+                    document.getElementById("part-standard-event-group").style.display = "none";
+                    document.getElementById("part-other-event-name").required = true;
+                    document.getElementById("part-event-name").required = false;
+                } else {
+                    document.getElementById("part-other-event-name").value = "";
+                    document.getElementById("part-event-name").value = "";
+                    document.getElementById("part-other-event-group").style.display = "none";
+                    document.getElementById("part-standard-event-group").style.display = "block";
+                    document.getElementById("part-other-event-name").required = false;
+                    document.getElementById("part-event-name").required = true;
+                }
+                
+                // Load year options
+                updateYearOptions();
+            }
+
+            // Populate datalists if not done
+            loadPartDatalists();
+
+            participationModalObj.show();
+        }
+
+        function loadPartDatalists() {
+            // Load departments list
+            fetch("/api/admin/departments")
+                .then(res => res.json())
+                .then(depts => {
+                    let html = "";
+                    depts.forEach(d => {
+                        html += `<option value="${d.name}">`;
+                    });
+                    document.getElementById("part-dept-list").innerHTML = html;
+                });
+
+            // Load tutors list
+            fetch("/api/achievements/tutors")
+                .then(res => res.json())
+                .then(tutors => {
+                    let html = "";
+                    tutors.forEach(t => {
+                        html += `<option value="${t.name}">${t.username} - ${t.department}</option>`;
+                    });
+                    document.getElementById("part-tutors-list").innerHTML = html;
+                });
+        }
+
+        function lookupStudentForParticipation(rollNumber) {
+            if (!rollNumber || rollNumber.trim() === "") return;
+            const statusDiv = document.getElementById("part-roll-status");
+            statusDiv.style.display = "block";
+            statusDiv.className = "small mt-1 text-info";
+            statusDiv.innerText = "Looking up student...";
+
+            fetch(`/api/achievements/student/${rollNumber.trim()}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error("Student not registered");
+                })
+                .then(data => {
+                    document.getElementById("part-student-name").value = data.name;
+                    document.getElementById("part-department").value = data.department;
+                    statusDiv.className = "small mt-1 text-success";
+                    statusDiv.innerText = `Verified: ${data.name}`;
+                    updateYearOptions(); // Dynamic year options based on looked up department
+                })
+                .catch(err => {
+                    statusDiv.className = "small mt-1 text-danger";
+                    statusDiv.innerText = "Roll number not found. Please enter manually.";
+                });
+        }
+
+        function saveParticipation(event) {
+            event.preventDefault();
+            const id = document.getElementById("part-id").value;
+            const isOther = document.getElementById("part-event-category").value === "Other Events";
+            const eventName = isOther ? 
+                document.getElementById("part-other-event-name").value.trim() : 
+                document.getElementById("part-event-name").value.trim();
+
+            const payload = {
+                rollNumber: document.getElementById("part-roll-number").value.trim().toUpperCase(),
+                studentName: document.getElementById("part-student-name").value.trim(),
+                department: document.getElementById("part-department").value.trim(),
+                year: document.getElementById("part-year").value,
+                tutorName: document.getElementById("part-tutor-name").value.trim(),
+                eventCategory: document.getElementById("part-event-category").value,
+                eventName: eventName,
+                eventDate: document.getElementById("part-event-date").value,
+                result: document.getElementById("part-result").value,
+                certificateStatus: document.getElementById("part-cert-status").value
+            };
+
+            const url = id ? `/api/participation/${id}` : "/api/participation";
+            const method = id ? "PUT" : "POST";
+
+            fetch(url, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Failed to save record") });
+            })
+            .then(() => {
+                showSuccessPopup(id ? "Participation Updated!" : "Participation Saved!");
+                if (participationModalObj) {
+                    participationModalObj.hide();
+                }
+                generateParticipationReport();
+            })
+            .catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+
+        function resetPartReportFilters() {
+            document.getElementById("filter-part-category").value = "All";
+            document.getElementById("filter-part-from-date").value = "";
+            document.getElementById("filter-part-to-date").value = "";
+            document.getElementById("participation-report-tbody").innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-4">No records generated. Set date filters and click Generate Report.</td>
+                </tr>
+            `;
+        }
+
+        function generateParticipationReport() {
+            const category = document.getElementById("filter-part-category").value;
+            const startDate = document.getElementById("filter-part-from-date").value;
+            const endDate = document.getElementById("filter-part-to-date").value;
+
+            if (!startDate || !endDate) {
+                alert("Please select both From and To dates.");
+                return;
+            }
+
+            const tbody = document.getElementById("participation-report-tbody");
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4"><div class="spinner-border text-secondary" role="status"></div></td></tr>';
+
+            fetch(`/api/participation/report?category=${category}&startDate=${startDate}&endDate=${endDate}`)
+                .then(res => res.json())
+                .then(records => {
+                    if (records.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted p-4">No participation records found for the selected criteria.</td></tr>';
+                        return;
+                    }
+
+                    // Sort by event date descending
+                    records.sort((a, b) => new Date(b.eventDate) - new Date(a.eventDate));
+
+                    let html = "";
+                    records.forEach(rec => {
+                        html += `
+                            <tr>
+                                <td><strong class="text-white">${rec.studentName}</strong></td>
+                                <td>${rec.rollNumber}</td>
+                                <td>${rec.department}</td>
+                                <td><span class="text-white fw-bold">${rec.eventName}</span></td>
+                                <td><span class="badge bg-secondary">${rec.eventCategory}</span></td>
+                                <td>${rec.eventDate}</td>
+                                <td><span class="badge bg-primary">${rec.result}</span></td>
+                                <td class="text-end no-print">
+                                    <button class="btn btn-outline-info btn-sm me-1" onclick="openParticipationForm('', ${rec.id})"><i class="fa-solid fa-pencil"></i></button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteParticipation(${rec.id})"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error("Error generating report:", err);
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger p-4">Error generating report.</td></tr>';
+                });
+        }
+
+        function deleteParticipation(id) {
+            if (!confirm("Are you sure you want to delete this participation record?")) return;
+
+            fetch(`/api/participation/${id}`, { method: "DELETE" })
+                .then(res => {
+                    if (res.ok) {
+                        showSuccessPopup("Record Deleted!");
+                        generateParticipationReport();
+                    } else {
+                        alert("Failed to delete record.");
+                    }
+                })
+                .catch(err => console.error("Error deleting participation:", err));
+        }
+
+        function printPartReport() {
+            window.print();
+        }
+
+        // Dummy report save
+        function savePartReport() {
+            alert("Report saved successfully!");
+        }
+
+        function handleOtherEventsClick() {
+            const newCat = prompt("Enter custom event type name:");
+            if (newCat) {
+                const cleanCat = newCat.trim();
+                if (cleanCat === "") return;
+                fetch("/api/achievements/categories", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: cleanCat })
+                })
+                .then(res => {
+                    if (res.ok) return res.json();
+                    return res.json().then(err => { throw new Error(err.error || "Failed to add category") });
+                })
+                .then(() => {
+                    showSuccessPopup("Custom category added successfully");
+                    renderEventCategories();
+                })
+                .catch(err => {
+                    alert("Error: " + err.message);
+                });
+            }
+        }
+
+        function renderEventCategories() {
+            fetch("/api/achievements/categories")
+                .then(res => res.json())
+                .then(cats => {
+                    const container = document.getElementById("event-categories-container");
+                    if (!container) return;
+
+                    const defaults = [
+                        { name: "Debate", icon: "fa-microphone", glowClass: "bg-primary-glow text-primary" },
+                        { name: "Conference", icon: "fa-users", glowClass: "bg-success-glow text-success" },
+                        { name: "Seminar", icon: "fa-calendar-days", glowClass: "bg-info-glow text-info" },
+                        { name: "Workshop", icon: "fa-trophy", glowClass: "bg-warning-glow text-warning" }
+                    ];
+
+                    let html = "";
+                    defaults.forEach(d => {
+                        html += `
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('${d.name}')" style="cursor: pointer;">
+                                    <div class="category-icon-wrapper ${d.glowClass} mb-3">
+                                        <i class="fa-solid ${d.icon} fa-2x"></i>
+                                    </div>
+                                    <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">${d.name}</h5>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    cats.forEach(c => {
+                        const isDefault = defaults.some(d => d.name.toLowerCase() === c.name.toLowerCase());
+                        if (!isDefault) {
+                            html += `
+                                <div class="col-6 col-md-4 col-lg-2">
+                                    <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('${c.name}')" style="cursor: pointer;">
+                                        <div class="category-icon-wrapper bg-secondary-glow text-light mb-3">
+                                            <i class="fa-solid fa-medal fa-2x"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">${c.name}</h5>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    html += `
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="handleOtherEventsClick()" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-danger-glow text-danger mb-3">
+                                    <i class="fa-solid fa-award fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Other Events</h5>
+                            </div>
+                        </div>
+                    `;
+
+                    container.innerHTML = html;
+
+                    const filterSelect = document.getElementById("filter-part-category");
+                    if (filterSelect) {
+                        let selectHtml = `<option value="All">All Categories</option>`;
+                        defaults.forEach(d => {
+                            selectHtml += `<option value="${d.name}">${d.name}</option>`;
+                        });
+                        cats.forEach(c => {
+                            const isDefault = defaults.some(d => d.name.toLowerCase() === c.name.toLowerCase());
+                            if (!isDefault) {
+                                selectHtml += `<option value="${c.name}">${c.name}</option>`;
+                            }
+                        });
+                        selectHtml += `<option value="Other Events">Other Events</option>`;
+                        filterSelect.innerHTML = selectHtml;
+                    }
+                })
+                .catch(err => console.error("Error rendering categories:", err));
+        }
+
+        function exportPartReportPdf() {
+            window.print();
+        }
     </script>
 
     <!-- Event Participants Modal -->
@@ -2322,6 +2920,100 @@
             </div>
         </div>
     </div>
+    <!-- Event Participation Modal -->
+    <div class="modal fade" id="participationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content modal-content-custom glass-panel border border-secondary text-white">
+                <div class="modal-header modal-header-custom border-bottom border-secondary">
+                    <h5 class="modal-title fw-bold" id="participationModalTitle">Record Student Participation</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="participation-form" onsubmit="saveParticipation(event)">
+                    <input type="hidden" id="part-id">
+                    <div class="modal-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Register Number / Roll Number</label>
+                                <input type="text" id="part-roll-number" class="form-control form-control-custom text-uppercase" placeholder="e.g. 22IT045" required onblur="lookupStudentForParticipation(this.value)">
+                                <div id="part-roll-status" class="small mt-1 fw-bold text-success" style="display: none;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Student Name</label>
+                                <input type="text" id="part-student-name" class="form-control form-control-custom" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Department</label>
+                                <input type="text" id="part-department" class="form-control form-control-custom" list="part-dept-list" placeholder="Type department name..." required oninput="updateYearOptions()">
+                                <datalist id="part-dept-list"></datalist>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Year of Study</label>
+                                <select id="part-year" class="form-select form-control-custom form-select-custom" required>
+                                    <option value="" disabled selected>Select Year</option>
+                                    <option value="1st Year">1st Year</option>
+                                    <option value="2nd Year">2nd Year</option>
+                                    <option value="3rd Year">3rd Year</option>
+                                    <option value="4th Year">4th Year</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Tutor Name</label>
+                                <input type="text" id="part-tutor-name" class="form-control form-control-custom" list="part-tutors-list" placeholder="Start typing tutor name..." required>
+                                <datalist id="part-tutors-list"></datalist>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Event Category</label>
+                                <input type="text" id="part-event-category" class="form-control form-control-custom" readonly>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6" id="part-standard-event-group">
+                                <label class="form-label text-muted small fw-bold">Event Name</label>
+                                <input type="text" id="part-event-name" class="form-control form-control-custom" placeholder="e.g. State Level Debate" required>
+                            </div>
+                            <div class="col-md-6" id="part-other-event-group" style="display: none;">
+                                <label class="form-label text-muted small fw-bold">Other Event Name</label>
+                                <input type="text" id="part-other-event-name" class="form-control form-control-custom" placeholder="e.g. Cultural Fest">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Event Date</label>
+                                <input type="date" id="part-event-date" class="form-control form-control-custom" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Result</label>
+                                <select id="part-result" class="form-select form-control-custom form-select-custom" required>
+                                    <option value="" disabled selected>Select Result</option>
+                                    <option value="Winner">Winner</option>
+                                    <option value="Runner">Runner</option>
+                                    <option value="Participant">Participant</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Certificate Status</label>
+                                <select id="part-cert-status" class="form-select form-control-custom form-select-custom" required>
+                                    <option value="" disabled selected>Select Status</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Issued">Issued</option>
+                                    <option value="Not Required">Not Required</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="button" class="btn btn-glass" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary-gradient px-4 fw-bold">Save Participation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
 

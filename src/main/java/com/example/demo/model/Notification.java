@@ -17,7 +17,7 @@ public class Notification {
     @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String content;
     
-    @Transient
+    @Column(name = "sender", nullable = true)
     private String sender; // e.g. "College Admin" or "Department of IT"
     
     @Column(name = "created_date", nullable = false)
@@ -25,6 +25,9 @@ public class Notification {
 
     @Transient
     private Long eventId;
+
+    @Column(name = "image_url", nullable = true)
+    private String imageUrl;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = true)
@@ -45,6 +48,15 @@ public class Notification {
         this.sender = sender;
         this.createdAt = createdAt;
         this.eventId = eventId;
+    }
+
+    public Notification(String title, String content, String sender, LocalDateTime createdAt, Long eventId, String imageUrl) {
+        this.title = title;
+        this.content = content;
+        this.sender = sender;
+        this.createdAt = createdAt;
+        this.eventId = eventId;
+        this.imageUrl = imageUrl;
     }
 
     // Getters and Setters
@@ -73,7 +85,16 @@ public class Notification {
     }
 
     public String getSender() {
-        return sender;
+        if (sender != null) {
+            return sender;
+        }
+        if (user != null) {
+            if ("ROLE_SUPER_ADMIN".equals(user.getRole()) || "ROLE_ADMIN".equals(user.getRole())) {
+                return "College Admin";
+            }
+            return user.getName();
+        }
+        return "System Notification";
     }
 
     public void setSender(String sender) {
@@ -102,5 +123,13 @@ public class Notification {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

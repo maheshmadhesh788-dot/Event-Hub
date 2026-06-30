@@ -14,6 +14,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <!-- Custom CSS -->
     <link href="css/style.css" rel="stylesheet">
+    <style>
+        .category-box-premium {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .category-box-premium:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.5);
+            background: rgba(99, 102, 241, 0.05);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.15);
+        }
+        .category-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+    </style>
 </head>
 <body>
 
@@ -268,6 +290,10 @@
                                         <label class="form-label text-muted small">Notice Description</label>
                                         <textarea id="notice-content" class="form-control form-control-custom" rows="4" required placeholder="Explain notice announcement..."></textarea>
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small">Notice Image (Optional)</label>
+                                        <input type="file" id="notice-image" class="form-control form-control-custom" accept="image/*">
+                                    </div>
                                     <div class="d-grid">
                                         <button type="submit" class="btn btn-secondary-gradient"><i class="fa-solid fa-paper-plane me-2"></i> Publish announcement</button>
                                     </div>
@@ -428,6 +454,8 @@
                         </div>
                     </div>
                 </div>
+
+
 
             </div>
 
@@ -688,42 +716,45 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Check cross-role access
+            if (localStorage.getItem("eventhub_student_session")) {
+                window.location.href = "dashboard.html";
+                return;
+            }
+            if (localStorage.getItem("eventhub_admin_token")) {
+                window.location.href = "admin.html";
+                return;
+            }
+
             eventModalObj = new bootstrap.Modal(document.getElementById('eventModal'));
             detailsModalObj = new bootstrap.Modal(document.getElementById('detailsModal'));
             participantsModal = new bootstrap.Modal(document.getElementById('participantsModal'));
 
-            // Check if department or staff is already logged in
-            const staffSession = localStorage.getItem("eventhub_staff_session");
+            // Check if department is already logged in
             currentDept = checkDepartmentAuth();
 
-            if (staffSession) {
-                const staff = JSON.parse(staffSession);
-                currentDept = {
-                    id: staff.id,
-                    name: staff.department,
-                    code: staff.code || "UG",
-                    description: staff.description || "",
-                    logoUrl: staff.logoUrl,
-                    coverImageUrl: staff.coverImageUrl
-                };
+            if (currentDept) {
                 showWorkspace();
 
-                // Show welcome banner for Tutor/HOD
-                const welcomeTitle = document.createElement("div");
-                welcomeTitle.className = "text-warning small fw-bold mb-1";
-                welcomeTitle.innerHTML = `<i class="fa-solid fa-user-tie me-1"></i> Logged in as: ${staff.name} (${staff.role === 'ROLE_HOD' ? 'HOD' : 'Tutor'})`;
-
-                const titleHeader = document.getElementById("dept-title-header");
-                if (titleHeader) {
-                    titleHeader.parentElement.insertBefore(welcomeTitle, titleHeader);
-                }
-
-                // Hide Edit Workspace Details button for Tutor
-                if (staff.role === 'ROLE_TUTOR') {
-                    const buttons = Array.from(document.querySelectorAll("button"));
-                    const editBtn = buttons.find(btn => btn.textContent.includes("Edit Workspace Details"));
-                    if (editBtn) editBtn.style.display = "none";
-                }
+                // Fetch the latest details of the department to populate HOD Name, email, contact info, etc.
+                fetch(`/api/departments/${currentDept.id}`)
+                    .then(res => res.json())
+                    .then(dept => {
+                        currentDept.name = dept.name;
+                        currentDept.code = dept.code;
+                        currentDept.password = dept.password;
+                        currentDept.description = dept.description;
+                        currentDept.logoUrl = dept.logoUrl;
+                        currentDept.coverImageUrl = dept.coverImageUrl;
+                        currentDept.hodName = dept.hodName;
+                        currentDept.email = dept.email;
+                        currentDept.contactNumber = dept.contactNumber;
+                        localStorage.setItem("eventhub_dept_session", JSON.stringify(currentDept));
+                        showWorkspace();
+                    })
+                    .catch(err => {
+                        console.error("Error fetching latest department info:", err);
+                    });
 
                 // Add a link/button to open the Student Achievement Module
                 const actionContainer = document.querySelector(".d-flex.gap-2.flex-wrap");
@@ -735,8 +766,6 @@
                     achBtn.innerHTML = `<i class="fa-solid fa-trophy me-1"></i> Student Achievements`;
                     actionContainer.insertBefore(achBtn, actionContainer.firstChild);
                 }
-            } else if (currentDept) {
-                showWorkspace();
             } else {
                 if (window.location.search.includes("register=true")) {
                     showRegisterPanel();
@@ -813,24 +842,56 @@
             document.getElementById("details-form").reset();
             document.getElementById("details-error-message").style.display = "none";
 
-            document.getElementById("workspace-name").value = currentDept.name || "";
-            document.getElementById("workspace-code").value = currentDept.code || "";
-            
-            // Password preloading (stored plain text)
-            document.getElementById("workspace-password").value = currentDept.password || "";
-            document.getElementById("workspace-password").placeholder = "Enter password";
-            
-            document.getElementById("workspace-hod").value = currentDept.hodName || "";
-            document.getElementById("workspace-email").value = currentDept.email || "";
-            document.getElementById("workspace-contact").value = currentDept.contactNumber || "";
+            fetch(`/api/departments/${currentDept.id}`)
+                .then(res => res.json())
+                .then(dept => {
+                    // Sync currentDept state
+                    currentDept.name = dept.name;
+                    currentDept.code = dept.code;
+                    currentDept.password = dept.password;
+                    currentDept.description = dept.description;
+                    currentDept.logoUrl = dept.logoUrl;
+                    currentDept.coverImageUrl = dept.coverImageUrl;
+                    currentDept.hodName = dept.hodName;
+                    currentDept.email = dept.email;
+                    currentDept.contactNumber = dept.contactNumber;
 
-            document.getElementById("workspace-logo-url").value = currentDept.logoUrl || "";
-            document.getElementById("workspace-cover-url").value = currentDept.coverImageUrl || "";
-            document.getElementById("workspace-description").value = currentDept.description || "";
-            document.getElementById("workspace-logo-status").innerText = currentDept.logoUrl ? "Logo set" : "";
-            document.getElementById("workspace-cover-status").innerText = currentDept.coverImageUrl ? "Banner set" : "";
+                    if (localStorage.getItem("eventhub_dept_session")) {
+                        localStorage.setItem("eventhub_dept_session", JSON.stringify(currentDept));
+                    }
 
-            detailsModalObj.show();
+                    // Populate fields
+                    document.getElementById("workspace-name").value = dept.name || "";
+                    document.getElementById("workspace-code").value = dept.code || "";
+                    document.getElementById("workspace-password").value = dept.password || "";
+                    document.getElementById("workspace-password").placeholder = "Enter password";
+                    document.getElementById("workspace-hod").value = dept.hodName || "";
+                    document.getElementById("workspace-email").value = dept.email || "";
+                    document.getElementById("workspace-contact").value = dept.contactNumber || "";
+
+                    document.getElementById("workspace-logo-url").value = dept.logoUrl || "";
+                    document.getElementById("workspace-cover-url").value = dept.coverImageUrl || "";
+                    document.getElementById("workspace-description").value = dept.description || "";
+                    document.getElementById("workspace-logo-status").innerText = dept.logoUrl ? "Logo set" : "";
+                    document.getElementById("workspace-cover-status").innerText = dept.coverImageUrl ? "Banner set" : "";
+
+                    detailsModalObj.show();
+                })
+                .catch(err => {
+                    console.error("Error loading latest details for editing:", err);
+                    // Fallback to in-memory state if API is offline
+                    document.getElementById("workspace-name").value = currentDept.name || "";
+                    document.getElementById("workspace-code").value = currentDept.code || "";
+                    document.getElementById("workspace-password").value = currentDept.password || "";
+                    document.getElementById("workspace-password").placeholder = "Enter password";
+                    document.getElementById("workspace-hod").value = currentDept.hodName || "";
+                    document.getElementById("workspace-email").value = currentDept.email || "";
+                    document.getElementById("workspace-contact").value = currentDept.contactNumber || "";
+                    document.getElementById("workspace-logo-url").value = currentDept.logoUrl || "";
+                    document.getElementById("workspace-cover-url").value = currentDept.coverImageUrl || "";
+                    document.getElementById("workspace-description").value = currentDept.description || "";
+                    detailsModalObj.show();
+                });
         }
 
         function uploadWorkspaceImage(fileInput, type) {
@@ -966,13 +1027,7 @@
                 return res.json().then(err => { throw new Error(err.error || "Login failed") });
             })
             .then(data => {
-                if (data.role === "ROLE_TUTOR" || data.role === "ROLE_HOD") {
-                    localStorage.setItem("eventhub_staff_session", JSON.stringify(data));
-                    localStorage.removeItem("eventhub_dept_session");
-                } else {
-                    localStorage.setItem("eventhub_dept_session", JSON.stringify(data));
-                    localStorage.removeItem("eventhub_staff_session");
-                }
+                localStorage.setItem("eventhub_dept_session", JSON.stringify(data));
                 // Reload page to run DOMContentLoaded init cleanly
                 window.location.reload();
             })
@@ -1574,11 +1629,20 @@
                     let html = "";
                     deptNotifs.forEach(notif => {
                         const formattedTime = new Date(notif.createdAt).toLocaleDateString() + ' ' + new Date(notif.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        let imgHtml = "";
+                        if (notif.imageUrl) {
+                            imgHtml = `
+                                <div class="mt-2 mb-2">
+                                    <img src="${notif.imageUrl}" alt="Notice image" style="max-width: 100%; max-height: 180px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15);">
+                                </div>
+                            `;
+                        }
                         html += `
                             <div class="notif-card dept-notif d-flex justify-content-between align-items-start">
                                 <div style="max-width: 85%;">
                                     <h6 class="mb-1 text-white fw-bold">${notif.title}</h6>
                                     <p class="mb-2 text-muted small">${notif.content}</p>
+                                    ${imgHtml}
                                     <small class="text-secondary" style="font-size: 0.75rem;"><i class="fa-solid fa-clock me-1"></i> ${formattedTime}</small>
                                 </div>
                                 <button class="btn btn-danger-custom btn-sm" onclick="deleteNotice(${notif.id})"><i class="fa-solid fa-trash-can"></i></button>
@@ -1594,25 +1658,54 @@
         function submitNotice(e) {
             e.preventDefault();
 
-            const payload = {
-                title: document.getElementById("notice-title").value,
-                content: document.getElementById("notice-content").value
+            const imageInput = document.getElementById("notice-image");
+
+            const postNoticePayload = (uploadedUrl) => {
+                const payload = {
+                    title: document.getElementById("notice-title").value,
+                    content: document.getElementById("notice-content").value,
+                    imageUrl: uploadedUrl
+                };
+
+                fetch(`/api/departments/${currentDept.id}/notifications`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => {
+                    if (res.ok) {
+                        document.getElementById("notice-form").reset();
+                        loadDeptNotices();
+                    } else {
+                        alert("Failed to publish notice");
+                    }
+                })
+                .catch(err => console.error("Error posting notice:", err));
             };
 
-            fetch(`/api/departments/${currentDept.id}/notifications`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            })
-            .then(res => {
-                if (res.ok) {
-                    document.getElementById("notice-form").reset();
-                    loadDeptNotices();
-                } else {
-                    alert("Failed to publish notice");
-                }
-            })
-            .catch(err => console.error("Error posting notice:", err));
+            if (imageInput && imageInput.files.length > 0) {
+                const formData = new FormData();
+                formData.append("file", imageInput.files[0]);
+
+                fetch("/api/files/upload", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.url) {
+                        postNoticePayload(data.url);
+                    } else {
+                        alert("Image upload failed: " + (data.error || "unknown error"));
+                    }
+                })
+                .catch(err => {
+                    console.error("Error uploading notice image:", err);
+                    alert("Error uploading notice image.");
+                });
+            } else {
+                postNoticePayload(null);
+            }
         }
 
         // Delete Notice (Admin endpoint allows deletion of any notice by ID, or we can use admin endpoint since it's open)
@@ -2060,6 +2153,7 @@
                     tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger p-4">Error loading feedback.</td></tr>';
                 });
         }
+
     </script>
 
     <!-- Event Participants Modal -->
@@ -2104,5 +2198,7 @@
             </div>
         </div>
     </div>
+
+
 </body>
 </html>

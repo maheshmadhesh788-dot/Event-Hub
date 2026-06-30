@@ -216,7 +216,7 @@
 
                 <!-- Registration History list -->
                 <div class="col-lg-8">
-                    <div class="glass-panel p-4 h-100">
+                    <div class="glass-panel p-4" style="height: 500px; display: flex; flex-direction: column;">
                         <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-20 flex-wrap gap-2">
                             <h4 class="text-white fw-bold mb-0"><i class="fa-solid fa-calendar-check text-primary me-2"></i>My Registrations</h4>
                             <div class="d-flex align-items-center gap-2">
@@ -233,7 +233,7 @@
                         </div>
 
                         <!-- Table -->
-                        <div class="table-responsive" id="table-panel">
+                        <div class="table-responsive" id="table-panel" style="overflow-y: auto; flex: 1;">
                             <table class="table table-custom table-hover">
                                 <thead>
                                     <tr>
@@ -243,7 +243,6 @@
                                         <th>Venue</th>
                                         <th>Date & Time</th>
                                         <th>Status</th>
-                                        <th class="text-center">QR Pass</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
@@ -274,6 +273,35 @@
                     <div class="glass-panel p-4 h-100">
                         <h4 class="text-white fw-bold mb-4"><i class="fa-solid fa-calendar-days text-primary me-2"></i>My Event Calendar</h4>
                         <div id="student-calendar" style="min-height: 400px; color: #fff;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- My Event Participations Row -->
+            <div class="row g-4 mt-2 mb-5">
+                <div class="col-12">
+                    <div class="glass-panel p-4">
+                        <h4 class="text-white fw-bold mb-4"><i class="fa-solid fa-medal text-primary me-2"></i>My Event Participations</h4>
+                        <div class="table-responsive">
+                            <table class="table table-custom table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Event Name</th>
+                                        <th>Category</th>
+                                        <th>Date</th>
+                                        <th>Tutor Name</th>
+                                        <th>Result</th>
+                                        <th>Certificate Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="participations-tbody">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">No event participation records found.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -405,8 +433,19 @@
     <script src="js/app.js"></script>
     <script>
         let currentStudent = null;
+        let calendarInstance = null;
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Check cross-role access
+            if (localStorage.getItem("eventhub_dept_session")) {
+                window.location.href = "department.html";
+                return;
+            }
+            if (localStorage.getItem("eventhub_admin_token")) {
+                window.location.href = "admin.html";
+                return;
+            }
+
             startNotificationPolling();
             loadDepartments();
 
@@ -495,6 +534,26 @@
             if (tbody) {
                 tbody.innerHTML = '<tr><td colspan="8" class="text-center p-4"><div class="spinner-border text-secondary" role="status"></div></td></tr>';
             }
+
+            // Load participations
+            const partTbody = document.getElementById("participations-tbody");
+            if (partTbody) {
+                partTbody.innerHTML = '<tr><td colspan="7" class="text-center p-4"><div class="spinner-border text-secondary" role="status"></div></td></tr>';
+            }
+            fetch("/api/participation/my")
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error("Failed to load participations");
+                })
+                .then(participations => {
+                    renderStudentParticipations(participations);
+                })
+                .catch(err => {
+                    console.error("Error refreshing participations:", err);
+                    if (partTbody) {
+                        partTbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Failed to fetch participations.</td></tr>`;
+                    }
+                });
 
             Promise.all([
                 fetch(`/api/student/registrations/${rollNumber}`).then(res => {
@@ -643,6 +702,48 @@
             });
         }
 
+        // Render student participation records
+        function renderStudentParticipations(participations) {
+            const tbody = document.getElementById("participations-tbody");
+            if (!tbody) return;
+
+            if (participations.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">No event participation records found.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Sort by date descending
+            participations.sort((a, b) => new Date(b.eventDate) - new Date(a.eventDate));
+
+            let html = "";
+            participations.forEach((part, index) => {
+                let badgeClass = "bg-secondary";
+                if (part.result === "Winner") badgeClass = "bg-success";
+                else if (part.result === "Runner") badgeClass = "bg-info";
+
+                let certBadgeClass = "bg-warning text-dark";
+                if (part.certificateStatus === "Issued") certBadgeClass = "bg-success text-white";
+                else if (part.certificateStatus === "Not Required") certBadgeClass = "bg-secondary text-white";
+
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong class="text-white">${part.eventName}</strong></td>
+                        <td><span class="badge bg-secondary">${part.eventCategory}</span></td>
+                        <td>${part.eventDate}</td>
+                        <td>${part.tutorName}</td>
+                        <td><span class="badge ${badgeClass}">${part.result}</span></td>
+                        <td><span class="badge ${certBadgeClass}">${part.certificateStatus}</span></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
         // Render student history into the DOM table
         function renderStudentHistory(registrations) {
             const tbody = document.getElementById("records-tbody");
@@ -679,7 +780,7 @@
                 }
 
                 // Actions buttons
-                let actionButtonsHtml = `<div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">`;
+                let actionButtonsHtml = "";
                 const isAttended = statusVal.includes("attend");
                 
                 actionButtonsHtml += `
@@ -698,7 +799,6 @@
                         </button>
                     `;
                 }
-                actionButtonsHtml += `</div>`;
 
                 html += `
                     <tr>
@@ -708,16 +808,20 @@
                         <td>${event.venue}</td>
                         <td>${formatEventDate(event.dateTime)}</td>
                         <td>${statusBadgeHtml}</td>
-                        <td>
-                            <div class="text-center">
-                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${reg.id}" 
-                                     alt="Pass QR" 
-                                     style="width: 45px; height: 45px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.15);"
-                                     onclick="showQrModal(${reg.id}, '${event.name.replace(/'/g, "\\'")}${compName.replace(/'/g, "\\'")}')"
-                                     title="Click to view larger QR code">
+                        <td class="text-center align-middle">
+                            <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+                                <div class="mb-1">
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${reg.id}" 
+                                         alt="Pass QR" 
+                                         style="width: 50px; height: 50px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.15);"
+                                         onclick="showQrModal(${reg.id}, '${event.name.replace(/'/g, "\\'")}${compName.replace(/'/g, "\\'")}')"
+                                         title="Click to view larger QR code">
+                                </div>
+                                <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                                    ${actionButtonsHtml}
+                                </div>
                             </div>
                         </td>
-                        <td class="text-center align-middle">${actionButtonsHtml}</td>
                     </tr>
                 `;
             });
@@ -1076,39 +1180,47 @@
             });
         }
 
+        function getEventPosterFallback(name) {
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const c1 = Math.abs(hash % 360);
+            const c2 = (c1 + 120) % 360;
+            return `linear-gradient(135deg, hsl(${c1}, 70%, 45%), hsl(${c2}, 80%, 30%))`;
+        }
+
         function renderCalendarEvents(registrations, bookmarks) {
             const calendarEl = document.getElementById("student-calendar");
             if (!calendarEl) return;
 
-            const events = [];
+            // Group all events by local YYYY-MM-DD date
+            const eventsByDate = {};
 
-            // Add registered events (Blue color)
-            registrations.forEach(r => {
-                const event = r.event;
-                const compSuffix = r.competition ? ` - ${r.competition.name}` : "";
-                events.push({
-                    id: 'reg-' + r.id,
-                    title: `Registered: ${event.name}${compSuffix}`,
-                    start: event.dateTime,
-                    color: '#6366f1',
-                    textColor: '#ffffff',
-                    url: `events.html?eventId=${event.id}`
+            const addEventToGroup = (event, type) => {
+                if (!event.dateTime) return;
+                const dateStr = event.dateTime.split('T')[0];
+                if (!eventsByDate[dateStr]) {
+                    eventsByDate[dateStr] = [];
+                }
+                eventsByDate[dateStr].push({
+                    id: event.id,
+                    name: event.name,
+                    posterUrl: event.posterUrl,
+                    url: `events.html?eventId=${event.id}`,
+                    type: type
                 });
-            });
+            };
 
-            // Add bookmarked events (Purple color)
+            registrations.forEach(r => {
+                if (r.event) addEventToGroup(r.event, 'registration');
+            });
             bookmarks.forEach(b => {
-                const event = b.event;
-                const alreadyReg = registrations.some(r => r.event.id === event.id);
-                if (!alreadyReg) {
-                    events.push({
-                        id: 'book-' + event.id,
-                        title: `Wishlist: ${event.name}`,
-                        start: event.dateTime,
-                        color: '#a855f7',
-                        textColor: '#ffffff',
-                        url: `events.html?eventId=${event.id}`
-                    });
+                if (b.event) {
+                    const alreadyReg = registrations.some(r => r.event && r.event.id === b.event.id);
+                    if (!alreadyReg) {
+                        addEventToGroup(b.event, 'wishlist');
+                    }
                 }
             });
 
@@ -1121,14 +1233,98 @@
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek'
+                    right: 'dayGridMonth'
                 },
-                events: events,
-                themeSystem: 'standard',
-                eventClick: function(info) {
-                    if (info.event.url) {
-                        info.jsEvent.preventDefault();
-                        window.location.href = info.event.url;
+                events: [], // Keep events empty so no blue default text banners are rendered
+                dayCellDidMount: function(arg) {
+                    // sv-SE locale returns standard format YYYY-MM-DD
+                    const dateStr = arg.date.toLocaleDateString('sv-SE');
+                    const dayEvents = eventsByDate[dateStr];
+
+                    if (dayEvents && dayEvents.length > 0) {
+                        const firstEvent = dayEvents[0];
+                        
+                        // Style day cell
+                        arg.el.style.position = 'relative';
+                        arg.el.style.cursor = 'pointer';
+                        arg.el.style.overflow = 'hidden';
+
+                        // Create poster background div
+                        const bgDiv = document.createElement('div');
+                        bgDiv.style.position = 'absolute';
+                        bgDiv.style.top = '0';
+                        bgDiv.style.left = '0';
+                        bgDiv.style.width = '100%';
+                        bgDiv.style.height = '100%';
+                        bgDiv.style.zIndex = '1';
+                        bgDiv.style.backgroundSize = 'cover';
+                        bgDiv.style.backgroundPosition = 'center';
+                        bgDiv.style.transition = 'transform 0.2s ease-in-out';
+
+                        if (firstEvent.posterUrl && firstEvent.posterUrl.trim().length > 0) {
+                            bgDiv.style.backgroundImage = `url('${firstEvent.posterUrl}')`;
+                        } else {
+                            bgDiv.style.background = getEventPosterFallback(firstEvent.name);
+                        }
+
+                        // Add dark glass overlay for legibility
+                        const overlay = document.createElement('div');
+                        overlay.style.position = 'absolute';
+                        overlay.style.top = '0';
+                        overlay.style.left = '0';
+                        overlay.style.width = '100%';
+                        overlay.style.height = '100%';
+                        overlay.style.background = 'rgba(0, 0, 0, 0.4)';
+                        bgDiv.appendChild(overlay);
+
+                        arg.el.appendChild(bgDiv);
+
+                        // Position and style the date number
+                        const numberEl = arg.el.querySelector('.fc-daygrid-day-number');
+                        if (numberEl) {
+                            numberEl.style.position = 'relative';
+                            numberEl.style.zIndex = '2';
+                            numberEl.style.color = '#fff';
+                            numberEl.style.fontWeight = 'bold';
+                            numberEl.style.background = 'rgba(0, 0, 0, 0.65)';
+                            numberEl.style.borderRadius = '50%';
+                            numberEl.style.width = '24px';
+                            numberEl.style.height = '24px';
+                            numberEl.style.display = 'flex';
+                            numberEl.style.alignItems = 'center';
+                            numberEl.style.justifyContent = 'center';
+                            numberEl.style.margin = '4px';
+                            numberEl.style.fontSize = '0.85rem';
+                        }
+
+                        // Display +N badge if there are multiple events
+                        if (dayEvents.length > 1) {
+                            const badge = document.createElement('div');
+                            badge.className = 'badge bg-primary position-absolute';
+                            badge.style.bottom = '5px';
+                            badge.style.right = '5px';
+                            badge.style.zIndex = '2';
+                            badge.style.fontSize = '0.75rem';
+                            badge.style.fontWeight = 'bold';
+                            badge.style.padding = '2px 5px';
+                            badge.innerText = `+${dayEvents.length - 1}`;
+                            arg.el.appendChild(badge);
+                        }
+
+                        // Hover effect
+                        arg.el.addEventListener('mouseenter', () => {
+                            bgDiv.style.transform = 'scale(1.08)';
+                        });
+                        arg.el.addEventListener('mouseleave', () => {
+                            bgDiv.style.transform = 'scale(1)';
+                        });
+                    }
+                },
+                dateClick: function(info) {
+                    const dayEvents = eventsByDate[info.dateStr];
+                    if (dayEvents && dayEvents.length > 0) {
+                        // Navigate to the first event on that date
+                        window.location.href = dayEvents[0].url;
                     }
                 }
             });

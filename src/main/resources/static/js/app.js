@@ -25,8 +25,11 @@ window.fetch = function (url, options) {
                 token = JSON.parse(studentSession).token;
             } catch (e) {}
         }
-    } else if (url.includes("/api/achievements")) {
-        token = localStorage.getItem("eventhub_admin_token") || localStorage.getItem("eventhub_superadmin_token");
+    } else if (url.includes("/api/participation") || url.includes("/api/achievements")) {
+        const studentSession = localStorage.getItem("eventhub_student_session");
+        if (studentSession) {
+            try { token = JSON.parse(studentSession).token; } catch (e) {}
+        }
         if (!token) {
             const deptSession = localStorage.getItem("eventhub_dept_session");
             if (deptSession) {
@@ -34,10 +37,7 @@ window.fetch = function (url, options) {
             }
         }
         if (!token) {
-            const staffSession = localStorage.getItem("eventhub_staff_session");
-            if (staffSession) {
-                try { token = JSON.parse(staffSession).token; } catch (e) {}
-            }
+            token = localStorage.getItem("eventhub_admin_token") || localStorage.getItem("eventhub_superadmin_token");
         }
     }
     
@@ -197,13 +197,22 @@ function renderNotificationDrawer(notifications) {
 
     let html = "";
     notifications.forEach(notif => {
-        const isDept = notif.sender.startsWith("Department");
+        const isDept = notif.sender && notif.sender.startsWith("Department");
         const isRead = readNotifs.includes(notif.id);
         const formattedTime = new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
         const clickAttr = notif.eventId ? `onclick="window.location.href='events.html?eventId=${notif.eventId}'" style="cursor: pointer;"` : '';
         const clickableClass = notif.eventId ? 'clickable-notif' : '';
         const unreadIndicator = !isRead ? '<span class="unread-dot-glow"></span>' : '';
+
+        let imgHtml = "";
+        if (notif.imageUrl) {
+            imgHtml = `
+                <div class="mt-2 mb-2">
+                    <img src="${notif.imageUrl}" alt="Notice image" style="max-width: 100%; max-height: 150px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);">
+                </div>
+            `;
+        }
 
         html += `
             <div class="notif-card ${isDept ? 'dept-notif' : ''} ${isRead ? 'read-notif' : ''} ${clickableClass}" ${clickAttr}>
@@ -215,6 +224,7 @@ function renderNotificationDrawer(notifications) {
                     <small class="text-muted" style="font-size: 0.75rem; flex-shrink: 0;">${formattedTime}</small>
                 </div>
                 <p class="mb-1 text-muted" style="font-size: 0.85rem; line-height: 1.4;">${notif.content}</p>
+                ${imgHtml}
                 <div class="d-flex justify-content-between align-items-center mt-2">
                     <span class="badge ${isDept ? 'bg-secondary' : 'bg-primary'}" style="font-size: 0.7rem;">${notif.sender}</span>
                     ${notif.eventId ? '<small class="text-secondary small fw-bold" style="font-size: 0.7rem;"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>View Event</small>' : ''}
@@ -237,12 +247,22 @@ function showToastNotification(notif) {
     toast.style.borderLeft = "4px solid #6366f1";
     toast.style.background = "#0f1322";
     
+    let toastImgHtml = "";
+    if (notif.imageUrl) {
+        toastImgHtml = `
+            <div class="mt-2 mb-1">
+                <img src="${notif.imageUrl}" alt="Notice image" style="max-width: 100%; max-height: 100px; border-radius: 4px;">
+            </div>
+        `;
+    }
+
     toast.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-1">
             <strong style="color: #fff; font-size: 0.95rem;"><i class="fas fa-bell text-primary mr-2"></i> ${notif.title}</strong>
             <button type="button" class="btn-close btn-close-white" style="font-size: 0.75rem;" onclick="this.parentElement.parentElement.remove()"></button>
         </div>
         <p class="text-muted mb-0" style="font-size: 0.85rem;">${notif.content}</p>
+        ${toastImgHtml}
     `;
     
     document.body.appendChild(toast);
@@ -428,7 +448,6 @@ function renderDynamicNavbar() {
     // Check sessions
     const studentSession = localStorage.getItem("eventhub_student_session");
     const deptSession = localStorage.getItem("eventhub_dept_session");
-    const staffSession = localStorage.getItem("eventhub_staff_session");
     const adminToken = localStorage.getItem("eventhub_admin_token");
     const superAdminToken = localStorage.getItem("eventhub_superadmin_token");
 
@@ -453,7 +472,6 @@ function renderDynamicNavbar() {
     // Separate active states for different dashboards/consoles to avoid multiple active indicators
     const studentActive = (page === 'dashboard.html' || page === 'history.html') ? 'active' : '';
     const departmentActive = (page === 'department.html') ? 'active' : '';
-    const staffActive = (page === 'achievements.html') ? 'active' : '';
     const adminActive = (page === 'admin.html') ? 'active' : '';
     const superAdminActive = (page === 'superadmin.html') ? 'active' : '';
 
@@ -461,7 +479,7 @@ function renderDynamicNavbar() {
     linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${homeActive}" href="index.html"><i class="fa-solid fa-house me-1"></i> Home</a></li>`;
     linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${eventsActive}" href="events.html"><i class="fa-solid fa-calendar-days me-1"></i> Events</a></li>`;
 
-    // Only show Achievements in header for admin, super admin, and department roles (staff see it under Staff Workspace)
+    // Only show Achievements in header for admin, super admin, and department roles
     const hasAchievementsAccess = superAdminToken || adminToken || deptSession;
     if (hasAchievementsAccess) {
         linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${achievementsActive}" href="achievements.html"><i class="fa-solid fa-trophy text-warning me-1"></i> Achievements</a></li>`;
@@ -471,8 +489,6 @@ function renderDynamicNavbar() {
         linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${studentActive}" href="dashboard.html"><i class="fa-solid fa-circle-user me-1"></i> Student Dashboard</a></li>`;
     } else if (deptSession) {
         linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${departmentActive}" href="department.html"><i class="fa-solid fa-building-columns me-1"></i> Department Workspace</a></li>`;
-    } else if (staffSession) {
-        linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${staffActive}" href="achievements.html"><i class="fa-solid fa-graduation-cap me-1"></i> Staff Workspace</a></li>`;
     } else if (adminToken) {
         linksHtml += `<li class="nav-item"><a class="nav-link nav-link-custom ${adminActive}" href="admin.html"><i class="fa-solid fa-lock me-1"></i> Admin Console</a></li>`;
     } else if (superAdminToken) {
@@ -488,4 +504,86 @@ function renderDynamicNavbar() {
 document.addEventListener("DOMContentLoaded", () => {
     initTheme();
     renderDynamicNavbar();
+    setupFormPreservation();
 });
+
+window.restoreFormDrafts = function(formId) {
+    const form = document.getElementById(formId) || document.querySelector(`form[name="${formId}"]`);
+    if (!form) return;
+    const inputs = form.querySelectorAll("input, select, textarea");
+    inputs.forEach(input => {
+        if (!input.id && !input.name) return;
+        if (input.type === "password" || input.type === "file" || input.type === "hidden") return;
+
+        const key = `form_draft_${formId}_${input.id || input.name}`;
+        const savedVal = localStorage.getItem(key);
+
+        if (savedVal !== null) {
+            if (input.type === "checkbox") {
+                input.checked = (savedVal === "true");
+            } else if (input.type === "radio") {
+                if (input.value === savedVal) {
+                    input.checked = true;
+                }
+            } else {
+                input.value = savedVal;
+            }
+
+            // Dispatch events to trigger interactive UI lookups/validations
+            input.dispatchEvent(new Event("change"));
+            input.dispatchEvent(new Event("input"));
+        }
+    });
+};
+
+function setupFormPreservation() {
+    document.querySelectorAll("form").forEach(form => {
+        const formId = form.id || form.getAttribute("name");
+        if (!formId) return;
+
+        if (formId === "login-form" || formId === "admin-login-form" || formId === "register-form") {
+            return;
+        }
+
+        window.restoreFormDrafts(formId);
+
+        const inputs = form.querySelectorAll("input, select, textarea");
+        inputs.forEach(input => {
+            if (!input.id && !input.name) return;
+            if (input.type === "password" || input.type === "file" || input.type === "hidden") return;
+
+            const key = `form_draft_${formId}_${input.id || input.name}`;
+
+            const saveHandler = () => {
+                if (input.type === "checkbox") {
+                    localStorage.setItem(key, input.checked);
+                } else if (input.type === "radio") {
+                    if (input.checked) {
+                        localStorage.setItem(key, input.value);
+                    }
+                } else {
+                    localStorage.setItem(key, input.value);
+                }
+            };
+
+            input.addEventListener("input", saveHandler);
+            input.addEventListener("change", saveHandler);
+        });
+
+        const clearDrafts = () => {
+            inputs.forEach(input => {
+                if (input.id || input.name) {
+                    const key = `form_draft_${formId}_${input.id || input.name}`;
+                    localStorage.removeItem(key);
+                }
+            });
+        };
+
+        form.addEventListener("submit", clearDrafts);
+        form.addEventListener("reset", clearDrafts);
+
+        form.querySelectorAll(".btn-close, .close, button[type='reset'], .btn-cancel, .btn-secondary").forEach(btn => {
+            btn.addEventListener("click", clearDrafts);
+        });
+    });
+}

@@ -17,6 +17,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import com.example.demo.model.Achievement;
+import com.example.demo.model.Registration;
+import com.example.demo.model.EventParticipation;
+import com.example.demo.repository.AchievementRepository;
+import com.example.demo.repository.RegistrationRepository;
+import com.example.demo.repository.EventParticipationRepository;
+import com.example.demo.util.DepartmentNormalizer;
+import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 
 @Component
@@ -29,6 +39,12 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final StaffProfileRepository staffProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AchievementRepository achievementRepository;
+    private final RegistrationRepository registrationRepository;
+    private final EventParticipationRepository eventParticipationRepository;
+
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
 
     @org.springframework.beans.factory.annotation.Value("${eventhub.admin.username:admin}")
     private String adminUsername;
@@ -42,7 +58,10 @@ public class DataInitializer implements CommandLineRunner {
                            DepartmentRepository departmentRepository,
                            UserRepository userRepository,
                            StaffProfileRepository staffProfileRepository,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder,
+                           AchievementRepository achievementRepository,
+                           RegistrationRepository registrationRepository,
+                           EventParticipationRepository eventParticipationRepository) {
         this.eventRepository = eventRepository;
         this.notificationRepository = notificationRepository;
         this.studentRepository = studentRepository;
@@ -50,11 +69,20 @@ public class DataInitializer implements CommandLineRunner {
         this.userRepository = userRepository;
         this.staffProfileRepository = staffProfileRepository;
         this.passwordEncoder = passwordEncoder;
+        this.achievementRepository = achievementRepository;
+        this.registrationRepository = registrationRepository;
+        this.eventParticipationRepository = eventParticipationRepository;
     }
 
     @Override
     @SuppressWarnings("null")
+    @org.springframework.transaction.annotation.Transactional
     public void run(String... args) throws Exception {
+        // Run department cleanup / normalization migration
+        migrateDepartments();
+
+        // Clean fake/test students
+        cleanFakeStudents();
 
         // ─────────────────────────────────────────────────────────────
         // 0. Seed Admin & Super Admin Users in the users table
@@ -287,17 +315,6 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Initialized default notifications.");
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 6. Seed Default Staff Accounts (Tutor & HOD)
-        // ─────────────────────────────────────────────────────────────
-        seedStaff("it_tutor", "tutor123", "ROLE_TUTOR", "Dr. Ramesh (IT Tutor)", "Information Technology");
-        seedStaff("it_hod", "hod123", "ROLE_HOD", "Dr. Karthik (IT HOD)", "Information Technology");
-        seedStaff("cs_tutor", "tutor123", "ROLE_TUTOR", "Dr. Priya (CS Tutor)", "Computer Science");
-        seedStaff("cs_hod", "hod123", "ROLE_HOD", "Dr. Sharma (CS HOD)", "Computer Science");
-        seedStaff("aiml_tutor", "tutor123", "ROLE_TUTOR", "Dr. Anand (AIML Tutor)", "B.Sc Artificial Intelligence & Machine Learning");
-        seedStaff("aiml_hod", "hod123", "ROLE_HOD", "Dr. Suresh (AIML HOD)", "B.Sc Artificial Intelligence & Machine Learning");
-        seedStaff("aids_tutor", "tutor123", "ROLE_TUTOR", "Dr. Anand (AIDS Tutor)", "B.Sc Artificial Intelligence & Data Science");
-        seedStaff("aids_hod", "hod123", "ROLE_HOD", "Dr. Suresh (AIDS HOD)", "B.Sc Artificial Intelligence & Data Science");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────
@@ -373,26 +390,196 @@ public class DataInitializer implements CommandLineRunner {
         return "/images/student_spaces.jpg";
     }
 
-    private void seedStaff(String username, String password, String role, String name, String department) {
-        userRepository.findByUsername(username).ifPresentOrElse(user -> {
-            user.setPassword(passwordEncoder.encode(password));
-            user.setRole(role);
-            userRepository.save(user);
-        }, () -> {
-            User user = new User(username, passwordEncoder.encode(password), role, name);
-            user.setEmail(username + "@kasc.ac.in");
-            user.setContactNumber("9876543210");
-            userRepository.save(user);
-        });
 
-        staffProfileRepository.findByUsernameIgnoreCase(username).ifPresentOrElse(profile -> {
-            profile.setName(name);
-            profile.setRole(role);
-            profile.setDepartment(department);
-            staffProfileRepository.save(profile);
-        }, () -> {
-            StaffProfile profile = new StaffProfile(username, department, name, role);
-            staffProfileRepository.save(profile);
-        });
+
+    private void migrateDepartments() {
+        System.out.println("Running department normalization migration...");
+        List<Department> allDepts = departmentRepository.findAll();
+        Map<String, Department> canonicalMap = new HashMap<>();
+
+        for (Department d : allDepts) {
+            String normalizedName = DepartmentNormalizer.normalize(d.getName());
+            
+            if (canonicalMap.containsKey(normalizedName)) {
+                Department canonical = canonicalMap.get(normalizedName);
+                System.out.println("Merging duplicate department: '" + d.getName() + "' (ID: " + d.getId() + ") into '" + canonical.getName() + "' (ID: " + canonical.getId() + ")");
+                
+                // 1. Update events pointing to duplicate dept
+                List<Event> events = eventRepository.findByDepartment(d);
+                for (Event e : events) {
+                    e.setDepartment(canonical);
+                    eventRepository.save(e);
+                }
+                
+                // 2. Sync corresponding ROLE_DEPARTMENT user
+                String oldName = d.getName();
+                userRepository.findByUsernameIgnoreCase(oldName).ifPresent(user -> {
+                    Optional<User> canonicalUserOpt = userRepository.findByUsernameIgnoreCase(canonical.getName());
+                    if (canonicalUserOpt.isPresent()) {
+                        userRepository.delete(user);
+                    } else {
+                        user.setUsername(canonical.getName());
+                        user.setName(canonical.getName());
+                        userRepository.save(user);
+                    }
+                });
+                
+                // 3. Delete duplicate department
+                departmentRepository.delete(d);
+            } else {
+                if (!d.getName().equals(normalizedName)) {
+                    String oldName = d.getName();
+                    System.out.println("Renaming Department: '" + oldName + "' -> '" + normalizedName + "'");
+                    d.setName(normalizedName);
+                    departmentRepository.save(d);
+                    
+                    // Update user username as well
+                    userRepository.findByUsernameIgnoreCase(oldName).ifPresent(user -> {
+                        user.setUsername(normalizedName);
+                        user.setName(normalizedName);
+                        userRepository.save(user);
+                    });
+                }
+                canonicalMap.put(normalizedName, d);
+            }
+        }
+        
+        // Save and flush any changes before normalizing other entities
+        departmentRepository.flush();
+        userRepository.flush();
+
+        // 4. Normalize students table
+        for (Student s : studentRepository.findAll()) {
+            String norm = DepartmentNormalizer.normalize(s.getDepartment());
+            if (s.getDepartment() == null || !norm.equals(s.getDepartment())) {
+                s.setDepartment(norm);
+                studentRepository.save(s);
+            }
+        }
+
+        // 5. Normalize staff profiles table
+        for (StaffProfile sp : staffProfileRepository.findAll()) {
+            String norm = DepartmentNormalizer.normalize(sp.getDepartment());
+            if (sp.getDepartment() == null || !norm.equals(sp.getDepartment())) {
+                sp.setDepartment(norm);
+                staffProfileRepository.save(sp);
+            }
+        }
+
+        // 6. Normalize achievements table
+        for (Achievement a : achievementRepository.findAll()) {
+            String norm = DepartmentNormalizer.normalize(a.getDepartment());
+            if (a.getDepartment() == null || !norm.equals(a.getDepartment())) {
+                a.setDepartment(norm);
+                achievementRepository.save(a);
+            }
+        }
+
+        // 7. Normalize registrations table
+        for (Registration r : registrationRepository.findAll()) {
+            String norm = DepartmentNormalizer.normalize(r.getDepartment());
+            if (r.getDepartment() == null || !norm.equals(r.getDepartment())) {
+                r.setDepartment(norm);
+                registrationRepository.save(r);
+            }
+        }
+
+        // 8. Normalize event participation table
+        for (EventParticipation ep : eventParticipationRepository.findAll()) {
+            String norm = DepartmentNormalizer.normalize(ep.getDepartment());
+            if (ep.getDepartment() == null || !norm.equals(ep.getDepartment())) {
+                ep.setDepartment(norm);
+                eventParticipationRepository.save(ep);
+            }
+        }
+        
+        System.out.println("Department normalization migration complete.");
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void cleanFakeStudents() {
+        System.out.println("Cleaning fake and invalid student profiles using EntityManager...");
+        
+        List<Object[]> studentsToClean = entityManager.createQuery(
+            "SELECT s.id, s.rollNumber, s.studentName, s.department FROM Student s", Object[].class)
+            .getResultList();
+            
+        List<String> officialDepts = List.of(
+            "Information Technology",
+            "Computer Science",
+            "Electronics and Communication Engineering",
+            "Mathematics",
+            "B.Sc Artificial intelligence and machine learning",
+            "B.Sc Artificial intelligence and data science",
+            "Electrical and Electronics Engineering",
+            "Bachelor of Computer Applications",
+            "Tamil Department",
+            "Department of Zoology",
+            "Department User"
+        );
+
+        for (Object[] studentInfo : studentsToClean) {
+            Long studentId = (Long) studentInfo[0];
+            String roll = (String) studentInfo[1];
+            String name = (String) studentInfo[2];
+            String dept = (String) studentInfo[3];
+
+            String normalizedDept = com.example.demo.util.DepartmentNormalizer.normalize(dept);
+
+            boolean isFake = false;
+            if (roll == null || name == null) {
+                isFake = true;
+            } else {
+                String uRoll = roll.toUpperCase();
+                String lName = name.toLowerCase();
+                if (uRoll.contains("TEST") || uRoll.contains("DUMMY") || uRoll.contains("TEMP") || uRoll.contains("FAKE")) {
+                    isFake = true;
+                } else if (lName.contains("test") || lName.contains("dummy") || lName.contains("fake") || lName.contains("temp")) {
+                    isFake = true;
+                } else if (uRoll.equals("STUDENT1")) {
+                    isFake = true;
+                } else if (normalizedDept == null || !officialDepts.contains(normalizedDept)) {
+                    isFake = true;
+                }
+            }
+
+            if (isFake) {
+                System.out.println("Deleting fake/invalid student: " + name + " (" + roll + ") with ID: " + studentId);
+                
+                entityManager.createQuery("DELETE FROM Attendance a WHERE a.student.id = :sid")
+                    .setParameter("sid", studentId).executeUpdate();
+
+                entityManager.createQuery("DELETE FROM Bookmark b WHERE b.student.id = :sid")
+                    .setParameter("sid", studentId).executeUpdate();
+
+                entityManager.createQuery("DELETE FROM Feedback f WHERE f.student.id = :sid")
+                    .setParameter("sid", studentId).executeUpdate();
+
+                entityManager.createQuery("DELETE FROM Certificate c WHERE c.student.id = :sid")
+                    .setParameter("sid", studentId).executeUpdate();
+
+                if (roll != null) {
+                    entityManager.createQuery("DELETE FROM TutorStudentAssignment ta WHERE ta.studentRegisterNumber = :roll")
+                        .setParameter("roll", roll).executeUpdate();
+                }
+
+                entityManager.createQuery("DELETE FROM Registration r WHERE r.student.id = :sid")
+                    .setParameter("sid", studentId).executeUpdate();
+
+                if (roll != null) {
+                    entityManager.createQuery("DELETE FROM EventParticipation ep WHERE ep.rollNumber = :roll")
+                        .setParameter("roll", roll).executeUpdate();
+                }
+
+                entityManager.createQuery("DELETE FROM Student s WHERE s.id = :sid")
+                    .setParameter("sid", studentId).executeUpdate();
+
+                if (roll != null) {
+                    entityManager.createQuery("DELETE FROM User u WHERE LOWER(u.username) = :roll")
+                        .setParameter("roll", roll.toLowerCase()).executeUpdate();
+                }
+            }
+        }
+        System.out.println("Fake student profiles cleanup complete.");
     }
 }

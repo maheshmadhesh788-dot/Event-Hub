@@ -48,7 +48,7 @@
     <main class="container my-5" style="max-width: 650px;">
         
         <!-- Registration Form View -->
-        <div id="registration-form-panel" class="glass-panel p-4 p-md-5 animate-fade-up">
+        <div id="registration-form-panel" class="glass-panel p-4 p-md-5 animate-fade-up" style="display: none;">
             <div class="text-center mb-4">
                 <div class="d-inline-flex align-items-center justify-content-center bg-primary-glow text-primary rounded-circle mb-3" style="width: 60px; height: 60px;">
                     <i class="fa-solid fa-pen-to-square fa-2x"></i>
@@ -206,9 +206,6 @@
         let eventId = null;
 
         document.addEventListener("DOMContentLoaded", () => {
-            startNotificationPolling();
-            loadDepartments();
-
             // Extract eventId from URL query
             const urlParams = new URLSearchParams(window.location.search);
             eventId = urlParams.get("eventId");
@@ -219,7 +216,31 @@
                 return;
             }
 
+            // Verify if student is logged in
+            const student = checkStudentAuth();
+            if (!student) {
+                alert("Please login first to continue registration.");
+                window.location.href = "login.html?redirect=" + encodeURIComponent("register.html?eventId=" + eventId);
+                return;
+            }
+
+            // Show registration form panel
+            document.getElementById("registration-form-panel").style.display = "block";
+
+            startNotificationPolling();
+            loadDepartments();
             loadEventDetails();
+
+            // Autofill student profile details
+            document.getElementById("rollNumber").value = student.rollNumber || "";
+            document.getElementById("studentName").value = student.studentName || "";
+            document.getElementById("department").value = student.department || "";
+            document.getElementById("contactNumber").value = student.contactNumber || "";
+            document.getElementById("email").value = student.email || "";
+            document.getElementById("password").value = localStorage.getItem("eventhub_student_password") || "";
+
+            // Trigger profile verification message
+            checkStudentProfile();
 
             // Add verify on password input blur
             document.getElementById("password").addEventListener("blur", verifyAndAutofillProfile);

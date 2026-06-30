@@ -19,6 +19,8 @@ public class AuthResponse {
     private String description;
     private String logoUrl;
     private String coverImageUrl;
+    private String hodName;
+    private String password;
 
     public AuthResponse() {}
 
@@ -140,5 +142,21 @@ public class AuthResponse {
 
     public void setCoverImageUrl(String coverImageUrl) {
         this.coverImageUrl = coverImageUrl;
+    }
+
+    public String getHodName() {
+        return hodName;
+    }
+
+    public void setHodName(String hodName) {
+        this.hodName = hodName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

@@ -50,7 +50,7 @@ public class StudentServiceImpl implements StudentService {
     public Student registerStudentProfile(Student student) {
         student.setRollNumber(student.getRollNumber().trim().toUpperCase());
         student.setStudentName(student.getStudentName().trim());
-        student.setDepartment(student.getDepartment().trim());
+        student.setDepartment(com.example.demo.util.DepartmentNormalizer.normalize(student.getDepartment().trim()));
         student.setContactNumber(student.getContactNumber().trim());
         student.setEmail(student.getEmail().trim());
         student.setPassword(passwordEncoder.encode(student.getPassword().trim()));
@@ -78,7 +78,7 @@ public class StudentServiceImpl implements StudentService {
                 student.setStudentName(updatedStudentData.getStudentName().trim());
             }
             if (updatedStudentData.getDepartment() != null) {
-                student.setDepartment(updatedStudentData.getDepartment().trim());
+                student.setDepartment(com.example.demo.util.DepartmentNormalizer.normalize(updatedStudentData.getDepartment().trim()));
             }
             if (updatedStudentData.getContactNumber() != null) {
                 student.setContactNumber(updatedStudentData.getContactNumber().trim());

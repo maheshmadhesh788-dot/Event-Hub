@@ -135,26 +135,6 @@ public class SuperAdminController {
                         u.setEmail(u.getUsername().toLowerCase().replaceAll("\\s+", "") + "@kasc.ac.in");
                     }
                 }
-            } else if ("ROLE_TUTOR".equalsIgnoreCase(u.getRole()) || "ROLE_HOD".equalsIgnoreCase(u.getRole())) {
-                staffProfileRepository.findByUsernameIgnoreCase(u.getUsername()).ifPresentOrElse(profile -> {
-                    u.setName(profile.getName());
-                    u.setDepartment(profile.getDepartment());
-                    if (u.getEmail() == null || u.getEmail().trim().isEmpty()) {
-                        u.setEmail(u.getUsername().toLowerCase() + "@kasc.ac.in");
-                    }
-                    if (u.getContactNumber() == null || u.getContactNumber().trim().isEmpty()) {
-                        u.setContactNumber("N/A");
-                    }
-                }, () -> {
-                    u.setName(u.getUsername());
-                    u.setDepartment("IT");
-                    if (u.getEmail() == null || u.getEmail().trim().isEmpty()) {
-                        u.setEmail(u.getUsername().toLowerCase() + "@kasc.ac.in");
-                    }
-                    if (u.getContactNumber() == null || u.getContactNumber().trim().isEmpty()) {
-                        u.setContactNumber("N/A");
-                    }
-                });
             } else if ("ROLE_ADMIN".equalsIgnoreCase(u.getRole())) {
                 u.setName("College Admin");
                 u.setDepartment("All");
@@ -205,8 +185,12 @@ public class SuperAdminController {
 
         // Create specific profiles based on role
         if ("ROLE_STUDENT".equals(role)) {
-            if (studentRepository.findByRollNumberIgnoreCase(username).isPresent()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Student with this roll number already exists."));
+            try {
+                com.example.demo.util.StudentValidator.validateStudentRegistration(
+                    name, username, departmentCode != null ? departmentCode : "IT", departmentRepository, studentRepository
+                );
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
             }
             Student student = new Student(username.toUpperCase(), name, departmentCode != null ? departmentCode : "IT",
                     contactNumber != null ? contactNumber : "0000000000", email != null ? email : "student@example.com", encodedPassword);
@@ -216,20 +200,20 @@ public class SuperAdminController {
             } catch (Exception e) {
                 // Log or ignore
             }
-        } else if ("ROLE_DEPARTMENT".equals(role)) {
-            if (departmentRepository.findByNameIgnoreCase(username).isPresent()) {
+        }
+        String finalUsername = username;
+        if ("ROLE_DEPARTMENT".equals(role)) {
+            finalUsername = com.example.demo.util.DepartmentNormalizer.normalize(username);
+            if (departmentRepository.findByNameIgnoreCase(finalUsername).isPresent()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Department with this name already exists."));
             }
-            String code = departmentCode != null ? departmentCode.trim().toUpperCase() : username.substring(0, Math.min(username.length(), 3)).toUpperCase();
-            Department dept = new Department(username, code, encodedPassword);
+            String code = departmentCode != null ? departmentCode.trim().toUpperCase() : finalUsername.substring(0, Math.min(finalUsername.length(), 3)).toUpperCase();
+            Department dept = new Department(finalUsername, code, encodedPassword);
             dept.setDescription("Workspace created by Super Admin");
             departmentRepository.saveAndFlush(dept);
-        } else if ("ROLE_TUTOR".equals(role) || "ROLE_HOD".equals(role)) {
-            StaffProfile profile = new StaffProfile(username, departmentCode != null ? departmentCode : "IT", name, role);
-            staffProfileRepository.saveAndFlush(profile);
         }
 
-        User user = new User(username, encodedPassword, role, name, email, contactNumber);
+        User user = new User(finalUsername, encodedPassword, role, name, email, contactNumber);
         User savedUser = userRepository.saveAndFlush(user);
 
         return ResponseEntity.ok(savedUser);
@@ -249,7 +233,11 @@ public class SuperAdminController {
             String password = payload.get("password");
 
             if (username != null && !username.trim().isEmpty()) {
-                user.setUsername(username.trim());
+                if ("ROLE_DEPARTMENT".equals(role) || (role == null && "ROLE_DEPARTMENT".equals(user.getRole()))) {
+                    user.setUsername(com.example.demo.util.DepartmentNormalizer.normalize(username.trim()));
+                } else {
+                    user.setUsername(username.trim());
+                }
             }
             if (role != null && !role.trim().isEmpty()) {
                 user.setRole(role.trim().toUpperCase());
@@ -300,22 +288,6 @@ public class SuperAdminController {
                     Department dept = new Department(savedUser.getUsername(), code, savedUser.getPassword());
                     departmentRepository.saveAndFlush(dept);
                 });
-            } else if ("ROLE_TUTOR".equals(savedUser.getRole()) || "ROLE_HOD".equals(savedUser.getRole())) {
-                String targetDept = payload.get("departmentCode");
-                if (targetDept == null || targetDept.trim().isEmpty()) {
-                    targetDept = "IT";
-                }
-                final String deptCode = targetDept;
-                staffProfileRepository.findByUsernameIgnoreCase(oldUsername).ifPresentOrElse(profile -> {
-                    profile.setUsername(savedUser.getUsername());
-                    profile.setName(savedUser.getName());
-                    profile.setRole(savedUser.getRole());
-                    profile.setDepartment(deptCode);
-                    staffProfileRepository.saveAndFlush(profile);
-                }, () -> {
-                    StaffProfile profile = new StaffProfile(savedUser.getUsername(), deptCode, savedUser.getName(), savedUser.getRole());
-                    staffProfileRepository.saveAndFlush(profile);
-                });
             }
 
             // Cleanup old role if role changed
@@ -324,8 +296,6 @@ public class SuperAdminController {
                     studentRepository.findByRollNumberIgnoreCase(oldUsername).ifPresent(studentRepository::delete);
                 } else if ("ROLE_DEPARTMENT".equals(oldRole)) {
                     departmentRepository.findByNameIgnoreCase(oldUsername).ifPresent(departmentRepository::delete);
-                } else if ("ROLE_TUTOR".equals(oldRole) || "ROLE_HOD".equals(oldRole)) {
-                    staffProfileRepository.findByUsernameIgnoreCase(oldUsername).ifPresent(staffProfileRepository::delete);
                 }
             }
 
@@ -346,8 +316,6 @@ public class SuperAdminController {
                 studentRepository.findByRollNumberIgnoreCase(username).ifPresent(studentRepository::delete);
             } else if ("ROLE_DEPARTMENT".equals(role)) {
                 departmentRepository.findByNameIgnoreCase(username).ifPresent(departmentRepository::delete);
-            } else if ("ROLE_TUTOR".equals(role) || "ROLE_HOD".equals(role)) {
-                staffProfileRepository.findByUsernameIgnoreCase(username).ifPresent(staffProfileRepository::delete);
             }
 
             return ResponseEntity.ok().build();

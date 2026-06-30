@@ -45,7 +45,7 @@
     </nav>
 
     <!-- Main Container -->
-    <main class="container my-5">
+    <main class="container my-5" id="history-workspace" style="display: none;">
         
         <!-- Department Cover Banner -->
         <div class="position-relative rounded mb-5 overflow-hidden animate-fade-up" style="height: 200px; background: linear-gradient(135deg, #0f172a, #1e293b); border: 1px solid rgba(255,255,255,0.05);">
@@ -155,11 +155,20 @@
         let participantsModal = null;
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Check cross-role access (students are not allowed)
+            if (localStorage.getItem("eventhub_student_session")) {
+                window.location.href = "dashboard.html";
+                return;
+            }
+
             currentDept = checkDepartmentAuth();
             if (!currentDept) {
                 window.location.href = "login.html?redirect=history.html";
                 return;
             }
+
+            // Show workspace
+            document.getElementById("history-workspace").style.display = "block";
 
             // Set department cover banner details
             document.getElementById("dept-title-header").innerText = `Department of ${currentDept.name} - History`;

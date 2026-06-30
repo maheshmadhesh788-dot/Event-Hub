@@ -89,6 +89,28 @@
                 background-color: rgba(0,0,0,0.05) !important;
             }
         }
+        
+        /* Event Participation Styles */
+        .category-box-premium {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .category-box-premium:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.5);
+            background: rgba(99, 102, 241, 0.05);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.15);
+        }
+        .category-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body class="dashboard-page">
@@ -120,7 +142,7 @@
     </nav>
 
     <!-- Main Container -->
-    <main class="container my-5 print-container">
+    <main class="container my-5 print-container" id="achievements-workspace" style="display: none;">
         
         <!-- Header Profile Panel -->
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 no-print">
@@ -133,21 +155,27 @@
                     <p class="text-muted mb-0 small" id="staff-details">Role: Staff | Department: Information Technology</p>
                 </div>
             </div>
+            <!-- Side Account Section -->
+            <div class="p-3 rounded glass-panel d-flex align-items-center gap-3" id="side-account-section">
+                <button class="btn btn-primary-gradient px-4 fw-bold" onclick="openAddAccountModal()">
+                    <i class="fa-solid fa-user-plus me-2"></i>Add Account
+                </button>
+            </div>
         </div>
 
         <!-- Navigation Tabs -->
         <ul class="nav nav-tabs border-secondary mb-4 no-print" id="achievementTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active text-white border-0 bg-transparent fw-bold" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-pane" type="button" role="tab"><i class="fa-solid fa-timeline text-secondary me-2"></i>Timeline View</button>
+                <button class="nav-link active text-white border-0 bg-transparent fw-bold" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-pane" type="button" role="tab"><i class="fa-solid fa-timeline text-secondary me-2"></i>Overview</button>
             </li>
             <li class="nav-item" role="presentation" id="entry-tab-item">
                 <button class="nav-link text-white border-0 bg-transparent fw-bold" id="entry-tab" data-bs-toggle="tab" data-bs-target="#entry-pane" type="button" role="tab"><i class="fa-solid fa-file-pen text-secondary me-2"></i>Achievement Entry</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link text-white border-0 bg-transparent fw-bold" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports-pane" type="button" role="tab" onclick="loadReportsData()"><i class="fa-solid fa-file-invoice text-secondary me-2"></i>Report Generator</button>
+                <button class="nav-link text-white border-0 bg-transparent fw-bold" id="participation-tab" data-bs-toggle="tab" data-bs-target="#participation-pane" type="button" role="tab"><i class="fa-solid fa-medal text-secondary me-2"></i>Event Participation Management</button>
             </li>
-            <li class="nav-item" role="presentation" id="assignments-tab-item">
-                <button class="nav-link text-white border-0 bg-transparent fw-bold" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments-pane" type="button" role="tab" onclick="loadAssignmentsData()"><i class="fa-solid fa-user-tag text-secondary me-2"></i>Student Assignments</button>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-white border-0 bg-transparent fw-bold" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports-pane" type="button" role="tab" onclick="loadReportsData()"><i class="fa-solid fa-file-invoice text-secondary me-2"></i>Report Generation</button>
             </li>
         </ul>
 
@@ -161,16 +189,13 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-bold">Academic Year</label>
-                            <select id="timeline-academic-year" class="form-select form-control-custom" onchange="loadTimeline()">
+                            <select id="timeline-academic-year" class="form-select form-control-custom form-select-custom" onchange="loadTimeline()">
                                 <option value="">All Academic Years</option>
-                                <option value="2024-2025">2024-2025</option>
-                                <option value="2025-2026" selected>2025-2026</option>
-                                <option value="2026-2027">2026-2027</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-muted small fw-bold">Event Type</label>
-                            <select id="timeline-event-type" class="form-select form-control-custom" onchange="loadTimeline()">
+                            <select id="timeline-event-type" class="form-select form-control-custom form-select-custom" onchange="loadTimeline()">
                                 <option value="">All Types</option>
                                 <option value="COLLEGE">College Level</option>
                                 <option value="DEPARTMENT">Department Level</option>
@@ -206,47 +231,56 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold">Department</label>
-                                <input type="text" id="entry-department" class="form-control form-control-custom" placeholder="Auto-populated" required>
+                                <input type="text" id="entry-department" class="form-control form-control-custom" list="entry-dept-list" placeholder="Type department name..." required>
+                                <datalist id="entry-dept-list"></datalist>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold">Tutor Name</label>
-                                <input type="text" id="entry-tutor" class="form-control form-control-custom" placeholder="Tutor/Staff Name" required>
+                                <input type="text" id="entry-tutor" class="form-control form-control-custom" list="tutors-list" placeholder="Start typing tutor name..." required>
+                                <datalist id="tutors-list"></datalist>
                             </div>
                         </div>
 
                         <hr class="border-secondary my-4">
 
                         <div class="row g-3 mb-3">
-                            <div class="col-md-8">
+                            <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold">Event Name</label>
-                                <input type="text" id="entry-event" class="form-control form-control-custom" placeholder="e.g. National Level Hackathon 2026" required>
+                                <input type="text" id="entry-event" class="form-control form-control-custom" placeholder="Enter Event Name" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Competition / Event Category</label>
+                                <select id="entry-competition" class="form-select form-control-custom form-select-custom" required onchange="handleCategoryChange()">
+                                    <option value="" disabled selected>Select Category</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold">Event Type</label>
-                                <select id="entry-event-type" class="form-select form-control-custom" required>
+                                <select id="entry-event-type" class="form-select form-control-custom form-select-custom" required>
                                     <option value="COLLEGE">College Level</option>
                                     <option value="DEPARTMENT">Department Level</option>
                                     <option value="NATIONAL">National Level</option>
                                     <option value="INTERNATIONAL">International Level</option>
                                 </select>
                             </div>
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold">Achievement / Position</label>
                                 <input type="text" id="entry-achievement" class="form-control form-control-custom" placeholder="e.g. 1st Prize, Runner-up" required>
                             </div>
-                            <div class="col-md-4">
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold">Event Date</label>
                                 <input type="date" id="entry-date" class="form-control form-control-custom" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <label class="form-label text-muted small fw-bold">Academic Year</label>
-                                <select id="entry-academic-year" class="form-select form-control-custom" required>
-                                    <option value="2024-2025">2024-2025</option>
-                                    <option value="2025-2026" selected>2025-2026</option>
-                                    <option value="2026-2027">2026-2027</option>
+                                <select id="entry-academic-year" class="form-select form-control-custom form-select-custom" required onchange="handleAcademicYearChange()">
+                                    <option value="" disabled selected>Select Academic Year</option>
                                 </select>
                             </div>
                         </div>
@@ -258,18 +292,71 @@
                 </div>
             </div>
 
-            <!-- Pane 3: Report Generator -->
+            <!-- Pane 3: Event Participation Management -->
+            <div class="tab-pane fade" id="participation-pane" role="tabpanel">
+                <div class="glass-panel p-4 mb-4">
+                    <h4 class="text-white fw-bold mb-4"><i class="fa-solid fa-medal text-primary me-2"></i>Event Participation Management</h4>
+                    <p class="text-muted small">Select an event category below to record student participation details.</p>
+                    
+                    <div class="row g-4 justify-content-center mb-5" id="event-categories-container">
+                        <!-- Debate Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('Debate')" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-primary-glow text-primary mb-3">
+                                    <i class="fa-solid fa-comments fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Debate</h5>
+                            </div>
+                        </div>
+                        <!-- Conference Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('Conference')" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-success-glow text-success mb-3">
+                                    <i class="fa-solid fa-users fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Conference</h5>
+                            </div>
+                        </div>
+                        <!-- Seminar Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('Seminar')" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-info-glow text-info mb-3">
+                                    <i class="fa-solid fa-person-chalkboard fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Seminar</h5>
+                            </div>
+                        </div>
+                        <!-- Workshop Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('Workshop')" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-warning-glow text-warning mb-3">
+                                    <i class="fa-solid fa-screwdrivers-wrench fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Workshop</h5>
+                            </div>
+                        </div>
+                        <!-- Other Events Box -->
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="handleOtherEventsClick()" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-danger-glow text-danger mb-3">
+                                    <i class="fa-solid fa-star fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Other Events</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pane 4: Report Generator -->
             <div class="tab-pane fade" id="reports-pane" role="tabpanel">
                 <div class="glass-panel p-4 no-print mb-4">
                     <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-filter text-secondary me-2"></i>Report Filters</h5>
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
                             <label class="form-label text-muted small fw-bold">Academic Year</label>
-                            <select id="filter-academic-year" class="form-select form-control-custom">
+                            <select id="filter-academic-year" class="form-select form-control-custom form-select-custom">
                                 <option value="">All Academic Years</option>
-                                <option value="2024-2025">2024-2025</option>
-                                <option value="2025-2026" selected>2025-2026</option>
-                                <option value="2026-2027">2026-2027</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -337,51 +424,253 @@
                     </div>
                 </div>
             </div>
+                </div>
+            </div>
 
-            <!-- Pane 4: Student Assignments -->
-            <div class="tab-pane fade" id="assignments-pane" role="tabpanel">
-                <div class="row g-4">
-                    <!-- Column 1: Self Assign Form -->
-                    <div class="col-md-4 no-print">
-                        <div class="glass-panel p-4">
-                            <h5 class="fw-bold text-white mb-3" id="assign-card-title"><i class="fa-solid fa-user-tag text-secondary me-2"></i>Assign Student</h5>
-                            <form id="assignment-form" onsubmit="handleAssignmentSubmit(event)">
-                                <div class="mb-3" id="assign-tutor-container" style="display: none;">
-                                    <label class="form-label text-muted small fw-bold">Tutor Username</label>
-                                    <input type="text" id="assign-tutor" class="form-control form-control-custom" placeholder="e.g. it_tutor">
+            <!-- Edit Achievement Modal -->
+            <div class="modal fade" id="editAchievementModal" tabindex="-1" aria-labelledby="editAchievementModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content glass-panel text-white" style="background: rgba(26, 26, 46, 0.98); border: 1px solid var(--glass-border);">
+                        <div class="modal-header border-secondary">
+                            <h5 class="modal-title fw-bold" id="editAchievementModalLabel"><i class="fa-solid fa-pencil text-primary me-2"></i>Edit Achievement Details</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form id="edit-achievement-form" onsubmit="handleEditSubmit(event)">
+                            <input type="hidden" id="edit-ach-id">
+                            <div class="modal-body">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Student Register / Roll Number</label>
+                                        <input type="text" id="edit-student-roll" class="form-control form-control-custom" required oninput="lookupEditStudent()">
+                                        <div id="edit-student-details" class="small mt-1 fw-bold text-success" style="display: none;"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Student Name</label>
+                                        <input type="text" id="edit-student-name" class="form-control form-control-custom" required>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Department</label>
+                                        <input type="text" id="edit-department" class="form-control form-control-custom" list="edit-dept-list" placeholder="Type department name..." required>
+                                        <datalist id="edit-dept-list"></datalist>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Tutor Name</label>
+                                        <input type="text" id="edit-tutor" class="form-control form-control-custom" list="edit-tutors-list" placeholder="Start typing tutor name..." required>
+                                        <datalist id="edit-tutors-list"></datalist>
+                                    </div>
+                                </div>
+
+                                <hr class="border-secondary my-4">
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Event Name</label>
+                                        <input type="text" id="edit-event" class="form-control form-control-custom" placeholder="Enter Event Name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Competition / Event Category</label>
+                                        <select id="edit-competition" class="form-select form-control-custom form-select-custom" required onchange="handleEditCategoryChange()">
+                                            <option value="" disabled selected>Select Category</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Event Type</label>
+                                        <select id="edit-event-type" class="form-select form-control-custom form-select-custom" required>
+                                            <option value="COLLEGE">College Level</option>
+                                            <option value="DEPARTMENT">Department Level</option>
+                                            <option value="NATIONAL">National Level</option>
+                                            <option value="INTERNATIONAL">International Level</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Achievement / Position</label>
+                                        <input type="text" id="edit-achievement" class="form-control form-control-custom" placeholder="e.g. 1st Prize, Runner-up" required>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Event Date</label>
+                                        <input type="date" id="edit-date" class="form-control form-control-custom" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Academic Year</label>
+                                        <select id="edit-academic-year" class="form-select form-control-custom form-select-custom" required>
+                                            <option value="" disabled selected>Select Academic Year</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-secondary">
+                                <button type="button" class="btn btn-glass text-muted" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary-gradient px-4 fw-bold">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Participation Modal -->
+            <div class="modal fade" id="participationModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content modal-content-custom glass-panel border border-secondary text-white" style="background: rgba(26, 26, 46, 0.98); border: 1px solid var(--glass-border);">
+                        <div class="modal-header modal-header-custom border-bottom border-secondary">
+                            <h5 class="modal-title fw-bold" id="participationModalTitle">Record Student Participation</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form id="participation-form" onsubmit="saveParticipation(event)">
+                            <input type="hidden" id="part-id">
+                            <div class="modal-body">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Register Number / Roll Number</label>
+                                        <input type="text" id="part-roll-number" class="form-control form-control-custom text-uppercase" placeholder="e.g. 22IT045" required onblur="lookupStudentForParticipation(this.value)">
+                                        <div id="part-roll-status" class="small mt-1 fw-bold text-success" style="display: none;"></div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Student Name</label>
+                                        <input type="text" id="part-student-name" class="form-control form-control-custom" required>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Department</label>
+                                        <input type="text" id="part-department" class="form-control form-control-custom" list="part-dept-list" placeholder="Type department name..." required oninput="updateYearOptions()">
+                                        <datalist id="part-dept-list"></datalist>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Year of Study</label>
+                                        <select id="part-year" class="form-select form-control-custom form-select-custom" required>
+                                            <option value="" disabled selected>Select Year</option>
+                                            <option value="1st Year">1st Year</option>
+                                            <option value="2nd Year">2nd Year</option>
+                                            <option value="3rd Year">3rd Year</option>
+                                            <option value="4th Year">4th Year</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Tutor Name</label>
+                                        <input type="text" id="part-tutor-name" class="form-control form-control-custom" list="part-tutors-list" placeholder="Start typing tutor name..." required>
+                                        <datalist id="part-tutors-list"></datalist>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Event Category</label>
+                                        <input type="text" id="part-event-category" class="form-control form-control-custom" readonly>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6" id="part-standard-event-group">
+                                        <label class="form-label text-muted small fw-bold">Event Name</label>
+                                        <input type="text" id="part-event-name" class="form-control form-control-custom" placeholder="e.g. State Level Debate" required>
+                                    </div>
+                                    <div class="col-md-6" id="part-other-event-group" style="display: none;">
+                                        <label class="form-label text-muted small fw-bold">Other Event Name</label>
+                                        <input type="text" id="part-other-event-name" class="form-control form-control-custom" placeholder="e.g. Cultural Fest">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-muted small fw-bold">Event Date</label>
+                                        <input type="date" id="part-event-date" class="form-control form-control-custom" required>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">Result</label>
+                                        <select id="part-result" class="form-select form-control-custom form-select-custom" required>
+                                            <option value="" disabled selected>Select Result</option>
+                                            <option value="Winner">Winner</option>
+                                            <option value="Runner">Runner</option>
+                                            <option value="Participant">Participant</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">Certificate Status</label>
+                                        <select id="part-cert-status" class="form-select form-control-custom form-select-custom" required>
+                                            <option value="" disabled selected>Select Status</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Issued">Issued</option>
+                                            <option value="Not Required">Not Required</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">Academic Year</label>
+                                        <select id="part-academic-year" class="form-select form-control-custom form-select-custom" required>
+                                            <option value="" disabled selected>Select Academic Year</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-secondary">
+                                <button type="button" class="btn btn-glass text-muted" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary-gradient px-4 fw-bold">Save Participation</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Account Modal -->
+            <div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content modal-content-custom glass-panel border border-secondary text-white" style="background: rgba(26, 26, 46, 0.98); border: 1px solid var(--glass-border);">
+                        <div class="modal-header modal-header-custom border-bottom border-secondary">
+                            <h5 class="modal-title fw-bold" id="addAccountModalLabel"><i class="fa-solid fa-user-plus text-primary me-2"></i>Create New Account</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="add-account-form" onsubmit="handleAddAccountSubmit(event)">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Username / Login ID</label>
+                                    <input type="text" id="add-account-username" class="form-control form-control-custom" placeholder="e.g. roll number or admin name" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label text-muted small fw-bold">Student Register / Roll Number</label>
-                                    <input type="text" id="assign-student" class="form-control form-control-custom" placeholder="e.g. 22IT001" required>
+                                    <label class="form-label text-muted small fw-bold">Password</label>
+                                    <input type="password" id="add-account-password" class="form-control form-control-custom" placeholder="Min 4 characters" required>
                                 </div>
-                                <button type="submit" class="btn btn-primary-gradient w-100 fw-bold"><i class="fa-solid fa-plus me-1"></i> Assign to List</button>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Full Display Name</label>
+                                    <input type="text" id="add-account-name" class="form-control form-control-custom" placeholder="e.g. Student Name or Dept Name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">System Role</label>
+                                    <select id="add-account-role" class="form-select form-control-custom" required onchange="toggleAddAccountFields()">
+                                        <option value="ROLE_STUDENT">Student</option>
+                                        <option value="ROLE_DEPARTMENT">Department</option>
+                                        <option value="ROLE_ADMIN">Admin</option>
+                                        <option value="ROLE_SUPER_ADMIN">Super Admin</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 row" id="add-account-role-extra-fields">
+                                    <div class="col-12">
+                                        <label class="form-label text-muted small fw-bold">Dept Code / Roll Prefix / Department Name</label>
+                                        <input type="text" id="add-account-dept-code" class="form-control form-control-custom" placeholder="e.g. IT, CS, or Full Dept Name for Department">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Email Address</label>
+                                    <input type="email" id="add-account-email" class="form-control form-control-custom" placeholder="name@example.com">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Contact Number</label>
+                                    <input type="text" id="add-account-contact" class="form-control form-control-custom" placeholder="e.g. 9876543210">
+                                </div>
+                                <div class="d-grid mt-4">
+                                    <button type="submit" class="btn btn-primary-gradient py-2 fw-bold"><i class="fa-solid fa-save me-2"></i>Create Account</button>
+                                </div>
                             </form>
-                        </div>
-                    </div>
-                    <!-- Column 2: Assignments Directory -->
-                    <div class="col-md-8">
-                        <div class="glass-panel p-4">
-                            <h5 class="fw-bold text-white mb-4"><i class="fa-solid fa-address-book text-primary me-2"></i>Assigned Students Directory</h5>
-                            <div class="table-responsive">
-                                <table class="table table-dark table-striped align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Register Number</th>
-                                            <th>Student Name</th>
-                                            <th>Department</th>
-                                            <th id="assign-th-tutor">Tutor Username</th>
-                                            <th class="text-end no-print">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="assignments-tbody">
-                                        <!-- Loaded dynamically -->
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+
 
         </div>
 
@@ -397,6 +686,12 @@
         let currentDept = "";
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Check cross-role access (students are not allowed)
+            if (localStorage.getItem("eventhub_student_session")) {
+                window.location.href = "dashboard.html";
+                return;
+            }
+
             // Verify Authentication
             const superAdminToken = localStorage.getItem("eventhub_superadmin_token");
             const adminToken = localStorage.getItem("eventhub_admin_token");
@@ -416,67 +711,68 @@
                 currentRole = "ROLE_DEPARTMENT";
                 currentUsername = session.username;
                 currentDept = session.name;
-            } else if (staffSessionStr) {
-                const session = JSON.parse(staffSessionStr);
-                currentRole = session.role; // ROLE_TUTOR or ROLE_HOD
-                currentUsername = session.username;
-                currentDept = session.department;
             } else {
                 window.location.href = "login.html?redirect=achievements.html";
                 return;
             }
 
+            // Show workspace
+            document.getElementById("achievements-workspace").style.display = "block";
+
             // Setup display headers
             let roleDisplay = "Staff";
             if (currentRole === "ROLE_SUPER_ADMIN") roleDisplay = "Super Admin";
             else if (currentRole === "ROLE_ADMIN") roleDisplay = "Admin";
-            else if (currentRole === "ROLE_HOD") roleDisplay = "HOD";
             else if (currentRole === "ROLE_DEPARTMENT") roleDisplay = "Department Admin";
-            else if (currentRole === "ROLE_TUTOR") roleDisplay = "Tutor / Staff";
 
             document.getElementById("staff-name").innerText = currentUsername;
             document.getElementById("staff-details").innerText = `Role: ${roleDisplay} | Department: ${currentDept}`;
 
             // Adjust forms & options based on roles
-            if (currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT" || currentRole === "ROLE_TUTOR") {
-                document.getElementById("entry-tutor").value = currentUsername;
-                
-                // Automatically fetch and lock department details
+            if (currentRole === "ROLE_DEPARTMENT") {
+                // Prefill department details but leave editable
                 if (currentDept && currentDept !== "All" && currentDept !== "null" && currentDept !== "") {
                     document.getElementById("entry-department").value = currentDept;
-                    document.getElementById("entry-department").readOnly = true;
                     document.getElementById("entry-department").style.borderColor = "var(--primary)";
                 }
             }
 
-            // Hide Tutor-Student assignment for HOD/Admin/Superadmin if not needed,
-            // or configure it to show assignments department wise.
-            if (currentRole === "ROLE_SUPER_ADMIN" || currentRole === "ROLE_ADMIN" || currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT") {
-                document.getElementById("assign-tutor-container").style.display = "block";
-                document.getElementById("assign-card-title").innerHTML = `<i class="fa-solid fa-user-tag text-secondary me-2"></i>Assign Student to Tutor`;
-            } else {
-                document.getElementById("assign-th-tutor").style.display = "none";
-            }
-
-            // Populate departments dropdown for filters if Admin/Super Admin
-            const filterDeptSelect = document.getElementById("filter-department");
-            if (currentRole === "ROLE_ADMIN" || currentRole === "ROLE_SUPER_ADMIN") {
-                filterDeptSelect.innerHTML = `<option value="">All Departments</option>`;
-                fetch("/api/departments")
-                    .then(res => res.json())
-                    .then(depts => {
-                        depts.forEach(d => {
-                            filterDeptSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
-                        });
+            // Populate departments dropdown list for filters, entry, and edit forms
+            const filterDeptList = document.getElementById("filter-dept-list");
+            const entryDeptList = document.getElementById("entry-dept-list");
+            const editDeptList = document.getElementById("edit-dept-list");
+            
+            fetch("/api/departments")
+                .then(res => res.json())
+                .then(depts => {
+                    let html = "";
+                    depts.forEach(d => {
+                        html += `<option value="${d.name}">`;
                     });
+                    if (filterDeptList) filterDeptList.innerHTML = html;
+                    if (entryDeptList) entryDeptList.innerHTML = html;
+                    if (editDeptList) editDeptList.innerHTML = html;
+                })
+                .catch(err => console.error("Error loading departments list:", err));
+
+            // Set initial defaults
+            const filterDeptInput = document.getElementById("filter-department");
+            if (currentRole === "ROLE_ADMIN" || currentRole === "ROLE_SUPER_ADMIN") {
+                if (filterDeptInput) filterDeptInput.value = "";
             } else {
-                // Lock department filter to current staff's department
-                filterDeptSelect.innerHTML = `<option value="${currentDept}" selected>${currentDept}</option>`;
-                filterDeptSelect.disabled = true;
+                if (filterDeptInput) filterDeptInput.value = currentDept || "";
+                if (filterDeptInput) filterDeptInput.style.borderColor = "var(--primary)";
             }
 
             // Load initial view
+            loadAcademicYears();
+            loadCategoriesDropdown();
+            loadTutorDatalist();
             loadTimeline();
+            renderEventCategories();
+
+            // Initialize Event Participation defaults and datalists
+            loadPartDatalists();
         });
 
         function handleLogout() {
@@ -501,7 +797,7 @@
                     })
                     .then(data => {
                         // Check department limits for non-admin roles
-                        if (currentRole === "ROLE_TUTOR" || currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT") {
+                        if (currentRole === "ROLE_DEPARTMENT") {
                             if (!data.department || data.department.toLowerCase() !== currentDept.toLowerCase()) {
                                 alert(`Access Denied: Student belongs to department "${data.department}", but you are only authorized to manage achievements for "${currentDept}".`);
                                 document.getElementById("entry-register").value = "";
@@ -571,15 +867,31 @@
                             year: 'numeric'
                         }).replace(/\//g, '-');
 
+                        // Determine if user has permission to edit/delete achievement
+                        let actionsHtml = "";
+                        const isAuthorized = currentRole === "ROLE_SUPER_ADMIN" || currentRole === "ROLE_ADMIN" || 
+                            (currentRole === "ROLE_DEPARTMENT" && ach.department && currentDept && ach.department.toLowerCase() === currentDept.toLowerCase());
+                        if (isAuthorized) {
+                            actionsHtml = `
+                                <div class="d-flex gap-1 no-print ms-2">
+                                    <button class="btn btn-outline-primary btn-sm px-2 py-1" style="font-size: 0.75rem;" onclick="openEditModal(${ach.id})"><i class="fa-solid fa-pencil"></i></button>
+                                    <button class="btn btn-outline-danger btn-sm px-2 py-1" style="font-size: 0.75rem;" onclick="deleteAchievement(${ach.id})"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            `;
+                        }
+
                         html += `
                             <div class="timeline-item animate-fade-up">
                                 <div class="timeline-badge">
                                     <i class="fa-solid fa-award"></i>
                                 </div>
                                 <div class="timeline-card">
-                                    <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap">
-                                        <h5 class="fw-bold text-white mb-1">${formattedDate}</h5>
-                                        <span class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">${ach.eventType}</span>
+                                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap w-100">
+                                        <div class="d-flex align-items-center">
+                                            <h5 class="fw-bold text-white mb-0 me-2">${formattedDate}</h5>
+                                            <span class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">${ach.eventType}</span>
+                                        </div>
+                                        ${actionsHtml}
                                     </div>
                                     <div class="row g-2">
                                         <div class="col-md-6">
@@ -621,6 +933,7 @@
             const department = document.getElementById("entry-department").value.trim();
             const tutorName = document.getElementById("entry-tutor").value.trim();
             const eventName = document.getElementById("entry-event").value.trim();
+            const competition = document.getElementById("entry-competition").value;
             const eventType = document.getElementById("entry-event-type").value;
             const achievement = document.getElementById("entry-achievement").value.trim();
             const eventDate = document.getElementById("entry-date").value;
@@ -635,7 +948,8 @@
                 eventType,
                 achievement,
                 eventDate,
-                academicYear
+                academicYear,
+                competition
             };
 
             fetch("/api/achievements", {
@@ -651,10 +965,13 @@
                 showSuccessPopup("Achievement Added Successfully");
                 document.getElementById("achievement-form").reset();
                 
-                // Re-initialize default tutor name
-                if (currentRole === "ROLE_TUTOR" || currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT") {
-                    document.getElementById("entry-tutor").value = currentUsername;
-                }
+                // Re-enable form controls and reload categories dropdown
+                document.getElementById("entry-date").readOnly = false;
+                document.getElementById("entry-date").style.borderColor = "";
+                document.getElementById("entry-event-type").disabled = false;
+                loadCategoriesDropdown();
+
+
 
                 // Redirect to timeline view
                 const timelineTab = new bootstrap.Tab(document.getElementById("timeline-tab"));
@@ -669,9 +986,23 @@
         // ==========================================
         // REPORT GENERATION & TABLE
         // ==========================================
+        // ==========================================
+        // REPORT GENERATION & TABLE
+        // ==========================================
         let reportsData = [];
 
+        function hasSelectedAchFilters() {
+            const academicYear = document.getElementById("filter-academic-year").value;
+            const fromDate = document.getElementById("filter-from-date").value;
+            const toDate = document.getElementById("filter-to-date").value;
+            const eventType = document.getElementById("filter-event-type").value;
+            const dept = document.getElementById("filter-department").value;
+            
+            return academicYear !== "" || fromDate !== "" || toDate !== "" || eventType !== "" || dept !== "";
+        }
+
         function resetReportFilters() {
+            document.getElementById("filter-academic-year").value = "";
             document.getElementById("filter-from-date").value = "";
             document.getElementById("filter-to-date").value = "";
             document.getElementById("filter-event-type").value = "";
@@ -683,9 +1014,23 @@
 
         function loadReportsData() {
             const tbody = document.getElementById("report-tbody");
+            if (!hasSelectedAchFilters()) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-filter fa-3x mb-3 text-secondary"></i>
+                            <h5 class="fw-bold">No filters selected</h5>
+                            <p class="small text-muted mb-0">Please select filters and click "Generate Report".</p>
+                        </td>
+                    </tr>
+                `;
+                reportsData = [];
+                return;
+            }
+
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center py-4 text-muted">
+                    <td colspan="10" class="text-center py-4 text-muted">
                         <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
                         Fetching reports data...
                     </td>
@@ -713,14 +1058,14 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Failed to fetch report data.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="10" class="text-center text-danger">Failed to fetch report data.</td></tr>`;
                 });
         }
 
         function renderReportsTable(data) {
             const tbody = document.getElementById("report-tbody");
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No records found matching filters.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-muted">No records found matching filters.</td></tr>`;
                 return;
             }
 
@@ -733,23 +1078,34 @@
                     year: 'numeric'
                 }).replace(/\//g, '-');
 
-                // Determine if user has permission to delete achievement
-                let deleteButton = "";
-                if (currentRole === "ROLE_SUPER_ADMIN" || currentRole === "ROLE_ADMIN" || 
-                    (currentRole === "ROLE_HOD" && ach.department.equalsIgnoreCase(currentDept)) ||
-                    (currentRole === "ROLE_TUTOR" && ach.createdByUsername.equalsIgnoreCase(currentUsername))) {
-                    deleteButton = `<button class="btn btn-outline-danger btn-sm no-print" onclick="deleteAchievement(${ach.id})"><i class="fa-solid fa-trash"></i></button>`;
+                // Determine if user has permission to edit/delete achievement
+                let actionsButton = "";
+                const isAuthorized = currentRole === "ROLE_SUPER_ADMIN" || currentRole === "ROLE_ADMIN" || 
+                    (currentRole === "ROLE_DEPARTMENT" && ach.department && currentDept && ach.department.toLowerCase() === currentDept.toLowerCase());
+                if (isAuthorized) {
+                    actionsButton = `
+                        <button class="btn btn-outline-primary btn-sm no-print me-1" onclick="openEditModal(${ach.id})"><i class="fa-solid fa-pencil"></i></button>
+                        <button class="btn btn-outline-danger btn-sm no-print" onclick="deleteAchievement(${ach.id})"><i class="fa-solid fa-trash"></i></button>
+                    `;
                 }
+
+                const compSuffix = ach.competition ? ` - ${ach.competition}` : "";
+                const typeLabel = ach.eventType === "COLLEGE" ? "College Level" :
+                                  ach.eventType === "DEPARTMENT" ? "Dept Level" :
+                                  ach.eventType === "NATIONAL" ? "National" : "Int'l";
 
                 html += `
                     <tr>
                         <td>${ach.studentName}</td>
                         <td class="font-monospace fw-bold">${ach.registerNumber}</td>
-                        <td>${ach.eventName}</td>
+                        <td>${ach.eventName}${compSuffix}</td>
                         <td class="text-warning fw-bold"><i class="fa-solid fa-award me-1"></i>${ach.achievement}</td>
                         <td>${formattedDate}</td>
                         <td><span class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">${ach.department}</span></td>
-                        <td class="text-end no-print">${deleteButton}</td>
+                        <td>${ach.tutorName}</td>
+                        <td><span class="badge bg-info text-dark font-monospace" style="font-size: 0.75rem;">${ach.academicYear}</span></td>
+                        <td><span class="badge bg-primary font-monospace" style="font-size: 0.75rem;">${typeLabel}</span></td>
+                        <td class="text-end no-print">${actionsButton}</td>
                     </tr>
                 `;
             });
@@ -830,108 +1186,767 @@
             document.body.removeChild(link);
         }
 
-        // ==========================================
-        // STUDENT ASSIGNMENT DIRECTORY
-        // ==========================================
-        function loadAssignmentsData() {
-            const tbody = document.getElementById("assignments-tbody");
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center py-4 text-muted">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                        Fetching assignments...
-                    </td>
-                </tr>
-            `;
 
-            fetch("/api/achievements/assignments")
-                .then(res => res.json())
-                .then(data => {
-                    if (data.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No student assignments recorded.</td></tr>`;
-                        return;
-                    }
-
-                    let html = "";
-                    data.forEach(assign => {
-                        let tutorCol = "";
-                        if (currentRole === "ROLE_SUPER_ADMIN" || currentRole === "ROLE_ADMIN" || currentRole === "ROLE_HOD" || currentRole === "ROLE_DEPARTMENT") {
-                            tutorCol = `<td>${assign.tutorUsername}</td>`;
-                        }
-
-                        html += `
-                            <tr>
-                                <td class="font-monospace fw-bold">${assign.studentRegisterNumber}</td>
-                                <td>${assign.studentName}</td>
-                                <td><span class="badge bg-secondary font-monospace" style="font-size: 0.75rem;">${assign.department}</span></td>
-                                ${tutorCol}
-                                <td class="text-end no-print">
-                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteAssignment(${assign.id})"><i class="fa-solid fa-unlink me-1"></i>Unassign</button>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                    tbody.innerHTML = html;
-                })
-                .catch(err => {
-                    console.error(err);
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Failed to fetch assignments list.</td></tr>`;
-                });
-        }
-
-        function handleAssignmentSubmit(e) {
-            e.preventDefault();
-            const studentRegisterNumber = document.getElementById("assign-student").value.trim().toUpperCase();
-            const tutorUsernameVal = document.getElementById("assign-tutor").value.trim();
-
-            const payload = {
-                studentRegisterNumber
-            };
-            if (tutorUsernameVal) {
-                payload.tutorUsername = tutorUsernameVal;
-            }
-
-            fetch("/api/achievements/assignments", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            })
-            .then(res => {
-                if (res.ok) return res.json();
-                return res.json().then(err => { throw new Error(err.error || "Assignment failed") });
-            })
-            .then(() => {
-                showSuccessPopup("Student Assigned Successfully");
-                document.getElementById("assign-student").value = "";
-                loadAssignmentsData();
-            })
-            .catch(err => {
-                alert("Error: " + err.message);
-            });
-        }
-
-        function deleteAssignment(id) {
-            if (!confirm("Are you sure you want to remove this student-tutor assignment?")) return;
-
-            fetch(`/api/achievements/assignments/${id}`, {
-                method: "DELETE"
-            })
-            .then(res => {
-                if (res.ok) {
-                    showSuccessPopup("Assignment Removed");
-                    loadAssignmentsData();
-                } else {
-                    alert("Failed to remove assignment.");
-                }
-            })
-            .catch(err => console.error(err));
-        }
 
         // Case-insensitive ignore case helper
         String.prototype.equalsIgnoreCase = function (compareString) {
             if (!compareString) return false;
             return this.toLowerCase() === compareString.toLowerCase();
         };
+
+        // --- NEW Dynamic dropdown & searchable selects logic ---
+        
+        let allEvents = [];
+        
+        function loadAcademicYears(selectedVal) {
+            fetch("/api/achievements/academic-years")
+                .then(res => res.json())
+                .then(years => {
+                    const timelineSelect = document.getElementById("timeline-academic-year");
+                    const entrySelect = document.getElementById("entry-academic-year");
+                    const filterSelect = document.getElementById("filter-academic-year");
+                    const filterPartSelect = document.getElementById("filter-part-academic-year");
+                    const partSelect = document.getElementById("part-academic-year");
+                    const editSelect = document.getElementById("edit-academic-year");
+
+                    // 1. Populate Timeline Select
+                    let timelineHtml = `<option value="">All Academic Years</option>`;
+                    years.forEach(y => {
+                        timelineHtml += `<option value="${y.name}">${y.name}</option>`;
+                    });
+                    if (timelineSelect) {
+                        timelineSelect.innerHTML = timelineHtml;
+                        timelineSelect.value = selectedVal || "";
+                    }
+
+                    // 2. Populate Filter Select
+                    let filterHtml = `<option value="">All Academic Years</option>`;
+                    years.forEach(y => {
+                        filterHtml += `<option value="${y.name}">${y.name}</option>`;
+                    });
+                    if (filterSelect) {
+                        filterSelect.innerHTML = filterHtml;
+                        filterSelect.value = selectedVal || "";
+                    }
+                    if (filterPartSelect) {
+                        filterPartSelect.innerHTML = filterHtml;
+                        filterPartSelect.value = selectedVal || "";
+                    }
+
+                    // 3. Populate Entry Select
+                    let entryHtml = `<option value="" disabled selected>Select Academic Year</option>`;
+                    years.forEach(y => {
+                        entryHtml += `<option value="${y.name}">${y.name}</option>`;
+                    });
+                    if (currentRole === "ROLE_SUPER_ADMIN" || currentRole === "ROLE_ADMIN") {
+                        entryHtml += `<option value="ADD_NEW" style="color: var(--primary); font-weight: bold;">+ Add New Academic Year...</option>`;
+                    }
+                    if (entrySelect) {
+                        entrySelect.innerHTML = entryHtml;
+                        const savedDraft = localStorage.getItem("form_draft_achievement-form_entry-academic-year");
+                        if (selectedVal) {
+                            entrySelect.value = selectedVal;
+                        } else if (savedDraft !== null) {
+                            entrySelect.value = savedDraft;
+                        }
+                    }
+
+                    // 4. Populate Part Select
+                    let partHtml = `<option value="" disabled selected>Select Academic Year</option>`;
+                    years.forEach(y => {
+                        partHtml += `<option value="${y.name}">${y.name}</option>`;
+                    });
+                    if (partSelect) {
+                        partSelect.innerHTML = partHtml;
+                    }
+
+                    // 5. Populate Edit Select
+                    let editHtml = `<option value="" disabled selected>Select Academic Year</option>`;
+                    years.forEach(y => {
+                        editHtml += `<option value="${y.name}">${y.name}</option>`;
+                    });
+                    if (editSelect) {
+                        editSelect.innerHTML = editHtml;
+                    }
+                })
+                .catch(err => console.error("Error loading academic years:", err));
+        }
+
+        function handleAcademicYearChange() {
+            const select = document.getElementById("entry-academic-year");
+            if (select.value === "ADD_NEW") {
+                const newYear = prompt("Enter new Academic Year (Format: YYYY-YYYY, e.g. 2024-2027):");
+                if (newYear) {
+                    const cleanYear = newYear.trim();
+                    
+                    fetch("/api/achievements/academic-years", {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ name: cleanYear })
+                    })
+                    .then(res => {
+                        if (res.ok) return res.json();
+                        return res.json().then(err => { throw new Error(err.error || "Failed to create academic year.") });
+                    })
+                    .then(data => {
+                        showSuccessPopup("Academic Year Added Successfully");
+                        loadAcademicYears(data.name);
+                    })
+                    .catch(err => {
+                        alert("Error: " + err.message);
+                        select.value = "";
+                    });
+                } else {
+                    select.value = "";
+                }
+            }
+        }
+
+        let editModalObj = null;
+
+        function openEditModal(id) {
+            fetch(`/api/achievements/${id}`)
+                .then(res => res.json())
+                .then(ach => {
+                    document.getElementById("edit-ach-id").value = ach.id;
+                    document.getElementById("edit-student-roll").value = ach.registerNumber || "";
+                    document.getElementById("edit-student-name").value = ach.studentName || "";
+                    document.getElementById("edit-department").value = ach.department || "";
+                    document.getElementById("edit-tutor").value = ach.tutorName || "";
+                    document.getElementById("edit-event").value = ach.eventName || "";
+                    document.getElementById("edit-achievement").value = ach.achievement || "";
+                    document.getElementById("edit-date").value = ach.eventDate || "";
+                    document.getElementById("edit-event-type").value = ach.eventType || "COLLEGE";
+
+                    // Clear detail indicators
+                    const detailsDiv = document.getElementById("edit-student-details");
+                    if (detailsDiv) {
+                        detailsDiv.style.display = "none";
+                        detailsDiv.innerText = "";
+                    }
+
+                    // Populate categories dropdown and pre-select
+                    loadEditCategoriesDropdown(ach.competition);
+
+                    // Populate academic years and pre-select
+                    loadEditAcademicYearsDropdown(ach.academicYear);
+
+                    // Open bootstrap modal
+                    if (!editModalObj) {
+                        editModalObj = new bootstrap.Modal(document.getElementById("editAchievementModal"));
+                    }
+                    editModalObj.show();
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Error loading achievement details.");
+                });
+        }
+
+        function loadEditCategoriesDropdown(selectedVal) {
+            fetch("/api/achievements/categories")
+                .then(res => res.json())
+                .then(cats => {
+                    const select = document.getElementById("edit-competition");
+                    if (!select) return;
+                    let html = `<option value="" disabled selected>Select Category</option>`;
+                    cats.forEach(c => {
+                        html += `<option value="${c.name}">${c.name}</option>`;
+                    });
+                    html += `<option value="ADD_NEW_CATEGORY" style="color: var(--primary); font-weight: bold;">+ Add Category...</option>`;
+                    select.innerHTML = html;
+                    if (selectedVal) {
+                        select.value = selectedVal;
+                    }
+                })
+                .catch(err => console.error("Error loading edit categories:", err));
+        }
+
+        function handleEditCategoryChange() {
+            const select = document.getElementById("edit-competition");
+            if (select.value === "ADD_NEW_CATEGORY") {
+                const newCat = prompt("Enter new Achievement Category:");
+                if (newCat) {
+                    const cleanCat = newCat.trim();
+                    fetch("/api/achievements/categories", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: cleanCat })
+                    })
+                    .then(res => {
+                        if (res.ok) return res.json();
+                        return res.json().then(err => { throw new Error(err.error || "Failed to add category") });
+                    })
+                    .then(data => {
+                        showSuccessPopup("Category Added Successfully");
+                        loadEditCategoriesDropdown(data.name);
+                    })
+                    .catch(err => {
+                        alert("Error: " + err.message);
+                        select.value = "";
+                    });
+                } else {
+                    select.value = "";
+                }
+            }
+        }
+
+        function loadEditAcademicYearsDropdown(selectedVal) {
+            fetch("/api/achievements/academic-years")
+                .then(res => res.json())
+                .then(years => {
+                    const select = document.getElementById("edit-academic-year");
+                    if (!select) return;
+                    let html = `<option value="" disabled selected>Select Academic Year</option>`;
+                    years.forEach(y => {
+                        html += `<option value="${y.name}">${y.name}</option>`;
+                    });
+                    select.innerHTML = html;
+                    if (selectedVal) {
+                        select.value = selectedVal;
+                    }
+                })
+                .catch(err => console.error("Error loading edit academic years:", err));
+        }
+
+        function lookupEditStudent() {
+            const rollInput = document.getElementById("edit-student-roll");
+            const detailsDiv = document.getElementById("edit-student-details");
+            if (!rollInput || !detailsDiv) return;
+
+            const roll = rollInput.value.trim();
+            if (roll.length < 3) {
+                detailsDiv.style.display = "none";
+                detailsDiv.innerText = "";
+                return;
+            }
+
+            fetch(`/api/achievements/student/${roll}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error("Not found");
+                })
+                .then(data => {
+                    detailsDiv.style.display = "block";
+                    detailsDiv.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${data.name} [${data.department}]`;
+                    document.getElementById("edit-student-name").value = data.name;
+                    document.getElementById("edit-department").value = data.department;
+                })
+                .catch(() => {
+                    detailsDiv.style.display = "none";
+                });
+        }
+
+        function handleEditSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById("edit-ach-id").value;
+            const studentName = document.getElementById("edit-student-name").value.trim();
+            const registerNumber = document.getElementById("edit-student-roll").value.trim().toUpperCase();
+            const department = document.getElementById("edit-department").value.trim();
+            const tutorName = document.getElementById("edit-tutor").value.trim();
+            const eventName = document.getElementById("edit-event").value.trim();
+            const competition = document.getElementById("edit-competition").value;
+            const eventType = document.getElementById("edit-event-type").value;
+            const achievement = document.getElementById("edit-achievement").value.trim();
+            const eventDate = document.getElementById("edit-date").value;
+            const academicYear = document.getElementById("edit-academic-year").value;
+
+            const payload = {
+                studentName,
+                registerNumber,
+                department,
+                tutorName,
+                eventName,
+                eventType,
+                achievement,
+                eventDate,
+                academicYear,
+                competition
+            };
+
+            fetch(`/api/achievements/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Failed to update achievement") });
+            })
+            .then(() => {
+                showSuccessPopup("Achievement Updated Successfully");
+                if (editModalObj) {
+                    editModalObj.hide();
+                }
+                loadReportsData();
+                loadTimeline();
+            })
+            .catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+
+        function loadCategoriesDropdown(selectedVal) {
+            fetch("/api/achievements/categories")
+                .then(res => res.json())
+                .then(cats => {
+                    const compSelect = document.getElementById("entry-competition");
+                    if (!compSelect) return;
+                    let html = `<option value="" disabled selected>Select Category</option>`;
+                    cats.forEach(c => {
+                        html += `<option value="${c.name}">${c.name}</option>`;
+                    });
+                    html += `<option value="ADD_NEW_CATEGORY" style="color: var(--primary); font-weight: bold;">+ Add Category...</option>`;
+                    compSelect.innerHTML = html;
+                    
+                    const savedDraft = localStorage.getItem("form_draft_achievement-form_entry-competition");
+                    if (selectedVal) {
+                        compSelect.value = selectedVal;
+                    } else if (savedDraft !== null) {
+                        compSelect.value = savedDraft;
+                    }
+                })
+                .catch(err => console.error("Error loading categories:", err));
+        }
+
+        function handleCategoryChange() {
+            const select = document.getElementById("entry-competition");
+            if (select.value === "ADD_NEW_CATEGORY") {
+                const newCat = prompt("Enter new Achievement Category:");
+                if (newCat) {
+                    const cleanCat = newCat.trim();
+                    fetch("/api/achievements/categories", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: cleanCat })
+                    })
+                    .then(res => {
+                        if (res.ok) return res.json();
+                        return res.json().then(err => { throw new Error(err.error || "Failed to add category") });
+                    })
+                    .then(data => {
+                        showSuccessPopup("Category Added Successfully");
+                        loadCategoriesDropdown(data.name);
+                    })
+                    .catch(err => {
+                        alert("Error: " + err.message);
+                        select.value = "";
+                    });
+                } else {
+                    select.value = "";
+                }
+            }
+        }
+
+        function loadTutorDatalist() {
+            fetch("/api/achievements/tutors")
+                .then(res => res.json())
+                .then(tutors => {
+                    const list = document.getElementById("tutors-list");
+                    if (!list) return;
+                    let html = "";
+                    tutors.forEach(t => {
+                        html += `<option value="${t.name}">${t.username} - ${t.department}</option>`;
+                    });
+                    list.innerHTML = html;
+                })
+                .catch(err => console.error("Error loading tutors list:", err));
+        }
+
+        // ==========================================
+        // EVENT PARTICIPATION MODULE LOGIC
+        // ==========================================
+        let participationModalObj = null;
+
+        function updateYearOptions() {
+            const deptInput = document.getElementById("part-department");
+            const yearSelect = document.getElementById("part-year");
+            if (!deptInput || !yearSelect) return;
+
+            const deptValue = deptInput.value.trim().toLowerCase();
+            let isFourYears = false;
+
+            if (deptValue.includes("engineering") || deptValue.includes("b.tech") || deptValue.includes("b.e.")) {
+                isFourYears = true;
+            }
+
+            const currentSelected = yearSelect.value;
+
+            let html = '<option value="" disabled selected>Select Year</option>';
+            html += '<option value="1st Year">1st Year</option>';
+            html += '<option value="2nd Year">2nd Year</option>';
+            html += '<option value="3rd Year">3rd Year</option>';
+            if (isFourYears) {
+                html += '<option value="4th Year">4th Year</option>';
+            }
+
+            yearSelect.innerHTML = html;
+
+            if (currentSelected && (currentSelected !== "4th Year" || isFourYears)) {
+                yearSelect.value = currentSelected;
+            }
+        }
+
+        function openParticipationForm(category, id = null) {
+            if (!participationModalObj) {
+                participationModalObj = new bootstrap.Modal(document.getElementById('participationModal'));
+            }
+            
+            const form = document.getElementById("participation-form");
+            form.reset();
+            document.getElementById("part-id").value = id || "";
+            document.getElementById("part-roll-status").style.display = "none";
+
+            if (id) {
+                document.getElementById("participationModalTitle").innerText = "Edit Student Participation";
+                // Fetch all records temporarily to extract details of this specific record
+                fetch(`/api/participation/report?startDate=2000-01-01&endDate=2099-12-31`)
+                    .then(res => res.json())
+                    .then(records => {
+                        const rec = records.find(r => r.id == id);
+                        if (rec) {
+                            document.getElementById("part-roll-number").value = rec.rollNumber;
+                            document.getElementById("part-student-name").value = rec.studentName;
+                            document.getElementById("part-department").value = rec.department;
+                            document.getElementById("part-tutor-name").value = rec.tutorName;
+                            document.getElementById("part-event-category").value = rec.eventCategory;
+                            
+                            // Check if category is Other Events
+                            if (rec.eventCategory === "Other Events") {
+                                document.getElementById("part-other-event-name").value = rec.eventName;
+                                document.getElementById("part-event-name").value = "";
+                                document.getElementById("part-other-event-group").style.display = "block";
+                                document.getElementById("part-standard-event-group").style.display = "none";
+                                document.getElementById("part-other-event-name").required = true;
+                                document.getElementById("part-event-name").required = false;
+                            } else {
+                                document.getElementById("part-event-name").value = rec.eventName;
+                                document.getElementById("part-other-event-name").value = "";
+                                document.getElementById("part-other-event-group").style.display = "none";
+                                document.getElementById("part-standard-event-group").style.display = "block";
+                                document.getElementById("part-other-event-name").required = false;
+                                document.getElementById("part-event-name").required = true;
+                            }
+                            
+                            document.getElementById("part-event-date").value = rec.eventDate;
+                            document.getElementById("part-result").value = rec.result;
+                            document.getElementById("part-cert-status").value = rec.certificateStatus;
+                            document.getElementById("part-academic-year").value = rec.academicYear || "";
+                            
+                            // Load year options and set value
+                            updateYearOptions();
+                            document.getElementById("part-year").value = rec.year;
+                        }
+                    })
+                    .catch(err => console.error("Error loading record for edit:", err));
+            } else {
+                document.getElementById("participationModalTitle").innerText = "Record Student Participation";
+                document.getElementById("part-event-category").value = category;
+                
+                // Show/hide other events fields
+                if (category === "Other Events") {
+                    document.getElementById("part-other-event-name").value = "";
+                    document.getElementById("part-event-name").value = "";
+                    document.getElementById("part-other-event-group").style.display = "block";
+                    document.getElementById("part-standard-event-group").style.display = "none";
+                    document.getElementById("part-other-event-name").required = true;
+                    document.getElementById("part-event-name").required = false;
+                } else {
+                    document.getElementById("part-other-event-name").value = "";
+                    document.getElementById("part-event-name").value = "";
+                    document.getElementById("part-other-event-group").style.display = "none";
+                    document.getElementById("part-standard-event-group").style.display = "block";
+                    document.getElementById("part-other-event-name").required = false;
+                    document.getElementById("part-event-name").required = true;
+                }
+
+                // Pre-fill department details if logged in
+                if (currentDept && currentDept !== "All" && currentDept !== "null" && currentDept !== "") {
+                    document.getElementById("part-department").value = currentDept;
+                }
+                
+                // Load year options
+                updateYearOptions();
+
+                if (typeof window.restoreFormDrafts === "function") {
+                    window.restoreFormDrafts("participation-form");
+                }
+            }
+
+            // Populate datalists if not done
+            loadPartDatalists();
+
+            participationModalObj.show();
+        }
+
+        function loadPartDatalists() {
+            // Load departments list
+            fetch("/api/departments")
+                .then(res => res.json())
+                .then(depts => {
+                    let html = "";
+                    depts.forEach(d => {
+                        html += `<option value="${d.name}">`;
+                    });
+                    document.getElementById("part-dept-list").innerHTML = html;
+                });
+
+            // Load tutors list
+            fetch("/api/achievements/tutors")
+                .then(res => res.json())
+                .then(tutors => {
+                    let html = "";
+                    tutors.forEach(t => {
+                        html += `<option value="${t.name}">${t.username} - ${t.department}</option>`;
+                    });
+                    document.getElementById("part-tutors-list").innerHTML = html;
+                });
+        }
+
+        function lookupStudentForParticipation(rollNumber) {
+            if (!rollNumber || rollNumber.trim() === "") return;
+            const statusDiv = document.getElementById("part-roll-status");
+            statusDiv.style.display = "block";
+            statusDiv.className = "small mt-1 text-info";
+            statusDiv.innerText = "Looking up student...";
+
+            fetch(`/api/achievements/student/${rollNumber.trim()}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error("Student not registered");
+                })
+                .then(data => {
+                    document.getElementById("part-student-name").value = data.name;
+                    document.getElementById("part-department").value = data.department;
+                    statusDiv.className = "small mt-1 text-success";
+                    statusDiv.innerText = `Verified: ${data.name}`;
+                    updateYearOptions(); // Dynamic year options based on looked up department
+                })
+                .catch(err => {
+                    statusDiv.className = "small mt-1 text-danger";
+                    statusDiv.innerText = "Roll number not found. Please enter manually.";
+                });
+        }
+
+        function saveParticipation(event) {
+            event.preventDefault();
+            const id = document.getElementById("part-id").value;
+            const isOther = document.getElementById("part-event-category").value === "Other Events";
+            const eventName = isOther ? 
+                document.getElementById("part-other-event-name").value.trim() : 
+                document.getElementById("part-event-name").value.trim();
+
+            const payload = {
+                rollNumber: document.getElementById("part-roll-number").value.trim().toUpperCase(),
+                studentName: document.getElementById("part-student-name").value.trim(),
+                department: document.getElementById("part-department").value.trim(),
+                year: document.getElementById("part-year").value,
+                tutorName: document.getElementById("part-tutor-name").value.trim(),
+                eventCategory: document.getElementById("part-event-category").value,
+                eventName: eventName,
+                eventDate: document.getElementById("part-event-date").value,
+                result: document.getElementById("part-result").value,
+                certificateStatus: document.getElementById("part-cert-status").value,
+                academicYear: document.getElementById("part-academic-year").value
+            };
+
+            const url = id ? `/api/participation/${id}` : "/api/participation";
+            const method = id ? "PUT" : "POST";
+
+            fetch(url, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Failed to save record") });
+            })
+            .then(() => {
+                showSuccessPopup(id ? "Participation Updated!" : "Participation Saved!");
+                if (participationModalObj) {
+                    participationModalObj.hide();
+                }
+            })
+            .catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+
+
+
+        let addAccountModalObj = null;
+
+        function openAddAccountModal() {
+            if (!addAccountModalObj) {
+                addAccountModalObj = new bootstrap.Modal(document.getElementById('addAccountModal'));
+            }
+            document.getElementById("add-account-form").reset();
+            toggleAddAccountFields();
+            addAccountModalObj.show();
+        }
+
+        function toggleAddAccountFields() {
+            const role = document.getElementById("add-account-role").value;
+            const extraFields = document.getElementById("add-account-role-extra-fields");
+            const deptInput = document.getElementById("add-account-dept-code");
+            
+            if (role === "ROLE_STUDENT" || role === "ROLE_DEPARTMENT") {
+                extraFields.style.display = "block";
+                deptInput.required = true;
+                if (role === "ROLE_STUDENT") {
+                    deptInput.placeholder = "e.g. IT, CS, MECH";
+                } else {
+                    deptInput.placeholder = "e.g. Information Technology or Code";
+                }
+            } else {
+                extraFields.style.display = "none";
+                deptInput.required = false;
+            }
+        }
+
+        function handleAddAccountSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById("add-account-username").value.trim();
+            const password = document.getElementById("add-account-password").value;
+            const name = document.getElementById("add-account-name").value.trim();
+            const role = document.getElementById("add-account-role").value;
+            const departmentCode = document.getElementById("add-account-dept-code").value.trim();
+            const email = document.getElementById("add-account-email").value.trim();
+            const contactNumber = document.getElementById("add-account-contact").value.trim();
+
+            const payload = {
+                username,
+                password,
+                name,
+                role,
+                departmentCode,
+                email,
+                contactNumber
+            };
+
+            fetch("/api/achievements/add-account", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                return res.json().then(err => { throw new Error(err.error || "Failed to create account") });
+            })
+            .then(() => {
+                showSuccessPopup("Account Created Successfully!");
+                if (addAccountModalObj) {
+                    addAccountModalObj.hide();
+                }
+            })
+            .catch(err => {
+                alert("Error: " + err.message);
+            });
+        }
+
+        function handleOtherEventsClick() {
+            const newCat = prompt("Enter custom event type name:");
+            if (newCat) {
+                const cleanCat = newCat.trim();
+                if (cleanCat === "") return;
+                fetch("/api/achievements/categories", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: cleanCat })
+                })
+                .then(res => {
+                    if (res.ok) return res.json();
+                    return res.json().then(err => { throw new Error(err.error || "Failed to add category") });
+                })
+                .then(() => {
+                    showSuccessPopup("Custom category added successfully");
+                    renderEventCategories();
+                })
+                .catch(err => {
+                    alert("Error: " + err.message);
+                });
+            }
+        }
+
+        function renderEventCategories() {
+            fetch("/api/achievements/categories")
+                .then(res => res.json())
+                .then(cats => {
+                    const container = document.getElementById("event-categories-container");
+                    if (!container) return;
+
+                    const defaults = [
+                        { name: "Debate", icon: "fa-microphone", glowClass: "bg-primary-glow text-primary" },
+                        { name: "Conference", icon: "fa-users", glowClass: "bg-success-glow text-success" },
+                        { name: "Seminar", icon: "fa-calendar-days", glowClass: "bg-info-glow text-info" },
+                        { name: "Workshop", icon: "fa-trophy", glowClass: "bg-warning-glow text-warning" }
+                    ];
+
+                    let html = "";
+                    defaults.forEach(d => {
+                        html += `
+                            <div class="col-6 col-md-4 col-lg-2">
+                                <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('${d.name}')" style="cursor: pointer;">
+                                    <div class="category-icon-wrapper ${d.glowClass} mb-3">
+                                        <i class="fa-solid ${d.icon} fa-2x"></i>
+                                    </div>
+                                    <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">${d.name}</h5>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    cats.forEach(c => {
+                        const isDefault = defaults.some(d => d.name.toLowerCase() === c.name.toLowerCase());
+                        if (!isDefault) {
+                            html += `
+                                <div class="col-6 col-md-4 col-lg-2">
+                                    <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="openParticipationForm('${c.name}')" style="cursor: pointer;">
+                                        <div class="category-icon-wrapper bg-secondary-glow text-light mb-3">
+                                            <i class="fa-solid fa-medal fa-2x"></i>
+                                        </div>
+                                        <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">${c.name}</h5>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+
+                    html += `
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <div class="glass-panel p-3 text-center h-100 d-flex flex-column justify-content-center align-items-center category-box-premium" onclick="handleOtherEventsClick()" style="cursor: pointer;">
+                                <div class="category-icon-wrapper bg-danger-glow text-danger mb-3">
+                                    <i class="fa-solid fa-award fa-2x"></i>
+                                </div>
+                                <h5 class="fw-bold text-white mb-0" style="font-size: 1rem;">Other Events</h5>
+                            </div>
+                        </div>
+                    `;
+
+                    container.innerHTML = html;
+
+                    const filterSelect = document.getElementById("filter-part-category");
+                    if (filterSelect) {
+                        let selectHtml = `<option value="All">All Categories</option>`;
+                        defaults.forEach(d => {
+                            selectHtml += `<option value="${d.name}">${d.name}</option>`;
+                        });
+                        cats.forEach(c => {
+                            const isDefault = defaults.some(d => d.name.toLowerCase() === c.name.toLowerCase());
+                            if (!isDefault) {
+                                selectHtml += `<option value="${c.name}">${c.name}</option>`;
+                            }
+                        });
+                        selectHtml += `<option value="Other Events">Other Events</option>`;
+                        filterSelect.innerHTML = selectHtml;
+                    }
+                })
+                .catch(err => console.error("Error rendering categories:", err));
+        }
+
     </script>
 </body>
 </html>

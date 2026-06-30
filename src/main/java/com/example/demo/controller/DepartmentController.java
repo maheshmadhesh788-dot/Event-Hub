@@ -9,6 +9,7 @@ import com.example.demo.service.EventService;
 import com.example.demo.service.RegistrationService;
 import com.example.demo.service.NotificationService;
 import com.example.demo.service.FeedbackService;
+import com.example.demo.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,17 +28,20 @@ public class DepartmentController {
     private final RegistrationService registrationService;
     private final NotificationService notificationService;
     private final FeedbackService feedbackService;
+    private final UserRepository userRepository;
 
     public DepartmentController(DepartmentService departmentService,
                                 EventService eventService,
                                 RegistrationService registrationService,
                                 NotificationService notificationService,
-                                FeedbackService feedbackService) {
+                                FeedbackService feedbackService,
+                                UserRepository userRepository) {
         this.departmentService = departmentService;
         this.eventService = eventService;
         this.registrationService = registrationService;
         this.notificationService = notificationService;
         this.feedbackService = feedbackService;
+        this.userRepository = userRepository;
     }
 
     // --- List Departments without Password (wait, name is kept, but we now include details) ---
@@ -59,7 +63,12 @@ public class DepartmentController {
         }).collect(Collectors.toList());
     }
 
-
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getDepartmentById(@PathVariable Long id) {
+        return departmentService.getDepartmentById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 
     // --- Update Department Profile Details ---
     @PutMapping("/{id}/details")
@@ -195,6 +204,7 @@ public class DepartmentController {
             .map(dept -> {
                 notification.setSender("Department of " + dept.getCode());
                 notification.setCreatedAt(LocalDateTime.now());
+                userRepository.findByUsernameIgnoreCase(dept.getName()).ifPresent(notification::setUser);
                 Notification saved = notificationService.createNotification(notification);
                 return ResponseEntity.ok(saved);
             })

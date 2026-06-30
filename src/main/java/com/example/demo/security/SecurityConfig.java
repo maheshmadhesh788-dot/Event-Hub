@@ -51,7 +51,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/departments").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/student/events/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/student/check/**").permitAll()
-                .requestMatchers("/api/student/register").permitAll()
+                
                 
                 // Secure Super Admin endpoints
                 .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN")
@@ -67,6 +67,9 @@ public class SecurityConfig {
                 
                 // Secure Achievement endpoints
                 .requestMatchers("/api/achievements/**").hasAnyRole("TUTOR", "HOD", "ADMIN", "SUPER_ADMIN", "DEPARTMENT")
+                
+                // Secure Event Participation endpoints
+                .requestMatchers("/api/participation/**").hasAnyRole("TUTOR", "HOD", "ADMIN", "SUPER_ADMIN", "DEPARTMENT", "STUDENT")
                 
                 // Catch-all
                 .anyRequest().authenticated()

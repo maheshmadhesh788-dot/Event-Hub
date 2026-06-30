@@ -13,4 +13,5 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<Registration> findByEvent_DepartmentId(Long departmentId);
     List<Registration> findByCompetitionId(Long competitionId);
     List<Registration> findByStudentRollNumberIgnoreCaseAndCompetitionId(String rollNumber, Long competitionId);
+    long countDistinctRollNumberByEventId(Long eventId);
 }

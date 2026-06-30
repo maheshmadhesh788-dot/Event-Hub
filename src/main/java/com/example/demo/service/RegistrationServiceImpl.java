@@ -58,10 +58,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         // Event capacity limit check (distinct roll numbers)
         if (event.getCapacity() != null && event.getCapacity() > 0) {
-            long distinctStudents = registrationRepository.findByEventId(event.getId()).stream()
-                    .map(r -> r.getRollNumber().toLowerCase())
-                    .distinct()
-                    .count();
+            long distinctStudents = registrationRepository.countDistinctRollNumberByEventId(event.getId());
             if (distinctStudents >= event.getCapacity()) {
                 throw new RuntimeException("Sorry, this event has reached its maximum capacity of " + event.getCapacity() + " participants.");
             }
@@ -75,7 +72,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             Student newStudent = new Student();
             newStudent.setRollNumber(rollNumber);
             newStudent.setStudentName(regData.getStudentName().trim());
-            newStudent.setDepartment(regData.getDepartment().trim());
+            newStudent.setDepartment(com.example.demo.util.DepartmentNormalizer.normalize(regData.getDepartment().trim()));
             newStudent.setContactNumber(regData.getContactNumber().trim());
             newStudent.setEmail(regData.getEmail().trim());
             newStudent.setYear(regData.getYear() != null ? regData.getYear().trim() : "1st");
@@ -109,7 +106,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             reg.setStudent(studentEntity);
             reg.setStudentName(regData.getStudentName().trim());
             reg.setRollNumber(rollNumber);
-            reg.setDepartment(regData.getDepartment().trim());
+            reg.setDepartment(com.example.demo.util.DepartmentNormalizer.normalize(regData.getDepartment().trim()));
             reg.setYear(regData.getYear().trim());
             reg.setContactNumber(regData.getContactNumber().trim());
             reg.setEmail(regData.getEmail().trim());
@@ -138,7 +135,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 reg.setStudent(studentEntity);
                 reg.setStudentName(regData.getStudentName().trim());
                 reg.setRollNumber(rollNumber);
-                reg.setDepartment(regData.getDepartment().trim());
+                reg.setDepartment(com.example.demo.util.DepartmentNormalizer.normalize(regData.getDepartment().trim()));
                 reg.setYear(regData.getYear().trim());
                 reg.setContactNumber(regData.getContactNumber().trim());
                 reg.setEmail(regData.getEmail().trim());

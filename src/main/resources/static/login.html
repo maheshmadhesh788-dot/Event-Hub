@@ -224,7 +224,7 @@
             const redirectUrl = urlParams.get("redirect");
             
             if (redirectUrl) {
-                if (student && redirectUrl === "dashboard.html") window.location.href = redirectUrl;
+                if (student && (redirectUrl === "dashboard.html" || redirectUrl.startsWith("register.html"))) window.location.href = redirectUrl;
                 if (dept && redirectUrl === "department.html") window.location.href = redirectUrl;
                 if (staff && redirectUrl === "achievements.html") window.location.href = redirectUrl;
                 if (admin && redirectUrl === "admin.html") window.location.href = redirectUrl;
@@ -271,8 +271,6 @@
                     localStorage.setItem("eventhub_superadmin_token", data.token);
                 } else if (role === "ROLE_DEPARTMENT") {
                     localStorage.setItem("eventhub_dept_session", JSON.stringify(data));
-                } else if (role === "ROLE_TUTOR" || role === "ROLE_HOD") {
-                    localStorage.setItem("eventhub_staff_session", JSON.stringify(data));
                 } else if (role === "ROLE_STUDENT") {
                     localStorage.setItem("eventhub_student_session", JSON.stringify(data));
                     localStorage.setItem("eventhub_student_rollnumber", data.rollNumber);
@@ -291,22 +289,19 @@
                         if ((role === "ROLE_ADMIN" && redirect === "admin.html") ||
                             (role === "ROLE_SUPER_ADMIN" && redirect === "superadmin.html") ||
                             (role === "ROLE_DEPARTMENT" && redirect === "department.html") ||
-                            ((role === "ROLE_TUTOR" || role === "ROLE_HOD") && (redirect === "achievements.html" || redirect === "department.html")) ||
-                            (role === "ROLE_STUDENT" && redirect === "dashboard.html")) {
+                            (role === "ROLE_STUDENT" && (redirect === "dashboard.html" || redirect.startsWith("register.html")))) {
                             window.location.href = redirect;
                         } else {
                             // Fallback to role-specific default if mismatch
                             if (role === "ROLE_ADMIN") window.location.href = "admin.html";
                             else if (role === "ROLE_SUPER_ADMIN") window.location.href = "superadmin.html";
                             else if (role === "ROLE_DEPARTMENT") window.location.href = "department.html";
-                            else if (role === "ROLE_TUTOR" || role === "ROLE_HOD") window.location.href = "achievements.html";
                             else if (role === "ROLE_STUDENT") window.location.href = "dashboard.html";
                         }
                     } else {
                         if (role === "ROLE_ADMIN") window.location.href = "admin.html";
                         else if (role === "ROLE_SUPER_ADMIN") window.location.href = "superadmin.html";
                         else if (role === "ROLE_DEPARTMENT") window.location.href = "department.html";
-                        else if (role === "ROLE_TUTOR" || role === "ROLE_HOD") window.location.href = "achievements.html";
                         else if (role === "ROLE_STUDENT") window.location.href = "dashboard.html";
                     }
                 }, 1000);

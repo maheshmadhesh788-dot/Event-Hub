@@ -80,11 +80,11 @@ public class Registration {
     }
 
     public String getDepartment() {
-        return student != null ? student.getDepartment() : department;
+        return student != null ? student.getDepartment() : com.example.demo.util.DepartmentNormalizer.normalize(department);
     }
 
     public void setDepartment(String department) {
-        this.department = department;
+        this.department = com.example.demo.util.DepartmentNormalizer.normalize(department);
     }
 
     public String getYear() {
